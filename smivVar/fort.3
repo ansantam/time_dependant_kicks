@@ -1,0 +1,303 @@
+/ 
+/ 18/07/2011
+/ fort.3 file: version from A.Mereghetti
+/ NB: comments about the meaning of numbers are reported from the manual, but
+/     simply as reminders: the full explaination is in the manual...
+/
+/ Geometry is contained in file fort.2
+GEOM
+NEXT
+/
+/ some printout to fort.6
+PRIN
+NEXT
+/
+/ ---------------------------------------------------------------------------- /
+/ tracking parameters:
+/ from manual:
+/ • data line 1: numl numlr napx amp(1) amp0 ird imc
+/   numl  (integer): Number of turns in the forward direction;
+/   numlr (integer): Number of turns in the backward direction;
+/   napx  (integer): Number of amplitude variations;
+/                    NB: it's better to think about couples of particles,
+/                        thus with itra (integer)=2...
+/   amp(1), amp0 (floats): Start and end amplitude (any sign) 
+/               in the horizontal phase space plane for the
+/               amplitude variations;
+/               NB: meaningless in case of coupling;
+/               NBB: in case of generation of the starting population, these are
+/                    min/max amplitudes at which the sampling will be done;
+/   ird   (integer): Switch for the type of amplitude variation. 
+/                    In case napx = 1 the amplitude nstart is used;
+/   imc   (integer): Number of variations of delta_p/p0;
+/                    NOTA BENE: NEVER PUT TO 0!!!! (otherwise it crashes...)
+/
+/ • data line 2: idy(1) idy(2) idfor irew iclo6 (integers)
+/   idy(1), idy(2) = 0: coupling to the horizontal and vertical motion planes
+/                       respectively switched off; 
+/                  = 1: coupling to the horizontal and vertical motion planes
+/                       respectively switched on; 
+/   idfor: Usually the closed orbit is added to the initial coordinates.
+/        = 0 : closed orbit added;
+/        = 1 : initial coordinates unchanged;
+/        = 2 : prolongation of a run, taken the initial coords from unit # 13;
+/        = 3 : obey to fort.3 file, DIST block;
+/   irew:  print out in unit 90... (0=no rewond; 1=rewound)
+/   iclo6: Differential Algebra package (0=switched off);
+/
+/ • data line 3: nde(1) nde(2) nwr(1) nwr(2) nwr(3) nwr(4) ntwin ibidu (integer)
+/   nde(1): Number of turns at flat bottom, useful for energy ramping;
+/   nde(2): Number of turns for the energy ramping. 
+/           numl–nde(2) gives the number of turns on the flat top.
+/   nwr(1): Every nwr(1)’th turn the coordinates will be written on unit 90 
+/           (and lower) in the flat bottom part of the tracking;
+/   nwr(2): Every nwr(2)’th turn the coordinates in the ramping region will be 
+/           written on unit 90 (and lower);
+/   nwr(3): Every nwr(3)’th turn at the flat top a write out of the coordinates
+/           on unit 90 (and lower) will occur. For constant energy, this number
+/           controls the amount of data on unit 90 (and lower), as the particles
+/            are considered on the flat top;
+/   nwr(4): In cases of very long runs it is sometimes useful to save all 
+/           coordinates for a prolongation of a run after a possible crash of 
+/           the computer. Every nwr(4)’th turn the coordinates are written
+/           to unit 6.
+/   ntwin:  Lyapunov analysis; 
+/   ibidu:  1 (write) or 2 (read) binary dump of the full accelerator 
+/           description in fort.32;
+/
+TRAC
+1000 0 1 0.0 0.0 0 1
+/ AM -> 1 0 1 0.0 0.0 0 1
+/ AM -> 50000 0 500 0.0 0.0 0 1
+/
+/ AM -> 0 0 3 0 0
+1 1 3 0 0
+/
+0 0 100000 100000 100000 100000 1
+NEXT
+/
+/
+/ ---------------------------------------------------------------------------- /
+/ initial coordinates
+/ • first data line: itra chi0 chid rat iver;
+/   itra (integer): 1=one particle; 2=two twin particles;
+/                   NOTA BENE: for a clearer output from SIXTRACK,
+/                              it's better to use 2 (couples of particles)...
+/   chi0:           Starting phase of the initial coordinate in the horizontal 
+/                   and vertical phase space projections;
+/   chid:           Phase difference between first and second particles;
+/   rat:            Denotes the emittance ratio (eII/eI ) of horizontal and 
+/                     vertical motion;
+/   iver = 0 : Vertical coordinates unchanged;
+/ • data lines 2 to 16: 15 initial coordinates (see table 3.4 in the Manual);
+/ NB: for the coupling, this part is useless, excp. from the energy
+/ NBB: the las three numbers are the TOTAL energy of the particle;
+/      if AMPRTN=9.38272310000000E-01 GeV, in case of pc=450.0GeV 
+/         the total energy should be: 4.50000978171078771E+02 GeV;
+/      nevertheless, SixTrack has: parameter(pmap = 938.271998d0,
+/         pmae = .510998902d0)
+/         giving a value of: 450000.978170428250450640900000000000000
+/         (with some bullshit starting from the 12th decimal digit...)
+INIT
+2 0.0 0.0 1.0 0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+450000.9781710787793
+450000.9781710787793
+450000.9781710787793
+NEXT
+/
+/ ---------------------------------------------------------------------------- /
+/ random fluctuation starting number:
+/ NOTA BENE: in case the starting distribution is read from an external file,
+/            this block can be skipped;
+/
+/ -- AM --> FLUC
+/ -- AM --> 1 1 0 0
+/ -- AM --> NEXT
+/
+/ ---------------------------------------------------------------------------- /
+/ Iteration error block: use default values, but for general apertures:
+ITERATION ACCURACY
+50 1.0E-12 1.0E-15
+10 1.0E-10 1.0E-10
+10 1.0E-10 1.0E-10
+1.0E-09 1.0E-09 1.0E-09 1.0E+06 1.0E+06
+NEXT
+/
+/ ---------------------------------------------------------------------------- /
+/ Synchrotron motion block: skip;
+/ if the block is skipped, no synchrotron motion is applied;
+/ NB: pmap synched with FLUKA one!!
+/ AM -> SYNC
+/ AM -> 4620 0.003100017718 7.0 0 6911.5038 938.27231  1 0
+/ AM ->  1 1
+/ AM -> NEXT
+/
+/ ---------------------------------------------------------------------------- /
+/
+/ read pre-sampled distribution
+/
+DIST
+ECHO
+READ "initial.dat"
+NEXT
+/
+/ ---------------------------------------------------------------------------- /
+/
+/ if you remove this block, you will not have any communication with FLUKA:
+/    thus, remove ANY element 26 in fort.2;
+/
+/ AM -> FLUKA
+/ AM -> DEBUG
+/ AM -> bpm_scrh_b2m bpm_scrh_e2m 1 2.0
+/ AM -> / AM -> bpm_scrh_beg bpm_scrh_end 1 1.0
+/ AM -> / AM -> bpm_scrh_beg bpm_scrh_beg 1 0.0
+/ AM -> NEXT
+/
+/ ---------------------------------------------------------------------------- /
+/
+/ AM -> / dump particle population at SINGLE ELEMENTs:
+/ AM -> DUMP
+/ AM -> HIGH
+/ AM -> bpm_scrh_beg 1 155
+/ AM -> bpm_scrh_end 1 157
+/ AM -> / AM -> bpm_scrh_b2m 1 155
+/ AM -> / AM -> bpm_scrh_e2m 1 157
+/ AM -> / AM -> qf.10010..1  1 157
+/ AM -> / AM -> qd.10110..1  1 158
+/ AM -> / AM -> mba.10030..1 1 159
+/ AM -> / AM -> tpsg.61776   2 156
+/ AM -> NEXT
+/
+/ ---------------------------------------------------------------------------- /
+/
+/ AM -> / statistics about the circulating population at SINGLE ELEMENTs:
+/ AM -> STAT
+/ AM -> bpm_scrh_b2m 1 156
+/ AM -> / AM -> tpsg.61776   2 156
+/ AM -> NEXT
+/
+/ ---------------------------------------------------------------------------- /
+/
+/ AM -> / DUMP linear optics functions...
+/ AM -> LINE
+/ AM -> / ...for all elements in fort.34 file (see Manual, 3.5.1, pag.19)
+/ AM -> /    actually the pritout is on terminal (redirected to tracker_xxxx.log in case
+/ AM -> /        of coupling), and on fort.34 there is only the end;
+/ AM -> /ELEMENT  0 1 1 4.02 4.02
+/ AM -> ELEMENT 0
+/ AM -> NEXT
+/
+/
+/ ---------------------------------------------------------------------------- /
+/
+LIMI
+/ AM -> bpm_scrh_e2m EL 7.500000E+01 7.500000E+01
+brch.51902 RE 5.000000E+01 5.000000E+01
+tcsm.51934 EL 3.000000E+01 4.000000E+01
+mpsh.61402 RE 7.600000E+01 1.765000E+01
+brcv.51899 RE 5.000000E+01 5.000000E+01
+qf.10010..1 EL 7.600000E+01 1.915000E+01
+tce.21695 RE 6.450000E+01 2.425000E+01
+tbsj.11995 RE 6.080000E+01 1.600000E+01
+mpsh.62199 RE 7.600000E+01 1.765000E+01
+tpsg.61776 RE 4.183000E+01 7.800000E+01
+tpsg.61773 RE 3.900000E+01 7.800000E+01
+tacw.51998 EL 7.800000E+01 7.800000E+01
+qfa.11610..1 RE 7.700000E+01 2.200000E+01
+/ AM -> bpm_scrh_b2m EL 7.500000E+01 7.500000E+01
+bshv.11759 EL 7.800000E+01 7.800000E+01
+/ AM -> bpm_scrh_mid EL 7.500000E+01 7.500000E+01
+tidv.11892 RE 4.250000E+01 2.040000E+01
+lsf.10205..1 EL 7.600000E+01 1.915000E+01
+mba.10030..1 RE 7.120000E+01 1.725000E+01
+mplh.61655 RE 7.600000E+01 1.765000E+01
+mplh.61996 RE 7.600000E+01 1.765000E+01
+bshv.11771 EL 7.800000E+01 7.800000E+01
+lsd.10305..1 EL 4.150000E+01 4.150000E+01
+tidp.11434 RE 4.100000E+01 1.500000E+01
+lsf.10805..1 EL 7.600000E+01 1.915000E+01
+qda.11710..1 EL 7.550000E+01 4.550000E+01
+bshv.51793 EL 7.800000E+01 7.800000E+01
+tal.52196 RE 7.800000E+01 1.340000E+02
+tpst.21759 RE 3.940000E+01 7.800000E+01
+brcz.52102 EL 5.000000E+01 5.000000E+01
+lsd.10105..1 EL 4.150000E+01 4.150000E+01
+/ AM -> bpm_scrh_beg EL 7.500000E+01 7.500000E+01
+/ AM -> bpm_scrh_end EL 7.500000E+01 7.500000E+01
+tpsg.41832 RE 4.640000E+01 7.800000E+01
+tbsm.11672 EL 7.800000E+01 7.800000E+01
+qd.10110..1 EL 4.150000E+01 4.150000E+01
+bshv.51659 EL 7.800000E+01 7.800000E+01
+bshv.51794 EL 7.800000E+01 7.800000E+01
+tidh.11795 RE 5.500000E+01 2.650000E+01
+brcz.51651 EL 5.000000E+01 5.000000E+01
+NEXT
+/
+/
+/ ---------------------------------------------------------------------------- /
+/
+DYNK
+/
+DEBUG
+/
+/ AM -> mpsh.61402	ramp.dat	1.0
+/ AM -> mplh.61655	ramp.dat	1.0
+/ AM -> mplh.61996	ramp.dat	1.0
+/ AM -> mpsh.62199	ramp.dat	1.0
+/ AM -> FUN     SIN       1            0.04    10      0.35    0.5
+/ AM -> FUN     SIN       14           0.04    10      0.35    0.0
+/ AM -> FUN     LIN       12           0.01    0.2
+/ AM -> FUN     LIN       1            0.02    0.0
+/ AM -> FUN     CNS       1            1.0
+/ AM -> FUN     CNS       1            0.5
+/ AM -> FUN     FLE       -            0.5     0.0     filename.dat
+/ AM -> FUN     EXP       14           1.0     -20.0   0.0     0.3
+/ AM -> FUN     LIN       -            0.02    0.0
+/
+FUN     SIN    1         0.1      20.0      1.5707963267948966  0.0
+FUN     LIN    -         0.0001
+FUN     EXP    -         1.0       0.0   -100.0                 0.0
+FUN     SQR    1         0.1
+FUN     LOG    14       -1.0       0.0    100.0                 1.0
+FUN     LIN    12        0.00001   1.0
+FUN     FLE    1         1.0       0.0    ramp.dat
+/
+/ AM -> qf.10010..1         1
+/ AM -> mba.10030..1        2     -       -     7
+/ AM -> lsd.10105..1        3     MUL     5     4
+/ AM -> qd.10110..1         9     SUB     8     -
+/ AM -> lsf.10205..1        9     ADD     8     -
+/ AM -> lsd.10305..1        -     -       -     -      1
+/ AM -> lsd.10305..1        9     MUL     8     -      5000
+/ AM -> lsd.10305..1        -     -       -     -      10000
+/ AM -> lsd.10305..1        9     DIV     8     -      20000
+/ AM -> lsd.10305..1        -     -       -     -      30000
+/
+/ SINGLE ELEMENT -- f1 -- oper -- f2 -- off -- nstart -- log_unit -- log_freq
+qf.10010..1         -     -       -     -      1         510         1
+qf.10010..1         1     MUL     2     6      101
+qd.10110..1         -     -       -     -      1
+qd.10110..1         1     MUL     2     6      101       511         1
+lsd.10105..1        -     -       -     -      1         512         1
+lsd.10105..1        3     MUL     4     0      201
+lsf.10205..1        5     -       -     -      1         513
+lsd.10305..1        -     -       -     -      1         514         1
+lsd.10305..1        7     -       -     -      351
+/
+NEXT
+/
+/ ---------------------------------------------------------------------------- /
+/
+ENDE

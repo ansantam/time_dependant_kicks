@@ -1,0 +1,54 @@
+\begin{tikzpicture}[node distance=2cm, auto]
+
+\path[use as bounding box] (-5.5,-3) rectangle (10,21);
+
+% initialisation
+\node at (0   , 20  ) [str] (START)  {START};
+\node at (0   , 18  ) [box,text width=5.5cm] (INITV) {\vbox{
+init variables, in particular:\\
+\texttt{nlostp},  \texttt{ktrack}, \texttt{strack},
+\texttt{strackc}, \texttt{stracks}
+}};
+\node at (0   , 16  ) [box] (BBINIT) {beam-beam element init};
+\node at (0   , 14  ) [box,text width=5.5cm] (ASSIV) {\vbox{
+assign variables, in particular:\\
+\texttt{ktrack},  \texttt{strack},
+\texttt{strackc}, \texttt{stracks}
+}};
+\node at (0   , 12  ) [cbx] (SAVEOS) {\texttt{saveorigsmiv}};
+\node at (0   , 10  ) [cfl] (CHKCPI) {\texttt{check\_coupling\_integrity}};
+
+% tracking
+\node at (0   , 7.5 ) [dec] (4dDEC)  {4D track?};
+\node at (8   , 7.5 ) [box] (THIN4D) {\texttt{thin4d}};
+\node at (0   , 5   ) [box] (HSYC)   {\texttt{hsyc(jj)=(c1m3*hsyc(jj))*dble(itionc(jj))}};
+\node at (0   , 3   ) [dec] (6duDEC) {acceleration?};
+\node at (5   , 3   ) [box] (THIN6U) {\texttt{thin6dua}};
+\node at (0   , 1   ) [box] (THIN6D) {\texttt{thin6d}};
+\node at (0   ,-0.5 ) [jun] (JOINT1) {};
+\node at (5   ,-0.5 ) [jun] (JOINT2) {};
+\node at (0   ,-2   ) [str] (END)    {END};
+
+
+
+% initialisation
+\path (START)  edge[arr] (INITV) ;
+\path (INITV)  edge[arr] (BBINIT);
+\path (BBINIT) edge[arr] (ASSIV) ;
+\path (ASSIV)  edge[arr] (SAVEOS);
+\path (SAVEOS) edge[arr] (CHKCPI);
+\path (CHKCPI) edge[arr] (4dDEC) ;
+
+% tracking
+\path (4dDEC)  edge[arr] node       {\small yes} (THIN4D);
+\draw [arr] (THIN4D) |- (JOINT2);
+\path (4dDEC)  edge[arr] node[swap] {\small no}  (HSYC)  ;
+\path (HSYC)   edge[arr] (6duDEC);
+\path (6duDEC) edge[arr] node       {\small yes} (THIN6U);
+\path (6duDEC) edge[arr] node[swap] {\small no}  (THIN6D);
+\path (THIN6D) edge[arr] (JOINT1);
+\path (THIN6U) edge[arr] (JOINT2);
+\path (JOINT2) edge[arr] (JOINT1);
+\path (JOINT1) edge[arr] (END)   ;
+
+\end{tikzpicture}

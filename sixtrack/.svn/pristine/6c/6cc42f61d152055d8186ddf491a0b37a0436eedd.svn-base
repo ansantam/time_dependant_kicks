@@ -1,0 +1,98 @@
+% from http://j-node.homeip.net/tech_wiki/index.php/PSTricks
+
+\documentclass[12pt]{article}
+
+\usepackage{xcolor}
+
+\usepackage{tikz}
+\usepackage{pgf}
+\usepackage[active,pdftex,tightpage]{preview}
+\usetikzlibrary{shapes,arrows,positioning,backgrounds}
+\PreviewEnvironment[]{tikzpicture}
+\tikzset{
+    %Define standard arrow tip
+    >=stealth',
+    %Define style for boxes
+    box/.style={
+           rectangle,
+           rounded corners,
+           draw=black, thick,
+           fill=magenta!20,
+           minimum height=0.9cm,
+           %text width=6.5em,
+           text centered},
+    %Define style for conditioned boxes
+    cbx/.style={
+           ellipse,
+           rounded corners,
+           draw=black, thick,
+           fill=magenta!20,
+           minimum height=0.9cm,
+           %text width=6.5em,
+           text centered},
+    %Define style for fluka boxes
+    flk/.style={
+           rectangle,
+           rounded corners,
+           draw=black, thick,
+           fill=cyan!20,
+           minimum height=0.9cm,
+           %text width=6.5em,
+           text centered},
+    %Define style for conditioned fluka boxes
+    cfl/.style={
+           ellipse,
+           rounded corners,
+           draw=black, thick,
+           fill=cyan!20,
+           minimum height=0.9cm,
+           %text width=6.5em,
+           text centered},
+    %Define style for fancy labelling
+    lbl/.style={
+           fill=red,
+           text=white},
+    % Define style for decision box
+    dec/.style={
+           diamond,
+           shape aspect=2,
+           draw=black, thick,
+           fill=yellow!35, 
+           minimum height=0.9cm,
+           text width=2cm,
+           text centered},
+    % Define style for start/stop boxes
+    str/.style={
+           ellipse,
+           draw=black, very thick,
+           fill=green!50, 
+           minimum height=0.9cm,
+           text centered},
+    % Define style for junction points
+    jun/.style={
+           circle,
+           draw=black, very thick,
+           fill=orange!20, 
+           minimum height=0.3cm,
+           text centered},
+    % Define style for arrows
+    arr/.style={
+           ->,
+           thick,
+           shorten <=2pt,
+           shorten >=2pt,}
+}
+
+\begin{document}
+
+\input{maincr}
+\input{trauthck}
+\input{trauthin}
+\input{thck4d}
+\input{thin4d}
+\input{thck6d}
+\input{thin6d}
+\input{thck6dua}
+\input{thin6dua}
+
+\end{document}
