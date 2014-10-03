@@ -247,7 +247,7 @@
       integer iav,ibb6d,ibbc,ibeco,ibidu,ibtyp,ic,icext,icextal,iclo,   &
      &iclo6,iclo6r,icode,icoe,icomb,icomb0,iconv,icow,icr,idam,idfor,   &
      &idis,idp,ierro,iffw,ifh,iicav,il,ilin,imad,imbb,                  &
-     &imc,imtr,iorg,iout,                                               &
+     &imc,imtr,iorg,iout, set_value,                                               &
      &ipos,ipr,iprint,ipt,iq,iqmod,iqmod6,iratioe,ird,ire,ires,         &
      &irew,irm,irmod2,ise,ise1,ise2,ise3,isea,iskew,iskip,istw,         &
      &isub,itco,itcro,itf,ithick,ition,itionc,itqv,its6d,iu,iver,ivox,  &
@@ -269,6 +269,7 @@
      &tam2,tiltc,tilts,tlen,totl,track6d,xpl,xrms,zfz,zpl,zrms,wirel,   &
      &acdipph, crabph, bbbx, bbby, bbbs,                                &
      &crabph2, crabph3, crabph4
+      character*16 el_name
 +if backtrk
 !     A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
 !     last modified: 12-06-2014
@@ -18511,6 +18512,10 @@ cc2008
           if ( lSEDlog(i1) ) then
             write(*,*) ' logging smiv of: ',bez(ii),' in unit ',
      &                 uSEDlog(i1),' every ',nSEDlog(i1),'turns;'
+            write(*,*)
+            el_name='mqxc.1r1..1'
+            write(*,*) 'Andreas test:  TYPE', set_value(bez(ii)),
+     & set_value(el_name)
           endif
         enddo
         if ( ldynkdebug ) then
@@ -45535,6 +45540,41 @@ C Should get me a NaN
       write(*,*) ''
       call prror(-1)
       end function
+
+      integer function set_value(el_name)
+!      
+!-----------------------------------------------------------------------
+!
+!     A.Santamaria (HSS)
+!     Last modified: 03-10-2014
+!     Function that returns the type of the element.    
+!
+!-----------------------------------------------------------------------
+!
+      implicit none
+
+      ! interface variables
+
++ca parpro
++ca parnum
++ca common
++ca commonmn
++ca commontr
++ca comdynk
+
+      ! temporary variables
+      integer i
+
+      set_value=0
+      do 777, i=1, il
+        if (el_name.eq.bez(i)) then 
+          set_value=kz(i)
+        endif
+777   continue
+
+      return
+      end function 
+
 
       double precision function lininterp(xval,xarray,yarray,idimen)
 !
