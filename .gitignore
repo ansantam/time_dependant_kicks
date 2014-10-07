@@ -38,3 +38,12 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+#### SIXTRACK REPO SPESIFIC ####
+
+#executables
+sixtrack/astuce
+sixtrack/dafor
+
+#build directories
+sixtrack/SixTrack_*/
