@@ -18515,6 +18515,7 @@ cc2008
          if (ldynkdebug) then
             call dynk_dumpFUNdata
          endif
+         call dynk_inputsanitycheck
          stop 0 !while debugging
          goto 110 ! loop BLOCK
 
@@ -45217,7 +45218,7 @@ C     OLD
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
 !     last modified: 14-10-2014
-!     Dump FUN data to the std. output for debugging
+!     Dump arrays with DYNK FUN data to the std. output for debugging
 !-----------------------------------------------------------------------
 !     
       implicit none
@@ -45245,6 +45246,72 @@ C     OLD
          write (*,*) ii, ":", "'"//cexpr_dynk(ii)//"'"
       end do
       
+      end subroutine
+
+      function dynk_findFUNindex(funName, startfrom)
+!
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 14-10-2014
+!     Find and return the index in the ifuncs array to the function with name funName
+!     Return -1 if nothing was found.
+!-----------------------------------------------------------------------
+!   
+      implicit none
+
++ca comdynk
+
+      character*(maxstrllen_dynk) funName
+      integer startfrom
+
+      integer dynk_findFUNindex
+      integer ii
+      
+      dynk_findFUNindex = -1
+
+      do ii=startfrom, nfuncs_dynk
+         if (cexpr_dynk(funcs_dynk(ii,1)) .eq. funName) then
+            dynk_findFUNindex = ii
+            exit ! break loop
+         endif
+      end do
+      
+      end function
+
+      subroutine dynk_inputsanitycheck
+!
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 14-10-2014
+!     Check that DYNK block input in fort.3 was sane
+!-----------------------------------------------------------------------
+!   
+      implicit none
++ca comdynk
+      integer dynk_findFUNindex
+
+      integer ii, jj
+      logical sane
+      sane = .true.
+      
+      ! Check that there are no doubly-defined function names
+      do ii=1, nfuncs_dynk-1
+         jj = dynk_findFUNindex(cexpr_dynk(funcs_dynk(ii,1)),ii+1)
+         if ( jj.ne. -1) then
+            sane = .false.
+            write (*,*) "Insane: function ", ii, "has same name as", jj
+         end if
+      end do
+
+      if (.not. sane) then
+         write (*,*) "****************************************"
+         write (*,*) "*******DYNK input was insane************"
+         write (*,*) "****************************************"
+         call dynk_dumpFUNdata
+         stop
+      else if (sane .and. ldynkdebug) then
+         write (*,*) "DYNK input was sane"
+      end if
       end subroutine
 
       subroutine dynkload
