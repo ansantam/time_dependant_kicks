@@ -45135,7 +45135,7 @@ C     OLD
       endif
       
       ! Which type of function?
-      if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then
+      if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! type 1
          ! Linear ramp y = dy/dt*t+b
          ! Arguments: (1) name=(2)=dy/dt (3)=Intercept b
          
@@ -45164,18 +45164,50 @@ C     OLD
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          
-C     Store data
+         ! Store data
          cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
      &        fields(2)(1:lfields(2))
          
-         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk) !dy/dt
-         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) !b
+         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! dy/dt
+         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) ! b
          nfexpr_dynk = nfexpr_dynk + 1
          
-C     else if (fields(2)(1:lfields(3)) .eq. "SIN" ) then
-! Sin functions y = A*sin(omega*T+phi)
-! Arguments: (1)=name (2)=A (3)=omega (4)=phi
+      else if (fields(3)(1:lfields(3)) .eq. "SIN" ) then ! type 10
+         ! Sin functions y = A*sin(omega*T+phi)
+         ! Arguments: (1)=name (2)=A (3)=omega (4)=phi
          
+         ! Check for sufficient space
+         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (nfexpr_dynk+2 .gt. maxdata_dynk) .or.
+     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Max number of maxdata_dynk to be exceeded"
+            write (*,*) "niexpr_dynk:", niexpr_dynk
+            write (*,*) "nfexpr_dynk:", nfexpr_dynk
+            write (*,*) "ncexpr_dynk:", ncexpr_dynk
+            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+            call prror(51)
+         endif
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 10          !TYPE (SIN)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         
+         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   !A
+         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) !omega
+         read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk+2) !phi
+         nfexpr_dynk = nfexpr_dynk + 2
+     
       end if
 
       end subroutine
