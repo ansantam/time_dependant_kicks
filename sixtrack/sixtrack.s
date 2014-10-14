@@ -1360,6 +1360,23 @@
       logical ldynkdebug                     ! print debug messages in main
                                              !   output
 
+C     Store the FUN statements
+      integer maxfuncs_dynk, maxdata_dynk, maxstrllen_dynk
+      parameter (maxfuncs_dynk=100, maxdata_dynk=500,maxstrllen_dynk=20)
+
+      integer funcs_dynk (maxfuncs_dynk,5) ! 1 row/FUN, cols are: 
+                                            ! (1) = function name in fort.3 (points within cexpr_dynk),
+                                            ! (2) = indicates function type
+                                            ! (3,4,5) = arguments (whatever integer data, incl pointing within other arrays)
+      integer iexpr_dynk (maxdata_dynk)                     ! Data for DYNK FUNs
+      double precision fexpr_dynk (maxdata_dynk)            ! Data for DYNK FUNs
+      character cexpr_dynk (maxdata_dynk)*(maxstrllen_dynk) ! Data for DYNK FUNs
+      
+      integer nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk !Number of used positions in arrays
+C     
+
+
+C     OLD STUFF
 *     recognised functions
       integer nfuns, lfuns
       parameter ( nfuns=11, lfuns=3 )
@@ -1432,6 +1449,12 @@
 
 !     fortran COMMON declaration follows padding requirements
       common /dynkComGen/ ldynk, ldynkdebug
+
+      common /dynkComExpr/ funcs_dynk,
+     &     iexpr_dynk, fexpr_dynk, cexpr_dynk,
+     &     nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk
+
+C     OLD stuff
       common /dynkComFun/ parDynkFun, lparDynkFun,
      &                    iDynkFun, jDynkFun, NacqDynkFuns
       common /dynkComCmb/ mapComboDynks, nTurnsComboDynks, 
@@ -18453,7 +18476,108 @@ cc2008
  2200 read(3,10020,end=1530,iostat=ierro) ch
       if(ierro.gt.0) call prror(51)
 
-      if(ch(1:1).eq.'/') goto 2200
+      if (.true.) then !(ch(:4).eq.next) then
+         write (*,*) "DYNK parser has read:"
+         write (*,*) "ifuncs: (",nfuncs_dynk,")"
+         do ii=1,nfuncs_dynk
+            write (*,*) ii, funcs_dynk(ii,:)
+         end do
+         write (*,*) "iexpr_dynk: (",niexpr_dynk,")"
+         do ii=1,niexpr_dynk
+            write (*,*) ii, iexpr_dynk(ii)
+         end do
+         write (*,*) "fexpr_dynk: (",nfexpr_dynk,")"
+         do ii=1,nfexpr_dynk
+            write (*,*) ii, fexpr_dynk(ii)
+         end do
+         write (*,*) "cexpr_dynk: (",ncexpr_dynk,")"
+         do ii=1,ncexpr_dynk
+            write (*,*) ii, "'"//cexpr_dynk(ii)//"'"
+         end do
+
+      endif
+      
+      if(ch(1:1).eq.'/') goto 2200 ! skip comment line
+
+C     Which type of block? Look at start of string (no leading blanks allowed)
+      if (ch(:4).eq."DEBU") then
+         ldynkdebug = .true.
+         write (*,*) "DYNK block debugging is ON"
+         goto 2200
+
+      elseif (ch(:3).eq."FUN") then
+         write (*,*) "Got a FUN block, len=", len(ch), ": '", ch, "'"
+         call read_fields( ch, fields, lfields, nfields, lerr )
+         if ( lerr ) call prror(51)
+         do ii=1,nfields
+            write (*,*) "Field(",ii,") ='",fields(ii)(1:lfields(ii)),"'"
+         enddo
+         
+         if (nfuncs_dynk+1 .gt. maxfuncs_dynk) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Maximum number of FUN exceeded, please increase &
+     & parameter maxfuncs_dynk."
+            write (*,*) "Current value of maxfuncs_dynk:",maxfuncs_dynk
+            call prror(51)
+         endif
+C     Which type of function?
+         if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then
+            ! Linear ramp y = dy/dt*t+b
+            ! Arguments: (1) name=(2)=dy/dt (3)=Intercept b
+            
+            write (*,*) "FOUND A LIN"
+
+C     Check for sufficient space
+            if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &           (nfexpr_dynk+2 .gt. maxdata_dynk) .or.
+     &           (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
+               write (*,*) "ERROR in DYNK block parsing (fort.3):"
+               write (*,*) "Max number of maxdata_dynk to be exceeded"
+               write (*,*) "niexpr_dynk:", niexpr_dynk
+               write (*,*) "nfexpr_dynk:", nfexpr_dynk
+               write (*,*) "ncexpr_dynk:", ncexpr_dynk
+               write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+               call prror(51)
+            endif
+C     Set pointers to start of funs data blocks
+            nfuncs_dynk = nfuncs_dynk+1
+            nfexpr_dynk = nfexpr_dynk+1
+            ncexpr_dynk = ncexpr_dynk+1
+C     Store pointers
+            funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+            funcs_dynk(nfuncs_dynk,2) = 1           !TYPE (LIN)
+            funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+            funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+            funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+
+C     Store data
+            cexpr_dynk(ncexpr_dynk)(1:lfields(2)) =   !NAME
+     &           fields(2)(1:lfields(2))
+            
+            read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk) !dy/dt
+            read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) !b
+            nfexpr_dynk = nfexpr_dynk + 1
+
+C         else if (fields(2)(1:lfields(3)) .eq. "SIN" ) then
+            ! Sin functions y = A*sin(omega*T+phi)
+            ! Arguments: (1)=name (2)=A (3)=omega (4)=phi
+            
+         end if
+
+         goto 2200              !loop
+      elseif (ch(:3).eq."SET") then
+         write (*,*) "Got a SET block, len=", len(ch), ": '", ch, "'"
+         call read_fields( ch, fields, lfields, nfields, lerr )
+         if ( lerr ) call prror(51)
+         do ii=1,nfields
+            write (*,*) "Field(",ii,") ='",fields(ii)(1:lfields(ii)),"'"
+         enddo
+      endif
+
+      stop 0 !while debugging
+C OLD CODE BELOW HERE:
+
+
       if(ch(:4).eq.next) then
         write(*,10500) dynk
 !       dump all functions found
@@ -41011,6 +41135,13 @@ C Should get me a NaN
 !     - general-purpose variables
       ldynk = .false.
       ldynkdebug = .false.
+      
+      nfuncs_dynk = 0
+      niexpr_dynk = 0
+      nfexpr_dynk = 0
+      ncexpr_dynk = 0
+
+C     OLD
 !     - variables describing the basic functions:
       NacqDynkFuns = 0
       do i1=1,NmaxDynkFuns
