@@ -1373,7 +1373,18 @@ C     Store the FUN statements
       character(maxstrlen_dynk) cexpr_dynk(maxdata_dynk) ! Data for DYNK FUNs (\0 initialized in comdynk)
       
       integer nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk !Number of used positions in arrays
-C     
+C     Store the SET statements
+      integer maxsets_dynk
+      parameter (maxsets_dynk=200)
+      integer sets_dynk(maxsets_dynk, 3) ! 1 row/SET, cols are:
+                                         ! (1) = function index (points within funcs_dynk)
+                                         ! (2) = first turn num. where it is active
+                                         ! (3) =  last turn num. where it is active
+      character(maxstrlen_dynk) csets_dynk (maxsets_dynk,2) ! 1 row/SET (same ordering as sets_dynk), cols are:
+                                                             ! (1) element name
+                                                             ! (2) attribute name
+      logical lsets_dynk(maxsets_dynk) ! 1 entry/SET. True if SETR, false if SET.
+      integer nsets_dynk ! Number of used positions in arrays
 
 
 C     OLD STUFF
@@ -1453,6 +1464,8 @@ C     OLD STUFF
       common /dynkComExpr/ funcs_dynk,
      &     iexpr_dynk, fexpr_dynk, cexpr_dynk,
      &     nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk
+
+      common /dynkComSet/ sets_dynk, csets_dynk, lsets_dynk, nsets_dynk
 
 C     OLD stuff
       common /dynkComFun/ parDynkFun, lparDynkFun,
@@ -18499,7 +18512,7 @@ cc2008
          goto 2200 !loop DYNK
 
       else if (ch(:3).eq."SET") then
-         write (*,*) "Got a SET block, len=", len(ch), ": '", ch, "'"
+         write (*,*) "Got a SET(R) block, len=", len(ch), ": '", ch, "'"
          call read_fields( ch, fields, lfields, nfields, lerr )
          if ( lerr ) call prror(51)
          if (ldynkdebug) then
@@ -18508,12 +18521,12 @@ cc2008
      &              fields(ii)(1:lfields(ii)),"'"
             enddo
          endif
-         
+         call dynk_parseSET(fields,lfields,nfields)
          goto 2200 !loop DYNK
 
       else if (ch(:4).eq.next) then
          if (ldynkdebug) then
-            call dynk_dumpFUNdata
+            call dynk_dumpdata
          endif
          call dynk_inputsanitycheck
          stop 0 !while debugging
@@ -41102,6 +41115,15 @@ C Should get me a NaN
             cexpr_dynk(i)(j:j) = char(0)
          enddo
       enddo
+      
+      nsets_dynk = 0
+
+      do i=1, maxsets_dynk
+         do j=1, maxstrlen_dynk
+            csets_dynk(i,1)(j:j) = char(0)
+            csets_dynk(i,2)(j:j) = char(0)
+         enddo
+      enddo
 
 C     OLD
 !     - variables describing the basic functions:
@@ -45257,7 +45279,7 @@ C     OLD
             write (*,*) "One or both of these are not known."
             write (*,*) "*************************************"
             
-            call dynk_dumpFUNdata
+            call dynk_dumpdata
             call prror(51)
          end if
          
@@ -45273,21 +45295,19 @@ C     OLD
          enddo
          write (*,*) "*************************************"
          
-         call dynk_dumpFUNdata
+         call dynk_dumpdata
          call prror(51)
 
       end if
 
       end subroutine
 
-      subroutine dynk_dumpFUNdata
-!
-!-----------------------------------------------------------------------
+      subroutine dynk_dumpdata
+!----------------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
 !     last modified: 14-10-2014
-!     Dump arrays with DYNK FUN data to the std. output for debugging
-!-----------------------------------------------------------------------
-!     
+!     Dump arrays with DYNK FUN and SET data to the std. output for debugging
+!----------------------------------------------------------------------------
       implicit none
       
 +ca comdynk
@@ -45296,6 +45316,7 @@ C     OLD
 
       write (*,*) "DYNK parser knows:"
 
+      write (*,*) "FUN:"
       write (*,*) "ifuncs: (",nfuncs_dynk,")"
       do ii=1,nfuncs_dynk
          write (*,*) ii, ":", funcs_dynk(ii,:)
@@ -45312,11 +45333,19 @@ C     OLD
       do ii=1,ncexpr_dynk
          write (*,*) ii, ":", "'"//cexpr_dynk(ii)//"'"
       end do
-      
+
+      write (*,*) "SET:"      
+      write (*,*) "sets(,:) csets(,1) csets(,2) lsets - (",
+     &     nsets_dynk,")"
+      do ii=1,nsets_dynk
+         write (*,*) ii, ":", sets_dynk(ii,:), 
+     &        "'"//csets_dynk(ii,1)//"' ", "'"//csets_dynk(ii,2)//"'",
+     &        lsets_dynk(ii)
+      end do
+
       end subroutine
 
       function dynk_findFUNindex(funName, startfrom)
-!
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
 !     last modified: 14-10-2014
@@ -45324,7 +45353,6 @@ C     OLD
 !      function with name funName, which should be zero-padded.
 !     Return -1 if nothing was found.
 !-----------------------------------------------------------------------
-!   
       implicit none
 
 +ca comdynk
@@ -45347,14 +45375,78 @@ C     OLD
       
       end function
 
+      subroutine dynk_parseSET(fields,lfields,nfields)
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 15-10-2014
+!     parse SET lines in the fort.3 input file, 
+!     store it in COMMON block dynkComExpr.
+!-----------------------------------------------------------------------
+      implicit none
++ca comdynk
++ca comgetfields
+      integer ii
+      
+      integer dynk_findFUNindex
+
+      if (nsets_dynk+1 .gt. maxsets_dynk) then
+         write (*,*) "ERROR in DYNK block parsing (fort.3):"
+         write (*,*) "Maximum number of SET exceeded, please increase &
+     &parameter maxsets_dynk."
+         write (*,*) "Current value of maxsets_dynk:", maxsets_dynk
+         call prror(51)
+      endif
+
+      if (nfields .ne. 6) then
+         write (*,*) "ERROR in DYNK block parsing (fort.3):"
+         write (*,*) "Expected 6 fields on line while parsing SET."
+         write (*,*) "Correct syntax:"
+         write (*,*) "SET element_name property function_name &
+     &startTurn endTurn"
+         write (*,*) "got field:"
+         do ii=1,nfields
+            write (*,*) "Field(",ii,") ='",
+     &           fields(ii)(1:lfields(ii)),"'"
+         enddo
+         call prror(51)
+      endif
+
+      nsets_dynk = nsets_dynk + 1
+
+      sets_dynk(nsets_dynk,1) =
+     &     dynk_findFUNindex( fields(4)(1:lfields(4)), 1 )
+C      sets_dynk(nsets_dynk,2)=dynk_
+      read(fields(5)(1:lfields(5)),*) sets_dynk(nsets_dynk,2)
+      read(fields(6)(1:lfields(6)),*) sets_dynk(nsets_dynk,3)
+
+      csets_dynk(nsets_dynk,1)(1:lfields(2)) = fields(2)(1:lfields(2))
+      csets_dynk(nsets_dynk,2)(1:lfields(3)) = fields(3)(1:lfields(3))
+
+      if (fields(1)(1:lfields(1)).eq."SETR") then
+         lsets_dynk(nsets_dynk) = .true.
+      else
+         lsets_dynk(nsets_dynk) = .false.
+      endif
+      
+      ! Sanity check
+      if (sets_dynk(nsets_dynk,1).eq.-1) then
+         write (*,*) "*************************************"
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "SET wanting function '", 
+     &           fields(4)(1:lfields(4)), "'"
+            write (*,*) "Calculated index:", sets_dynk(nsets_dynk,1)
+            write (*,*) "This function is not known."
+            write (*,*) "*************************************"
+         endif
+
+      end subroutine
+
       subroutine dynk_inputsanitycheck
-!
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
 !     last modified: 14-10-2014
 !     Check that DYNK block input in fort.3 was sane
 !-----------------------------------------------------------------------
-!   
       implicit none
 +ca comdynk
       integer dynk_findFUNindex ! define function return type
@@ -45376,7 +45468,7 @@ C     OLD
          write (*,*) "****************************************"
          write (*,*) "*******DYNK input was insane************"
          write (*,*) "****************************************"
-         call dynk_dumpFUNdata
+         call dynk_dumpdata
          stop
       else if (sane .and. ldynkdebug) then
          write (*,*) "DYNK input was sane"
