@@ -1361,16 +1361,16 @@
                                              !   output
 
 C     Store the FUN statements
-      integer maxfuncs_dynk, maxdata_dynk, maxstrllen_dynk
-      parameter (maxfuncs_dynk=100, maxdata_dynk=500,maxstrllen_dynk=20)
+      integer maxfuncs_dynk, maxdata_dynk, maxstrlen_dynk
+      parameter (maxfuncs_dynk=100, maxdata_dynk=500,maxstrlen_dynk=20)
 
       integer funcs_dynk (maxfuncs_dynk,5) ! 1 row/FUN, cols are: 
                                            ! (1) = function name in fort.3 (points within cexpr_dynk),
                                            ! (2) = indicates function type
                                            ! (3,4,5) = arguments (pointing within other arrays {i|f|c}expr_dynk)
-      integer iexpr_dynk (maxdata_dynk)                     ! Data for DYNK FUNs
-      double precision fexpr_dynk (maxdata_dynk)            ! Data for DYNK FUNs
-      character cexpr_dynk (maxdata_dynk)*(maxstrllen_dynk) ! Data for DYNK FUNs
+      integer iexpr_dynk (maxdata_dynk)                  ! Data for DYNK FUNs
+      double precision fexpr_dynk (maxdata_dynk)         ! Data for DYNK FUNs
+      character(maxstrlen_dynk) cexpr_dynk(maxdata_dynk) ! Data for DYNK FUNs (\0 initialized in comdynk)
       
       integer nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk !Number of used positions in arrays
 C     
@@ -19600,7 +19600,7 @@ C OLD CODE BELOW HERE:
 !     A.Mereghetti, for the FLUKA Team
 !     last modified: 27-08-2014
 !     parse a line and split it into its fields
-!       fields are returned as string
+!       fields are returned as 0-terminated and padded string
 !     always in main code
 !-----------------------------------------------------------------------
 !
@@ -19617,7 +19617,7 @@ C OLD CODE BELOW HERE:
       nfields=0
       do ii=1,n_max_fields
          do jj=1,l_max_string
-            fields(ii)(jj:jj)=' '
+            fields(ii)(jj:jj) = char(0) ! ZERO terminate/pad
          enddo
          lfields(ii)=0
       enddo
@@ -41097,6 +41097,12 @@ C Should get me a NaN
       nfexpr_dynk = 0
       ncexpr_dynk = 0
 
+      do i=1,maxdata_dynk
+         do j=1,maxstrlen_dynk
+            cexpr_dynk(i)(j:j) = char(0)
+         enddo
+      enddo
+
 C     OLD
 !     - variables describing the basic functions:
       NacqDynkFuns = 0
@@ -45126,6 +45132,8 @@ C     OLD
       
 +ca comdynk
 +ca comgetfields
+      integer ii
+      integer dynk_findFUNindex ! define function return type
 
       if (nfuncs_dynk+1 .gt. maxfuncs_dynk) then
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
@@ -45139,8 +45147,6 @@ C     OLD
       if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! type 1
          ! Linear ramp y = dy/dt*t+b
          ! Arguments: (1) name=(2)=dy/dt (3)=Intercept b
-         
-         ! write (*,*) "FOUND A LIN"
          
          ! Check for sufficient space
          if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
@@ -45164,7 +45170,6 @@ C     OLD
          funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         
          ! Store data
          cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
      &        fields(2)(1:lfields(2))
@@ -45199,7 +45204,6 @@ C     OLD
          funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         
          ! Store data
          cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
      &        fields(2)(1:lfields(2))
@@ -45208,7 +45212,70 @@ C     OLD
          read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) !omega
          read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk+2) !phi
          nfexpr_dynk = nfexpr_dynk + 2
-     
+
+      else if (fields(3)(1:lfields(3)) .eq. "ADD" ) then ! type 20
+         ! ADD functions y = f1 + f2
+         ! Arguments: (1)=name (2)=namef1 (3)=namef3
+         
+         ! Check for sufficient space
+         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Max number of maxdata_dynk to be exceeded"
+            write (*,*) "niexpr_dynk:", niexpr_dynk
+            write (*,*) "nfexpr_dynk:", nfexpr_dynk
+            write (*,*) "ncexpr_dynk:", ncexpr_dynk
+            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+            call prror(51)
+         endif
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 20          !TYPE (ADD)
+         funcs_dynk(nfuncs_dynk,3) = 
+     &        dynk_findFUNindex(fields(4)(1:lfields(4)), 1) !Index to f1
+         funcs_dynk(nfuncs_dynk,4) = 
+     &        dynk_findFUNindex(fields(5)(1:lfields(5)), 1) !Index to f2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         ! Sanity check
+         if (funcs_dynk(nfuncs_dynk,3) .eq. -1 .or. 
+     &       funcs_dynk(nfuncs_dynk,4) .eq. -1) then
+            
+            write (*,*) "*************************************"
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "ADD wanting functions '", 
+     &           fields(4)(1:lfields(4)), "' and '", 
+     &           fields(5)(1:lfields(5)), "'"
+            write (*,*) "Calculated indices:", 
+     &           funcs_dynk(nfuncs_dynk,3), funcs_dynk(nfuncs_dynk,4)
+            write (*,*) "One or both of these are not known."
+            write (*,*) "*************************************"
+            
+            call dynk_dumpFUNdata
+            call prror(51)
+         end if
+         
+      else
+         ! UNKNOWN function
+         write (*,*) "*************************************"
+         write (*,*) "ERROR in DYNK block parsing (fort.3):"
+         write (*,*) "Unkown function to dynk_parseFUN()   "
+         write (*,*) "Got fields:"
+         do ii=1,nfields
+            write (*,*) "Field(",ii,") ='",
+     &           fields(ii)(1:lfields(ii)),"'"
+         enddo
+         write (*,*) "*************************************"
+         
+         call dynk_dumpFUNdata
+         call prror(51)
+
       end if
 
       end subroutine
@@ -45253,7 +45320,8 @@ C     OLD
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
 !     last modified: 14-10-2014
-!     Find and return the index in the ifuncs array to the function with name funName
+!     Find and return the index in the ifuncs array to the
+!      function with name funName, which should be zero-padded.
 !     Return -1 if nothing was found.
 !-----------------------------------------------------------------------
 !   
@@ -45261,8 +45329,9 @@ C     OLD
 
 +ca comdynk
 
-      character*(maxstrllen_dynk) funName
+      character(maxstrlen_dynk) funName
       integer startfrom
+      intent(in) funName, startfrom
 
       integer dynk_findFUNindex
       integer ii
@@ -45270,7 +45339,7 @@ C     OLD
       dynk_findFUNindex = -1
 
       do ii=startfrom, nfuncs_dynk
-         if (cexpr_dynk(funcs_dynk(ii,1)) .eq. funName) then
+         if (cexpr_dynk(funcs_dynk(ii,1)).eq.funName) then
             dynk_findFUNindex = ii
             exit ! break loop
          endif
@@ -45288,7 +45357,7 @@ C     OLD
 !   
       implicit none
 +ca comdynk
-      integer dynk_findFUNindex
+      integer dynk_findFUNindex ! define function return type
 
       integer ii, jj
       logical sane
