@@ -18529,8 +18529,16 @@ cc2008
          if (ldynkdebug) then
             call dynk_dumpdata
          endif
+         if (ldynk) then
+            write (*,*)
+            write (*,*) "******************************************"
+            write (*,*) "** More than one DYNK block encountered **"
+            write (*,*) "******************************************"
+            call prror(51)
+         else
+            ldynk = .true.
+         endif
          call dynk_inputsanitycheck
-         stop 0 !while debugging
          goto 110 ! loop BLOCK
 
       else
