@@ -247,7 +247,7 @@
       integer iav,ibb6d,ibbc,ibeco,ibidu,ibtyp,ic,icext,icextal,iclo,   &
      &iclo6,iclo6r,icode,icoe,icomb,icomb0,iconv,icow,icr,idam,idfor,   &
      &idis,idp,ierro,iffw,ifh,iicav,il,ilin,imad,imbb,                  &
-     &imc,imtr,iorg,iout, set_value,                                               &
+     &imc,imtr,iorg,iout,                                               &
      &ipos,ipr,iprint,ipt,iq,iqmod,iqmod6,iratioe,ird,ire,ires,         &
      &irew,irm,irmod2,ise,ise1,ise2,ise3,isea,iskew,iskip,istw,         &
      &isub,itco,itcro,itf,ithick,ition,itionc,itqv,its6d,iu,iver,ivox,  &
@@ -13291,6 +13291,8 @@ cc2008
 +ca dbstat
 +ca combmat
 +ca comdynk
+      integer set_value
+
       double precision tmpamplfact, tmplen
       dimension icel(ncom,20),iss(2),iqq(5)
       dimension beze(nblo,nelb),ilm(nelb),ilm0(40),bez0(nele),ic0(10)
@@ -45366,7 +45368,7 @@ C      sets_dynk(nsets_dynk,2)=dynk_
 
       end subroutine
 
-      function dynk_findFUNindex(funName, startfrom)
+      integer function dynk_findFUNindex(funName, startfrom)
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
 !     last modified: 14-10-2014
@@ -45382,7 +45384,6 @@ C      sets_dynk(nsets_dynk,2)=dynk_
       integer startfrom
       intent(in) funName, startfrom
 
-      integer dynk_findFUNindex
       integer ii
       
       dynk_findFUNindex = -1
