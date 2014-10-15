@@ -18498,7 +18498,6 @@ cc2008
          goto 2200 !loop DYNK
 
       else if (ch(:3).eq."FUN") then
-
          call read_fields( ch, fields, lfields, nfields, lerr )
          if ( lerr ) call prror(51)
          if (ldynkdebug) then
@@ -45297,83 +45296,9 @@ C     OLD
          
          call dynk_dumpdata
          call prror(51)
-
       end if
 
       end subroutine
-
-      subroutine dynk_dumpdata
-!----------------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 14-10-2014
-!     Dump arrays with DYNK FUN and SET data to the std. output for debugging
-!----------------------------------------------------------------------------
-      implicit none
-      
-+ca comdynk
-
-      integer ii
-
-      write (*,*) "DYNK parser knows:"
-
-      write (*,*) "FUN:"
-      write (*,*) "ifuncs: (",nfuncs_dynk,")"
-      do ii=1,nfuncs_dynk
-         write (*,*) ii, ":", funcs_dynk(ii,:)
-      end do
-      write (*,*) "iexpr_dynk: (",niexpr_dynk,")"
-      do ii=1,niexpr_dynk
-         write (*,*) ii, ":", iexpr_dynk(ii)
-      end do
-      write (*,*) "fexpr_dynk: (",nfexpr_dynk,")"
-      do ii=1,nfexpr_dynk
-         write (*,*) ii, ":", fexpr_dynk(ii)
-      end do
-      write (*,*) "cexpr_dynk: (",ncexpr_dynk,")"
-      do ii=1,ncexpr_dynk
-         write (*,*) ii, ":", "'"//cexpr_dynk(ii)//"'"
-      end do
-
-      write (*,*) "SET:"      
-      write (*,*) "sets(,:) csets(,1) csets(,2) lsets - (",
-     &     nsets_dynk,")"
-      do ii=1,nsets_dynk
-         write (*,*) ii, ":", sets_dynk(ii,:), 
-     &        "'"//csets_dynk(ii,1)//"' ", "'"//csets_dynk(ii,2)//"'",
-     &        lsets_dynk(ii)
-      end do
-
-      end subroutine
-
-      function dynk_findFUNindex(funName, startfrom)
-!-----------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 14-10-2014
-!     Find and return the index in the ifuncs array to the
-!      function with name funName, which should be zero-padded.
-!     Return -1 if nothing was found.
-!-----------------------------------------------------------------------
-      implicit none
-
-+ca comdynk
-
-      character(maxstrlen_dynk) funName
-      integer startfrom
-      intent(in) funName, startfrom
-
-      integer dynk_findFUNindex
-      integer ii
-      
-      dynk_findFUNindex = -1
-
-      do ii=startfrom, nfuncs_dynk
-         if (cexpr_dynk(funcs_dynk(ii,1)).eq.funName) then
-            dynk_findFUNindex = ii
-            exit ! break loop
-         endif
-      end do
-      
-      end function
 
       subroutine dynk_parseSET(fields,lfields,nfields)
 !-----------------------------------------------------------------------
@@ -45441,6 +45366,36 @@ C      sets_dynk(nsets_dynk,2)=dynk_
 
       end subroutine
 
+      function dynk_findFUNindex(funName, startfrom)
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 14-10-2014
+!     Find and return the index in the ifuncs array to the
+!      function with name funName, which should be zero-padded.
+!     Return -1 if nothing was found.
+!-----------------------------------------------------------------------
+      implicit none
+
++ca comdynk
+
+      character(maxstrlen_dynk) funName
+      integer startfrom
+      intent(in) funName, startfrom
+
+      integer dynk_findFUNindex
+      integer ii
+      
+      dynk_findFUNindex = -1
+
+      do ii=startfrom, nfuncs_dynk
+         if (cexpr_dynk(funcs_dynk(ii,1)).eq.funName) then
+            dynk_findFUNindex = ii
+            exit ! break loop
+         endif
+      end do
+      
+      end function
+
       subroutine dynk_inputsanitycheck
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
@@ -45474,6 +45429,50 @@ C      sets_dynk(nsets_dynk,2)=dynk_
          write (*,*) "DYNK input was sane"
       end if
       end subroutine
+
+      subroutine dynk_dumpdata
+!----------------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 14-10-2014
+!     Dump arrays with DYNK FUN and SET data to the std. output for debugging
+!----------------------------------------------------------------------------
+      implicit none
+      
++ca comdynk
+
+      integer ii
+
+      write (*,*) "DYNK parser knows:"
+
+      write (*,*) "FUN:"
+      write (*,*) "ifuncs: (",nfuncs_dynk,")"
+      do ii=1,nfuncs_dynk
+         write (*,*) ii, ":", funcs_dynk(ii,:)
+      end do
+      write (*,*) "iexpr_dynk: (",niexpr_dynk,")"
+      do ii=1,niexpr_dynk
+         write (*,*) ii, ":", iexpr_dynk(ii)
+      end do
+      write (*,*) "fexpr_dynk: (",nfexpr_dynk,")"
+      do ii=1,nfexpr_dynk
+         write (*,*) ii, ":", fexpr_dynk(ii)
+      end do
+      write (*,*) "cexpr_dynk: (",ncexpr_dynk,")"
+      do ii=1,ncexpr_dynk
+         write (*,*) ii, ":", "'"//cexpr_dynk(ii)//"'"
+      end do
+
+      write (*,*) "SET:"      
+      write (*,*) "sets(,:) csets(,1) csets(,2) lsets - (",
+     &     nsets_dynk,")"
+      do ii=1,nsets_dynk
+         write (*,*) ii, ":", sets_dynk(ii,:), 
+     &        "'"//csets_dynk(ii,1)//"' ", "'"//csets_dynk(ii,2)//"'",
+     &        lsets_dynk(ii)
+      end do
+
+      end subroutine
+
 
       subroutine dynkload
 !
