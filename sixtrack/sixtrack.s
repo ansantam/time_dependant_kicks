@@ -45757,6 +45757,7 @@ C      sets_dynk(nsets_dynk,2)=dynk_
 
 !     temporary variables
       integer ii, jj, kk
+      logical lactive
       double precision tmpsmiv, compute_smiv, powerscale
 !     smiv values are scaled by a certain power of 10, according
 !       to the multipole order
@@ -45790,6 +45791,26 @@ C      sets_dynk(nsets_dynk,2)=dynk_
          write(*,*) ''
          write(*,*) ' CALL TO APPLYDYNKS AT TURN ',n
       endif
+      
+      do kk=1,nsets_dynk
+         if (n .ge. sets_dynk(kk,2) .and. n .le. sets_dynk(kk,3)) then
+            lactive = .true.
+         else
+            lactive = .false.
+         end if
+         if ( ldynkdebug ) then
+            write (*,*) "Setting DYNK using function '",
+     &           cexpr_dynk(funcs_dynk(sets_dynk(kk,1),1)), 
+     &           "' on element='", csets_dynk(kk,1), "' property='", 
+     &           csets_dynk(kk,2), "', SETR=", lsets_dynk(kk)
+            write (*,*) " firstturn=", sets_dynk(kk,2),
+     &           " lastturn=", sets_dynk(kk,3),
+     &           " active=", lactive
+         end if
+         
+      end do
+      
+      return ! return early
 
 !     loop over all the SINGLE ELEMENTs flagged for dynamic kicks:
       do kk=1,NacqDynkSEs
