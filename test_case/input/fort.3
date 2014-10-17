@@ -53,13 +53,14 @@ DEBU
 / AM -> DEBUG
 /
 /
-FUN rise1 LIN 2.4 1.3
+FUN rise1 LIN 10 -5
 FUN rise2 LIN 3.14   1.55
-FUN mysin SIN 3.14 123 1234
+FUN mysin SIN 10 0.62831853 0
 FUN adder ADD rise1 mysin
 /
-SET  CRAB5 voltage adder 10 100
+SET  CRAB4 voltage mysin 10 20
 SETR CRAB6 voltage rise1 10 100
+SET  CRAB5 voltage adder 10 100
 /
 /FUN     LIN    1         0.001
 /

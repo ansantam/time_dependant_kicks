@@ -45176,7 +45176,7 @@ C     OLD
       
       ! Which type of function?
       if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! type 1
-         ! Linear ramp y = dy/dt*t+b
+         ! Linear ramp y = dy/dt*T+b
          ! Arguments: (1) name=(2)=dy/dt (3)=Intercept b
          
          ! Check for sufficient space
@@ -45350,7 +45350,12 @@ C     OLD
 
       sets_dynk(nsets_dynk,1) =
      &     dynk_findFUNindex( fields(4)(1:lfields(4)), 1 )
-C      sets_dynk(nsets_dynk,2)=dynk_
+      if ( sets_dynk(nsets_dynk,1) .eq. -1 ) then
+         write (*,*) "ERROR in DYNK block parsing (fort.3):"
+         write (*,*) "specified function ",
+     &        "'",fields(4)(1:lfields(4)),"' not found."
+         call prror(51)
+      endif
       read(fields(5)(1:lfields(5)),*) sets_dynk(nsets_dynk,2)
       read(fields(6)(1:lfields(6)),*) sets_dynk(nsets_dynk,3)
 
@@ -45787,6 +45792,8 @@ C      sets_dynk(nsets_dynk,2)=dynk_
 !
       save
 
+      double precision dynk_computeFUN
+
       if ( ldynkdebug ) then
          write(*,*) ''
          write(*,*) ' CALL TO APPLYDYNKS AT TURN ',n
@@ -45806,6 +45813,7 @@ C      sets_dynk(nsets_dynk,2)=dynk_
             write (*,*) " firstturn=", sets_dynk(kk,2),
      &           " lastturn=", sets_dynk(kk,3),
      &           " active=", lactive
+            write (*,*) "F(turn) = ", dynk_computeFUN(sets_dynk(kk,1),n)
          end if
          
       end do
@@ -45886,7 +45894,61 @@ C      sets_dynk(nsets_dynk,2)=dynk_
       return
       end subroutine
 !
+      
+      recursive double precision function 
+     &     dynk_computeFUN( funNum, turn ) result(retval)
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 17-10-2014
+!     Compute the value of a given DYNK function for the given turn
+!-----------------------------------------------------------------------
+      implicit none
++ca comdynk
+      integer funNum, turn
+      intent (in) funNum, turn
+      
+C      write (*,*) "In dynk_computeFUN(", funNum,turn,")"
+      
+      if (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
+         write (*,*) "ERROR in dynk_computeFUN"
+         write (*,*) "funNum =", funNum, "nfuncs_dynk =",
+     &        nfuncs_dynk, "turn =", turn
+         call dynk_dumpdata
+         stop
+      endif
+      
+      if     ( funcs_dynk(funNum,2) .eq. 1  ) then !LIN
+         retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
+     &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
+c$$$         write (*,*) "Computing LIN at turn=", turn, "dy/dt=",
+c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)), "b=",
+c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)+1), "ret=",
+c$$$     &        retval
+      elseif ( funcs_dynk(funNum,2) .eq. 10 ) then !SIN
+         retval = fexpr_dynk(funcs_dynk(funNum,3))
+     &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) 
+     &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
+c$$$         write (*,*) "Computing SIN at turn=", turn, "A=",
+c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)),      "omega=",
+c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)+1),    "phi=",
+c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)+2),    "ret=",
+c$$$     &        retval
+      elseif ( funcs_dynk(funNum,2) .eq. 20 ) then !ADD
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
+c$$$         write (*,*) "Computing ADD at turn=", turn, "ret=",
+c$$$     &        retval
+      else ! UNKNOWN
+         write (*,*) "ERROR in dynk_computeFUN"
+         write (*,*) "funNum =", funNum, "nfuncs_dynk =",
+     &        nfuncs_dynk, "turn =", turn
+         write (*,*) "Unknown function type = ", funcs_dynk(funNum,2)
+         call dynk_dumpdata
+         stop
+      end if
 
+      end function
+	
       double precision function compute_smiv( dn, kk, iCombo, iSet )
 !
 !-----------------------------------------------------------------------
