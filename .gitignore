@@ -47,3 +47,8 @@ sixtrack/dafor
 
 #build directories
 sixtrack/SixTrack_*/
+
+#Extra input/output files
+test_case/input/*
+!test_case/input/fort.2
+!test_case/input/fort.3
