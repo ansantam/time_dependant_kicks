@@ -45926,7 +45926,7 @@ c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)+1), "ret=",
 c$$$     &        retval
       elseif ( funcs_dynk(funNum,2) .eq. 10 ) then !SIN
          retval = fexpr_dynk(funcs_dynk(funNum,3))
-     &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) 
+     &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
      &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
 c$$$         write (*,*) "Computing SIN at turn=", turn, "A=",
 c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)),      "omega=",
