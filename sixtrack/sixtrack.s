@@ -45336,7 +45336,7 @@ C     OLD
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
          write (*,*) "Expected 6 fields on line while parsing SET."
          write (*,*) "Correct syntax:"
-         write (*,*) "SET element_name property function_name &
+         write (*,*) "SET element_name attribute_name function_name &
      &startTurn endTurn"
          write (*,*) "got field:"
          do ii=1,nfields
@@ -45802,6 +45802,8 @@ C     OLD
       do kk=1,nsets_dynk
          if (n .ge. sets_dynk(kk,2) .and. n .le. sets_dynk(kk,3)) then
             lactive = .true.
+            call dynk_setvalue(csets_dynk(kk,1), csets_dynk(kk,2),
+     &           sets_dynk(kk,1), n, lsets_dynk(kk) )
          else
             lactive = .false.
          end if
@@ -46081,6 +46083,42 @@ c$$$     &        retval
       write(*,*) ''
       call prror(-1)
       end function
+
+      subroutine dynk_setvalue(el_name, att_name, 
+     &     funNum, turn, setR)
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 20-10-2014
+!     Set the value of the element's attribute 
+!     to the value provided by dynk_computeFUN(funNum, turn)
+!
+!     To be implemented later: If setR=.true., recompute function value
+!     for each sub-element, else compute it once
+!     per SET statement in fort.3 and per turn.
+!-----------------------------------------------------------------------
+      implicit none
+
++ca comdynk
+
+      character(maxstrlen_dynk) el_name, att_name
+      integer funNum, turn
+      logical setR
+      intent (in) el_name, att_name, funNum, turn, setR
+
+      double precision dynk_computeFUN
+
+      write (*,*)
+      write (*,*) "In dynk_setvalue()"
+      write (*,*) "Using function number =", funNUM,
+     &     "named '", cexpr_dynk(funcs_dynk(funNum,1)), "'"
+      write (*,*) "Turn =", turn, "setR =", setR
+      write (*,*) "Element = '", el_name, 
+     &     "', attribute = '", att_name, "'"
+      write (*,*) "Function value =", dynk_computeFUN(funNum,turn)
+      
+C     Here comes the logic for setting the value of the attribute for all instances of the element...
+      
+      end subroutine
 
       integer function set_value(el_name)
 !      
