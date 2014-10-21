@@ -1354,11 +1354,9 @@
 !     - never use tab chars in fort.3
 
 *     general-purpose variables
-      logical ldynk                          ! dynamic kick requested, i.e. DYNK
-                                             !   input bloc issued in the
-                                             !   fort.3 file
-      logical ldynkdebug                     ! print debug messages in main
-                                             !   output
+      logical ldynk         ! dynamic kick requested, i.e. DYNK input bloc issued in the fort.3 file
+      logical ldynkdebug    ! print debug messages in main output
+      logical ldynkfileopen ! Is dynksets.dat already open?
 
 C     Store the FUN statements
       integer maxfuncs_dynk, maxdata_dynk, maxstrlen_dynk
@@ -1459,7 +1457,7 @@ C     OLD STUFF
       integer NacqDynkSEs
 
 !     fortran COMMON declaration follows padding requirements
-      common /dynkComGen/ ldynk, ldynkdebug
+      common /dynkComGen/ ldynk, ldynkdebug, ldynkfileopen
 
       common /dynkComExpr/ funcs_dynk,
      &     iexpr_dynk, fexpr_dynk, cexpr_dynk,
@@ -10133,6 +10131,10 @@ cc2008
 !     last modified: 02-09-2014
 !     close units for logging dynks
 !     always in main code
+      if (ldynkfileopen) then
+         close(665)
+      endif
+      !OLD:
       if ( ldynk ) then
          do i=1,NacqDynkSEs
             if ( lSEDlog(i) ) then
@@ -41113,6 +41115,7 @@ C Should get me a NaN
 !     - general-purpose variables
       ldynk = .false.
       ldynkdebug = .false.
+      ldynkfileopen = .false.
       
       nfuncs_dynk = 0
       niexpr_dynk = 0
@@ -45432,7 +45435,10 @@ C     OLD
             write (*,*) "Insane: function ", ii, "has same name as", jj
          end if
       end do
-
+      
+      ! Check that no SETS work on same elem/att at same time
+      ! TODO
+      
       if (.not. sane) then
          write (*,*) "****************************************"
          write (*,*) "*******DYNK input was insane************"
@@ -45487,6 +45493,24 @@ C     OLD
 
       end subroutine
 
+      function dynk_stringzerotrim(instring)
+      implicit none
++ca comdynk
+      character(maxstrlen_dynk) dynk_stringzerotrim, instring
+      intent(in) instring
+
+      integer ii
+
+      do ii=1,maxstrlen_dynk
+         if ( instring(ii:ii) .ne. char(0) ) then
+            dynk_stringzerotrim(ii:ii) = instring(ii:ii)
+         else 
+            dynk_stringzerotrim(ii:ii) = ' '
+         end if
+      end do
+      dynk_stringzerotrim = trim(dynk_stringzerotrim)
+
+      end function
 
       subroutine dynkload
 !
@@ -45759,7 +45783,7 @@ C     OLD
 !     interface variables
       integer n  ! current turn number
       integer dn ! number of turns since beginning of current combo
-
+      
 !     temporary variables
       integer ii, jj, kk
       logical lactive
@@ -45792,11 +45816,19 @@ C     OLD
 !
       save
 
-      double precision dynk_computeFUN
+      double precision dynk_computeFUN, dynk_getvalue
+      character(maxstrlen_dynk) dynk_stringzerotrim
 
       if ( ldynkdebug ) then
          write(*,*) ''
          write(*,*) ' CALL TO APPLYDYNKS AT TURN ',n
+      endif
+      
+      if (.not. ldynkfileopen) then
+         open(unit=665, file="dynksets.dat",
+     &        status="replace",action="write") 
+         write(665,*)"# turn element attribute function active value"
+         ldynkfileopen = .true.
       endif
       
       do kk=1,nsets_dynk
@@ -45817,6 +45849,14 @@ C     OLD
      &           " active=", lactive
             write (*,*) "F(turn) = ", dynk_computeFUN(sets_dynk(kk,1),n)
          end if
+
+         write(665,*) n, 
+     &        dynk_stringzerotrim(csets_dynk(kk,1)),
+     &        dynk_stringzerotrim(csets_dynk(kk,2)), 
+     &        dynk_stringzerotrim(
+     &           cexpr_dynk(funcs_dynk(sets_dynk(kk,1),1)) ),
+     &        lactive,
+     &        dynk_getvalue(csets_dynk(kk,1), csets_dynk(kk,2))
          
       end do
       
@@ -46119,6 +46159,26 @@ c$$$     &        retval
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
       
       end subroutine
+
+      double precision function dynk_getvalue(el_name, att_name)
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 20-10-2014
+!     
+!     Returns the value currently set by an element.
+!     
+!     Todo: what to do if there are several instances of same element?
+!     
+!-----------------------------------------------------------------------
+      implicit none
++ca comdynk
+
+      character(maxstrlen_dynk) el_name, att_name
+
+C     Placeholder code...
+      dynk_getvalue = 42.0
+      
+      end function
 
       integer function set_value(el_name)
 !      
