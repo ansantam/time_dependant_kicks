@@ -49,25 +49,16 @@ READ "initial.dat"
 NEXT
 DYNK
 DEBU
-/
-/ AM -> DEBUG
-/
-/
 FUN rise1 LIN 10 -5
 FUN rise2 LIN 3.14   1.55
 /A = 1, turn 1 = 0, 10 turns/period
 FUN mysin SIN 1 0.62831853 -0.62831853
 FUN adder ADD rise1 mysin
-/
-SET  CRAB4 voltage mysin 5 20
+FUN defval GET CRAB4 voltage
+/SET  CRAB4 voltage mysin 5 20
+SET  CRAB4 voltage defval 5 20
 SETR CRAB6 voltage rise1 5 100
 SET  CRAB5 voltage adder 10 100
-/
-/FUN     LIN    1         0.001
-/
-/
-/ SINGLE ELEMENT -- f1 -- oper -- f2 -- off -- nstart -- log_unit -- log_freq
-/CRAB5         1     -       -     -      1         510
 NEXT
 COLLIMATION
 .TRUE. 

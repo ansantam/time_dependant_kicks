@@ -27723,6 +27723,7 @@ C Should get me a NaN
 !     save original kicks
 !     always in main code
       if (ldynk) call saveorigsmiv
+      if (ldynk) call dynk_pretrack
 
 +if fluka
 
@@ -36312,6 +36313,7 @@ C Should get me a NaN
 !     save original kicks
 !     always in main code
       if (ldynk) call saveorigsmiv
+      if (ldynk) call dynk_pretrack
 
 +if fluka
 
@@ -45175,9 +45177,70 @@ C     OLD
       endif
       
       ! Which type of function?
-      if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! type 1
-         ! Linear ramp y = dy/dt*T+b
-         ! Arguments: (1) name=(2)=dy/dt (3)=Intercept b
+      if ( fields(3)(1:lfields(3)) .eq. "GET" ) then ! type 0
+         ! GET: Store the value of an element/value
+
+         if (nfields .ne. 5) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "GET function expected 5 arguments, got",nfields
+            write (*,*) "Expected syntax:"
+            write (*,*) "SET funname GET elementName attribute"
+            call prror(51)
+         endif
+
+         ! Check for sufficient space
+         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (nfexpr_dynk+1 .gt. maxdata_dynk) .or.
+     &        (ncexpr_dynk+3 .gt. maxdata_dynk) ) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Max number of maxdata_dynk to be exceeded"
+            write (*,*) "niexpr_dynk:", niexpr_dynk
+            write (*,*) "nfexpr_dynk:", nfexpr_dynk
+            write (*,*) "ncexpr_dynk:", ncexpr_dynk
+            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+            call prror(51)
+         endif
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 0           !TYPE (GET)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk  )(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk+1)(1:lfields(4)) = !ELEMENT_NAME
+     &        fields(4)(1:lfields(4))
+         cexpr_dynk(ncexpr_dynk+2)(1:lfields(5)) = !ATTRIBUTE_NAME
+     &        fields(5)(1:lfields(5))
+         ncexpr_dynk = ncexpr_dynk+2
+         
+         fexpr_dynk(nfexpr_dynk) = -1.0 !Initialize a place in the array to store the value
+         
+         if (lfields(2) .gt. 16) then ! length of BEZ elements
+            write (*,*) "*************************************"
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "SET FUN got an element name with     "
+            write (*,*) "length =", lfields(4), "> 16."
+            write (*,*) "The name was: '",fields(4)(1:lfields(4)),"'"
+            write (*,*) "*************************************"
+            call prror(51)
+         end if
+         
+      else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! type 1
+         ! LIN: Linear ramp y = dy/dt*T+b
+         
+         if (nfields .ne. 5) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "LIN function expected 5 arguments, got",nfields
+            write (*,*) "Expected syntax:"
+            write (*,*) "SET funname LIN dy/dt b"
+            call prror(51)
+         endif
          
          ! Check for sufficient space
          if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
@@ -45210,8 +45273,14 @@ C     OLD
          nfexpr_dynk = nfexpr_dynk + 1
          
       else if (fields(3)(1:lfields(3)) .eq. "SIN" ) then ! type 10
-         ! Sin functions y = A*sin(omega*T+phi)
-         ! Arguments: (1)=name (2)=A (3)=omega (4)=phi
+         ! SIN: Sin functions y = A*sin(omega*T+phi)
+         if (nfields .ne. 6) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "SIN function expected 5 arguments, got",nfields
+            write (*,*) "Expected syntax:"
+            write (*,*) "SET funname SIN amplitude omega phase"
+            call prror(51)
+         endif
          
          ! Check for sufficient space
          if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
@@ -45246,8 +45315,14 @@ C     OLD
 
       else if (fields(3)(1:lfields(3)) .eq. "ADD" ) then ! type 20
          ! ADD functions y = f1 + f2
-         ! Arguments: (1)=name (2)=namef1 (3)=namef3
-         
+         if (nfields .ne. 5) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "ADD function expected 5 arguments, got",nfields
+            write (*,*) "Expected syntax:"
+            write (*,*) "SET funname ADD funname1 funname2"
+            call prror(51)
+         endif
+
          ! Check for sufficient space
          if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
      &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
@@ -45644,6 +45719,40 @@ C     OLD
 10010 format(132('-'))
       end subroutine
 
+      subroutine dynk_pretrack
+!
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 21-10-2014
+!     
+!     Save original values for GET functions and sanity check
+!     that elements/attributes for SET actually exist.
+!-----------------------------------------------------------------------
+!
+      implicit none
++ca comdynk
+      !Functions
+      double precision dynk_getvalue
+      !Temp variables
+      integer ii
+
+      write(*,*) "In dynk_pretrack()"
+      
+      ! Save original values for GET functions
+      do ii=1,nfuncs_dynk
+         if (funcs_dynk(ii,2) .eq. 0) then !GET
+            fexpr_dynk(funcs_dynk(ii,3)) =
+C     &           dynk_getvalue("CRAB5","voltage")
+     &           dynk_getvalue( cexpr_dynk(funcs_dynk(ii,1)+1),
+     &                          cexpr_dynk(funcs_dynk(ii,1)+2) )
+         endif
+      enddo
+      if (ldynkdebug) call dynk_dumpdata
+
+      ! Sanity check of SET elements/attributes
+      
+      end subroutine
+
       subroutine saveorigsmiv
 !
 !-----------------------------------------------------------------------
@@ -45958,14 +46067,16 @@ C     OLD
 C      write (*,*) "In dynk_computeFUN(", funNum,turn,")"
       
       if (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
-         write (*,*) "ERROR in dynk_computeFUN"
-         write (*,*) "funNum =", funNum, "nfuncs_dynk =",
-     &        nfuncs_dynk, "turn =", turn
-         call dynk_dumpdata
-         stop
+c$$$         write (*,*) "ERROR in dynk_computeFUN"
+c$$$         write (*,*) "funNum =", funNum, "nfuncs_dynk =",
+c$$$     &        nfuncs_dynk, "turn =", turn
+c$$$         call dynk_dumpdata
+         stop 2
       endif
       
-      if     ( funcs_dynk(funNum,2) .eq. 1  ) then !LIN
+      if     ( funcs_dynk(funNum,2) .eq. 0  ) then !GET
+         retval = fexpr_dynk(funcs_dynk(funNum,3))
+      elseif ( funcs_dynk(funNum,2) .eq. 1  ) then !LIN
          retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
      &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
 c$$$         write (*,*) "Computing LIN at turn=", turn, "dy/dt=",
@@ -45987,12 +46098,12 @@ c$$$     &        retval
 c$$$         write (*,*) "Computing ADD at turn=", turn, "ret=",
 c$$$     &        retval
       else ! UNKNOWN
-         write (*,*) "ERROR in dynk_computeFUN"
-         write (*,*) "funNum =", funNum, "nfuncs_dynk =",
-     &        nfuncs_dynk, "turn =", turn
-         write (*,*) "Unknown function type = ", funcs_dynk(funNum,2)
-         call dynk_dumpdata
-         stop
+c$$$         write (*,*) "ERROR in dynk_computeFUN"
+c$$$         write (*,*) "funNum =", funNum, "nfuncs_dynk =",
+c$$$     &        nfuncs_dynk, "turn =", turn
+c$$$         write (*,*) "Unknown function type = ", funcs_dynk(funNum,2)
+c$$$         call dynk_dumpdata
+         stop 1
       end if
 
       end function
