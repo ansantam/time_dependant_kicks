@@ -45371,14 +45371,23 @@ C     OLD
       ! Sanity check
       if (sets_dynk(nsets_dynk,1).eq.-1) then
          write (*,*) "*************************************"
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "SET wanting function '", 
-     &           fields(4)(1:lfields(4)), "'"
-            write (*,*) "Calculated index:", sets_dynk(nsets_dynk,1)
-            write (*,*) "This function is not known."
-            write (*,*) "*************************************"
-         endif
-
+         write (*,*) "ERROR in DYNK block parsing (fort.3):"
+         write (*,*) "SET wanting function '",
+     &        fields(4)(1:lfields(4)), "'"
+         write (*,*) "Calculated index:", sets_dynk(nsets_dynk,1)
+         write (*,*) "This function is not known."
+         write (*,*) "*************************************"
+         call prror(51)
+      endif
+      if (lfields(2) .gt. 16) then ! length of BEZ elements
+         write (*,*) "*************************************"
+         write (*,*) "ERROR in DYNK block parsing (fort.3):"
+         write (*,*) "SET got an element name with length =",lfields(2),
+     &        "> 16."
+         write (*,*) "The name was: '",fields(2)(1:lfields(2)),"'"
+         write (*,*) "*************************************"
+         call prror(51)
+      end if
       end subroutine
 
       integer function dynk_findFUNindex(funName, startfrom)
