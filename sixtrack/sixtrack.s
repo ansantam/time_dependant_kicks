@@ -13293,7 +13293,6 @@ cc2008
 +ca dbstat
 +ca combmat
 +ca comdynk
-      integer set_value
 
       double precision tmpamplfact, tmplen
       dimension icel(ncom,20),iss(2),iqq(5)
@@ -18618,8 +18617,6 @@ C OLD CODE BELOW HERE:
      &                 uSEDlog(i1),' every ',nSEDlog(i1),'turns;'
             write(*,*)
             el_name='mqxc.1r1..1'
-            write(*,*) 'Andreas test:  TYPE', set_value(bez(ii)),
-     & set_value(el_name)
           endif
         enddo
         if ( ldynkdebug ) then
@@ -46210,41 +46207,6 @@ C     Placeholder code...
       dynk_getvalue = 42.0
       
       end function
-
-      integer function set_value(el_name)
-!      
-!-----------------------------------------------------------------------
-!
-!     A.Santamaria (HSS)
-!     Last modified: 03-10-2014
-!     Function that returns the type of the element.    
-!
-!-----------------------------------------------------------------------
-!
-      implicit none
-
-      ! interface variables
-
-+ca parpro
-+ca parnum
-+ca common
-+ca commonmn
-+ca commontr
-+ca comdynk
-
-      ! temporary variables
-      integer i
-
-      set_value=0
-      do 777, i=1, il
-        if (el_name.eq.bez(i)) then 
-          set_value=kz(i)
-        endif
-777   continue
-
-      return
-      end function 
-
 
       double precision function lininterp(xval,xarray,yarray,idimen)
 !
