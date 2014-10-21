@@ -46138,12 +46138,19 @@ c$$$     &        retval
 !-----------------------------------------------------------------------
       implicit none
 
++ca parpro
++ca parnum
++ca common
++ca commonmn
++ca commontr
 +ca comdynk
+
 
       character(maxstrlen_dynk) el_name, att_name
       integer funNum, turn
       logical setR
       intent (in) el_name, att_name, funNum, turn, setR
+      integer el_type
 
       double precision dynk_computeFUN
 
@@ -46157,7 +46164,25 @@ c$$$     &        retval
       write (*,*) "Function value =", dynk_computeFUN(funNum,turn)
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
-      
+      ! Get type
+      fun_val= dynk_computeFUN(funNum,turn)
+      do 777, i=1, il
+        write (*,*) el_name,bez(i)
+        if (el_name.eq.bez(i)) then  ! name found
+          el_type=kz(i)  ! type found
+          if (abs(el_type).eq.23) then ! crab cavity
+             if (att_name.eq."voltage") then
+                ed(i)=fun_val
+             elseif (att_name.eq."phase") then
+                el(i)=fun_val
+             elseif (att_name.eq."frequency") then
+                ek(i)=fun_val
+             endif
+          endif
+        endif
+777   continue
+
+
       end subroutine
 
       double precision function dynk_getvalue(el_name, att_name)
