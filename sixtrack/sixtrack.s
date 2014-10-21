@@ -46124,7 +46124,7 @@ c$$$     &        retval
       call prror(-1)
       end function
 
-      subroutine dynk_setvalue(el_name, att_name, 
+      subroutine dynk_setvalue(element_name, att_name, 
      &     funNum, turn, setR)
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
@@ -46146,43 +46146,49 @@ c$$$     &        retval
 +ca comdynk
 
 
-      character(maxstrlen_dynk) el_name, att_name
+      character(maxstrlen_dynk) element_name, att_name
       integer funNum, turn
       logical setR
-      intent (in) el_name, att_name, funNum, turn, setR
-      integer el_type
-
+      intent (in) element_name, att_name, funNum, turn, setR
+      !Functions
       double precision dynk_computeFUN
-
+      character(maxstrlen_dynk) dynk_stringzerotrim
+      ! temp variables
+      integer el_type, ii
+      double precision fun_val
+      character(maxstrlen_dynk) element_name_stripped
+      
+      element_name_stripped = trim(dynk_stringzerotrim(element_name))
+      
       write (*,*)
       write (*,*) "In dynk_setvalue()"
       write (*,*) "Using function number =", funNUM,
      &     "named '", cexpr_dynk(funcs_dynk(funNum,1)), "'"
       write (*,*) "Turn =", turn, "setR =", setR
-      write (*,*) "Element = '", el_name, 
+      write (*,*) "Element = '", element_name, 
      &     "', attribute = '", att_name, "'"
       write (*,*) "Function value =", dynk_computeFUN(funNum,turn)
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
       ! Get type
       fun_val= dynk_computeFUN(funNum,turn)
-      do 777, i=1, il
-        write (*,*) el_name,bez(i)
-        if (el_name.eq.bez(i)) then  ! name found
-          el_type=kz(i)  ! type found
+      do ii=1,il
+        write (*,*) element_name_stripped,bez(ii)
+        if (element_name_stripped.eq.bez(ii)) then  ! name found
+          el_type=kz(ii)  ! type found
+          write (*,*) "FOUND!", ii, el_type
           if (abs(el_type).eq.23) then ! crab cavity
              if (att_name.eq."voltage") then
-                ed(i)=fun_val
+                ed(ii)=fun_val
              elseif (att_name.eq."phase") then
-                el(i)=fun_val
+                el(ii)=fun_val
              elseif (att_name.eq."frequency") then
-                ek(i)=fun_val
+                ek(ii)=fun_val
              endif
           endif
         endif
-777   continue
-
-
+      enddo
+      
       end subroutine
 
       double precision function dynk_getvalue(el_name, att_name)
