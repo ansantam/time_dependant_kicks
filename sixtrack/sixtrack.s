@@ -45173,7 +45173,8 @@ C     &           dynk_getvalue("CRAB5","voltage")
       if (.not. ldynkfileopen) then
          open(unit=665, file="dynksets.dat",
      &        status="replace",action="write") 
-         write(665,*) "# turn element attribute function active "//
+         write(665,*) "# turn setidx " //
+     &        "element attribute function active " //
      &        "nvalues value1 value2 ..."
          ldynkfileopen = .true.
       endif
@@ -45199,7 +45200,7 @@ C     &           dynk_getvalue("CRAB5","voltage")
      &           dynk_computeFUN(sets_dynk(kk,1),turn)
          end if
 
-         write(665,*) turn, 
+         write(665,*) turn, kk,
      &        dynk_stringzerotrim(csets_dynk(kk,1)),
      &        dynk_stringzerotrim(csets_dynk(kk,2)), 
      &        dynk_stringzerotrim(
