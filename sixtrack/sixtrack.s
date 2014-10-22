@@ -28708,7 +28708,7 @@ C Should get me a NaN
 !       apply dynamic kicks
 !       always in main code
         if ( ldynk ) then
-           call applydynks(n)
+           call dynk_apply(n)
         endif
 
 +if .not.fluka
@@ -29824,7 +29824,7 @@ C Should get me a NaN
 !       apply dynamic kicks
 !       always in main code
         if ( ldynk ) then
-           call applydynks(n)
+           call dynk_apply(n)
         endif
 
 +if .not.fluka
@@ -33412,7 +33412,7 @@ C Should get me a NaN
 !       apply dynamic kicks
 !       always in main code
         if ( ldynk ) then
-           call applydynks(n)
+           call dynk_apply(n)
         endif
 
 +if .not.fluka
@@ -36044,7 +36044,7 @@ C Should get me a NaN
 !       apply dynamic kicks
 !       always in main code
         if ( ldynk ) then
-           call applydynks(n)
+           call dynk_apply(n)
         endif
 
 +if .not.fluka
@@ -36703,7 +36703,7 @@ C Should get me a NaN
 !       apply dynamic kicks
 !       always in main code
         if ( ldynk ) then
-           call applydynks(n)
+           call dynk_apply(n)
         endif
 
 +if .not.fluka
@@ -37488,7 +37488,7 @@ C Should get me a NaN
 !       apply dynamic kicks
 !       always in main code
         if ( ldynk ) then
-           call applydynks(n)
+           call dynk_apply(n)
         endif
 
 +if .not.fluka
@@ -45127,7 +45127,7 @@ C     &           dynk_getvalue("CRAB5","voltage")
       end subroutine
 
 +dk dynktrack
-      subroutine applydynks(n)
+      subroutine dynk_apply(turn)
 !
 !-----------------------------------------------------------------------
 !     A.Mereghetti, for the FLUKA Team
@@ -45155,7 +45155,8 @@ C     &           dynk_getvalue("CRAB5","voltage")
 +ca comdynk
 
 !     interface variables
-      integer n  ! current turn number
+      integer turn  ! current turn number
+      intent(in) turn
 
 !     temporary variables
       integer ii, jj, kk
@@ -45166,7 +45167,7 @@ C     &           dynk_getvalue("CRAB5","voltage")
 
       if ( ldynkdebug ) then
          write(*,*) ''
-         write(*,*) ' CALL TO APPLYDYNKS AT TURN ',n
+         write(*,*) ' CALL TO APPLYDYNKS AT TURN ', turn
       endif
       
       if (.not. ldynkfileopen) then
@@ -45178,10 +45179,11 @@ C     &           dynk_getvalue("CRAB5","voltage")
       endif
       
       do kk=1,nsets_dynk
-         if (n .ge. sets_dynk(kk,2) .and. n .le. sets_dynk(kk,3)) then
+         if (turn .ge. sets_dynk(kk,2) .and.
+     &       turn .le. sets_dynk(kk,3)) then
             lactive = .true.
             call dynk_setvalue(csets_dynk(kk,1), csets_dynk(kk,2),
-     &           sets_dynk(kk,1), n, lsets_dynk(kk) )
+     &           sets_dynk(kk,1), turn, lsets_dynk(kk) )
          else
             lactive = .false.
          end if
@@ -45193,10 +45195,11 @@ C     &           dynk_getvalue("CRAB5","voltage")
             write (*,*) " firstturn=", sets_dynk(kk,2),
      &           " lastturn=", sets_dynk(kk,3),
      &           " active=", lactive
-            write (*,*) "F(turn) = ", dynk_computeFUN(sets_dynk(kk,1),n)
+            write (*,*) "F(turn) = ", 
+     &           dynk_computeFUN(sets_dynk(kk,1),turn)
          end if
 
-         write(665,*) n, 
+         write(665,*) turn, 
      &        dynk_stringzerotrim(csets_dynk(kk,1)),
      &        dynk_stringzerotrim(csets_dynk(kk,2)), 
      &        dynk_stringzerotrim(
