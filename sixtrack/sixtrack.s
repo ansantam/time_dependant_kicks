@@ -1383,79 +1383,7 @@ C     Store the SET statements
                                                              ! (2) attribute name
       logical lsets_dynk(maxsets_dynk) ! 1 entry/SET. True if SETR, false if SET.
       integer nsets_dynk ! Number of used positions in arrays
-
-
-C     OLD STUFF
-*     recognised functions
-      integer nfuns, lfuns
-      parameter ( nfuns=11, lfuns=3 )
-      character funs(nfuns)*(lfuns)
-      data funs / 'CNS', 'LIN', 'HP1', 'HP2', 'SQR',
-     &            'PAR', 'EXP', 'LOG', 'SIN', 'FLE',
-     &            'NSE' /
-
-*     recognised operations
-      integer noper, loper
-      parameter ( noper=4, loper=3 )
-      character oper(noper)*(loper)
-      data oper / 'ADD', 'SUB', 'MUL', 'DIV' /
-
-*     variables storing the definition of functions
-!     NB: functions are stored in memory as declared by the user
-!     NB: index=0: constant profile, with original kick; always kept in memory
-!         as default and at user disposal
-      integer NmaxDynkFuns                     ! max number of functions that
-      parameter ( NmaxDynkFuns=20 )            !   can be stored in memory
-      integer NmaxDynkFunPar                   ! max number of function param
-      parameter ( NmaxDynkFunPar=4 )           !   that can be stored in memory
-      integer iDynkFun( 0:NmaxDynkFuns )       ! map: function type (SIN,COS...)
-      integer jDynkFun( NmaxDynkFuns )         ! map: profile index
-!     map: parameters value
-      double precision parDynkFun( 0:NmaxDynkFuns, NmaxDynkFunPar )
-!     map: use of original smiv
-      logical lparDynkFun( 0:NmaxDynkFuns, NmaxDynkFunPar )
-      integer NacqDynkFuns                     ! number of acquired functions
       
-*     variables describing profiles from files
-      integer maxdynkprofiles                  ! max number of profiles that can
-      parameter ( maxdynkprofiles=10  )        !   be stored in memory
-      integer maxdynkpoints                    ! max number of points in each
-      parameter ( maxdynkpoints  =100 )        !   profile
-      integer maxdynknamelen                   ! max length of filenames
-      parameter ( maxdynknamelen =40  )        !
-!     file names of the profiles
-      character dynkprofname( maxdynkprofiles )*( maxdynknamelen )
-      integer numdynkprofiles                  ! number of acquired profiles
-      integer numdynkpoints( maxdynkprofiles ) ! number of points per profile
-!     array of x-values of each profile (ie turn number)
-      integer dynkpx( maxdynkprofiles, maxdynkpoints )
-!     array of y-values of each profile (ie intensities)
-      doubleprecision dynkpy( maxdynkprofiles, maxdynkpoints )
-
-*     variables storing the combos
-      integer NmaxDynkSEs                      ! max number of SINGLE ELEMENTs
-      parameter ( NmaxDynkSEs=20 )             !    with dynamic kicks
-      integer NmaxDynkIcombo                   ! max number of combos per
-      parameter ( NmaxDynkIcombo=10 )          !    SINGLE ELEMENT
-      integer iSEDynks( NmaxDynkSEs )          ! map: index of SING ELEMENT
-!     original value of smiv
-      double precision oriSmivSEDynks( NmaxDynkSEs )
-!     logging
-      logical lSEDlog(  NmaxDynkSEs )          ! flag
-      integer uSEDlog(  NmaxDynkSEs )          ! dumping unit
-      integer nSEDlog(  NmaxDynkSEs )          ! frequency (every nturns)
-!     number of acquired combos for each SINGLE ELEMENT flagged for dyn kicks
-      integer nComboDynks( NmaxDynkSEs )
-!     current active combo of each SINGLE ELEMENT flagged for dyn kicks
-      integer iComboDynks( NmaxDynkSEs )
-!     map of f1, oper ('-'=0, otherwise operation), f2 and offset
-!       onto SINGLE ELEMENT flagged for by dyn kicks
-      integer mapComboDynks( NmaxDynkSEs, NmaxDynkIcombo, 4 )
-!     number of turns of each combo
-      integer nTurnsComboDynks( NmaxDynkSEs, NmaxDynkIcombo )
-!     number of SINGLE ELEMENTs flagged for dyn kicks
-      integer NacqDynkSEs
-
 !     fortran COMMON declaration follows padding requirements
       common /dynkComGen/ ldynk, ldynkdebug, ldynkfileopen
 
@@ -1464,16 +1392,6 @@ C     OLD STUFF
      &     nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk
 
       common /dynkComSet/ sets_dynk, csets_dynk, lsets_dynk, nsets_dynk
-
-C     OLD stuff
-      common /dynkComFun/ parDynkFun, lparDynkFun,
-     &                    iDynkFun, jDynkFun, NacqDynkFuns
-      common /dynkComCmb/ mapComboDynks, nTurnsComboDynks, 
-     &                    oriSmivSEDynks, iSEDynks, nComboDynks, 
-     &                    iComboDynks, uSEDlog, nSEDlog, lSEDlog,
-     &                    NacqDynkSEs
-      common /dynkComFle/ dynkpx, dynkpy, dynkprofname,
-     &                    numdynkpoints, numdynkprofiles
 
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
@@ -7889,17 +7807,6 @@ cc2008
          endif
       endif
 
-+cd dynkinittrack
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 01-09-2014
-!     initialise index of current combos for dynamic kicks
-!     always in main code
-      if ( ldynk ) then
-         do i=1,NacqDynkSEs
-            iComboDynks(i)=1
-         enddo
-      endif
-
 +cd umlalid
           iwrite=0
           if(nlin.eq.0) then
@@ -10133,16 +10040,6 @@ cc2008
 !     always in main code
       if (ldynkfileopen) then
          close(665)
-      endif
-      !OLD:
-      if ( ldynk ) then
-         do i=1,NacqDynkSEs
-            if ( lSEDlog(i) ) then
-!              the same file could be used by more than one SINGLE ELEMENT
-               inquire( unit=uSEDlog(i), opened=lopen )
-               if ( lopen ) close(uSEDlog(i))
-            endif
-         enddo
       endif
 
 !     A.Mereghetti, D.Sinuela Pastor and P.G.Ortega, for the FLUKA Team
@@ -18552,337 +18449,11 @@ cc2008
          write (*,*) "*******************************************"
          call prror(51)
       endif
-
-
-C OLD CODE BELOW HERE:
-
-
-      if(ch(:4).eq.next) then
-        write(*,10500) dynk
-!       dump all functions found
-        write(*,*) ''
-        write(*,'(1X,20("-"),A19,20("-"))') ' echo of functions '
-        write(*,*) ''
-        write(*,'(1X,A3,1X,A3,4(1X,A13),1X,13A)') 'num', 'FUN',
-     &               'par_1', 'par_2', 'par_3', 'par_4', 'use_orig_kick'
-        write(*,*) ''
-!       remind the user about the default profile
-        i1=iDynkFun(0)
-        write(*,'(1X,I3,1X,A3,4(1X,1PE13.6),5X,4(1X,L1))') 0, 
-     &               funs(i1), ( parDynkFun(0,i2), i2=1,NmaxDynkFunPar),
-     &                         (lparDynkFun(0,i2), i2=1,NmaxDynkFunPar)
-        do ii=1,NacqDynkFuns
-          i1=iDynkFun(ii)
-          write(*,'(1X,I3,1X,A3,4(1X,1PE13.6),5X,4(1X,L1))') ii, 
-     &              funs(i1), ( parDynkFun(ii,i2), i2=1,NmaxDynkFunPar),
-     &                        (lparDynkFun(ii,i2), i2=1,NmaxDynkFunPar)
-          if ( iDynkFun(ii) .eq. 10 ) then
-            i1=jDynkFun(ii)
-            write(*,*) '         -> profile from file: ', 
-     &                                                 dynkprofname(i1)
-          endif
-        enddo
-!       dump all combos found:
-        write(*,*) ''
-        write(*,'(1X,21("-"),A16,21("-"))') ' echo of combos '
-        write(*,*) ''
-        write(*,'(1X,A16,1X,A8,4(1X,A4))') 'SINGLE ELEMENT  ', 'TURN',
-     &               'I_F1', 'OPER', 'I_F2', 'I_OF'
-        write(*,*) ''
-        do i1=1,NacqDynkSEs
-          ii=iSEDynks(i1)
-          do i2=1,nComboDynks(i1)
-            idat = '   '
-            if ( mapComboDynks(i1,i2,2) .gt. 0 .and. 
-     &           mapComboDynks(i1,i2,2) .le. noper ) then
-              idat = ' '//oper( mapComboDynks(i1,i2,2) )
-            endif
-            if ( i2 .eq. 1 ) then
-              write(*,'(1X,A16,1X,I8,1X,I4,1X,A4,2(1X,I4))') bez(ii),
-     &            nTurnsComboDynks(i1,i2), mapComboDynks(i1,i2,1), idat,
-     &                   mapComboDynks(i1,i2,3), mapComboDynks(i1,i2,4)
-            else
-              write(*,'(1X,A16,1X,I8,1X,I4,1X,A4,2(1X,I4))') '',
-     &            nTurnsComboDynks(i1,i2), mapComboDynks(i1,i2,1), idat,
-     &                   mapComboDynks(i1,i2,3), mapComboDynks(i1,i2,4)
-            endif
-          enddo
-        enddo
-!       dump logging
-        write(*,*) ''
-        do i1=1,NacqDynkSEs
-          ii=iSEDynks(i1)
-          if ( lSEDlog(i1) ) then
-            write(*,*) ' logging smiv of: ',bez(ii),' in unit ',
-     &                 uSEDlog(i1),' every ',nSEDlog(i1),'turns;'
-            write(*,*)
-            el_name='mqxc.1r1..1'
-          endif
-        enddo
-        if ( ldynkdebug ) then
-          write(*,*) ''
-          write(*,*) '        --> requested debug messages!'
-        endif
-!       some checks
-        lerr1=.false.
-!       - all the functions exist
-        write(*,*)''
-        write(*,*)' check that all used functions are declared...'
-        do i1=1,NacqDynkSEs
-          ii=iSEDynks(i1)
-          do i2=1,nComboDynks(i1)
-            if ( mapComboDynks(i1,i2,1).gt.NacqDynkFuns ) then
-              write(*,10890) 1, i2, bez(ii)
-              lerr1=.true.
-            endif
-            if ( mapComboDynks(i1,i2,3).gt.NacqDynkFuns ) then
-              write(*,10890) 2, i2, bez(ii)
-              lerr1=.true.
-            endif
-            if ( mapComboDynks(i1,i2,4).gt.NacqDynkFuns ) then
-              write(*,10890) 3, i2, bez(ii)
-              lerr1=.true.
-            endif
-          enddo
-        enddo
-        write(*,*) ' ...done'
-!       - no thick-lens element has been flagged
-        write(*,*)''
-        write(*,*)' check that no thick element has been flagged...'
-        do i1=1,NacqDynkSEs
-          ii=iSEDynks(i1)
-          if ( el(ii).gt.zero ) then
-            write(*,10891) bez(ii)
-            lerr = .true.
-          endif
-        enddo
-        write(*,*) ' ...done'
-        if ( lerr1 ) then
-          call prror(51)
-        endif
-        goto 110
-      endif
-
-      lineno3=lineno3+1
-
-      if(ch(:4).eq.'DEBU') then
-*       requesting debugging output messages
-        ldynkdebug = .true.
-        goto 2222
-      elseif ( ch(:3).eq.'FUN' ) then
-*       the user is declaring a function
-        call read_fields( ch, fields, lfields, nfields, lerr )
-        if ( lerr ) call prror(51)
-*       recognise the function
-        do ii=1,nfuns
-          if ( fields(2)(1:lfuns) .eq. funs(ii) ) then
-*           recognised function
-            goto 2201
-          endif
-        enddo
-*       function not recognised
-        write(*,*) ''
-        write(*,*) ' not recognised function in line:'
-        write(*,*) ch(:80)
-        write(*,*) ''
-        write(*,*) ' available functions:'
-        do ii=1,nfuns
-          write(*,*) '    ',funs(ii)
-        enddo
-        write(*,*) ''
-        call prror(51)
-*       recognised function: let's store the infos provided by the user
- 2201   NacqDynkFuns=NacqDynkFuns+1
-        if ( NacqDynkFuns .gt. NmaxDynkFuns ) then
-          write(*,*) ''
-          write(*,*) ' exceeded max number of functions!!'
-          write(*,*) ' please increase this parameter:'
-          write(*,*) '     NmaxDynkFuns: ', NmaxDynkFuns
-          write(*,*) '     and then recompile!'
-          write(*,*) ''
-          call prror(51)
-        endif
-        iDynkFun( NacqDynkFuns ) = ii
-        if ( nfields-3 .gt. NmaxDynkFunPar ) then
-          write(*,*) ' too many numerical parameters in line:'
-          write(*,*) ch(:80)
-          write(*,*) ' I will use only the first ', NmaxDynkFunPar
-        endif
-        if ( iDynkFun( NacqDynkFuns ) .eq. 10 ) then
-*         profile from file:
-          numdynkprofiles = numdynkprofiles +1
-          if (numdynkprofiles.gt.maxdynkprofiles) then
-            write(*,*) ''
-            write(*,*) ' exceeded max number of profiles from file!!'
-            write(*,*) ' please increase this parameter:'
-            write(*,*) '     maxdynkprofiles: ', maxdynkprofiles
-            write(*,*) '     and then recompile!'
-            write(*,*) ''
-            call prror(51)
-          endif
-          dynkprofname(numdynkprofiles)=fields(6)(1:lfields(6))
-          read (fields(4)(1:lfields(4)),*) parDynkFun(NacqDynkFuns,1)
-          read (fields(5)(1:lfields(5)),*) parDynkFun(NacqDynkFuns,2)
-          jDynkFun(NacqDynkFuns)=numdynkprofiles
-        else
-*         an actual function is declared: store parameters
-          do ii=1,min(nfields-3,NmaxDynkFunPar)
-            read (fields(ii+3)(1:lfields(ii+3)),*)
-     &                                      parDynkFun(NacqDynkFuns,ii)
-          enddo
-        endif
-*       store infos concerning the use of the original kick
-        if ( fields(3)(1:1) .ne. '-' ) then
-          do ii=1,lfields(3)
-            read (fields(3)(ii:ii),*) i1
-            lparDynkFun(NacqDynkFuns,i1)=.true.
-          enddo
-        endif
-        goto 2222
-      else
-*       the user is declaring a combo
-        call read_fields( ch, fields, lfields, nfields, lerr )
-        if ( lerr ) call prror(51)
-*       find declared element in the list of SINGLE ELEMENTs already declared:
-        do i1=1,NacqDynkSEs
-          i2=iSEDynks(i1)
-          if(bez(i2)(1:lfields(1)).eq.fields(1)(1:lfields(1))) goto 2203
-        enddo
-*       find declared element in the list of SINGLE ELEMENTs:
-        do i2=1,il
-          if(bez(i2)(1:lfields(1)).eq.fields(1)(1:lfields(1))) goto 2202
-        enddo
-*       SINGLE ELEMENT not recognised
-        write(*,*) ''
-        write(*,*) ' not recognised SINGLE ELEMENT in line:'
-        write(*,*) ch(:80)
-        write(*,*) ''
-        call prror(51)
- 2202   continue
-*       recognised SINGLE ELEMENT: let's store the infos provided by the user
-        NacqDynkSEs=NacqDynkSEs+1
-        if ( NacqDynkSEs .gt. NmaxDynkSEs ) then
-          write(*,*) ''
-          write(*,*) ' exceeded max number of SINGLE ELEMENTS that can'
-          write(*,*) '   be assigned dynamic kicks!!'
-          write(*,*) ' please increase this parameter:'
-          write(*,*) '     NmaxDynkSEs: ', NmaxDynkSEs
-          write(*,*) '     and then recompile!'
-          write(*,*) ''
-          call prror(51)
-        endif
-        i1=NacqDynkSEs
-        iSEDynks(i1)=i2
- 2203   continue
-*       store provided info
-        nComboDynks(i1)=nComboDynks(i1)+1
-*       default value of turn start
-        nTurnsComboDynks(i1,nComboDynks(i1))=1
-        if ( fields(2)(1:1) .ne. '-' ) then
-*         store first function
-          read (fields(2)(1:lfields(2)),*) 
-     &                               mapComboDynks(i1,nComboDynks(i1),1)
-          if ( mapComboDynks(i1,nComboDynks(i1),1).lt.0 ) then
-            write(*,*) ''
-            write(*,*) ' invalid declaration of fun 1 in line:'
-            write(*,*) ch(:80)
-            write(*,*) ''
-            call prror(51)
-          endif
-        endif
-        if ( nfields.ge.4 ) then
-          if ( fields(3)(1:1).ne.'-' .and. fields(4)(1:1).ne.'-' ) then
-*           store combination operation
-            do ii=1,noper
-              if ( fields(3)(1:loper) .eq. oper(ii)(1:loper) ) then
-                mapComboDynks(i1,nComboDynks(i1),2)=ii
-                goto 2204
-              endif
-            enddo
-            write(*,*) ''
-            write(*,*) ' not recognised operation in line:'
-            write(*,*) ch(:80)
-            write(*,*) ''
-            call prror(51)
- 2204       continue
-*           store second function
-            read (fields(4)(1:lfields(4)),*) 
-     &                               mapComboDynks(i1,nComboDynks(i1),3)
-            if ( mapComboDynks(i1,nComboDynks(i1),3).lt.0 ) then
-              write(*,*) ''
-              write(*,*) ' invalid declaration of fun 2 in line:'
-              write(*,*) ch(:80)
-              write(*,*) ''
-              call prror(51)
-            endif
-          endif
-        endif
-        if ( nfields.ge.5 ) then
-*         store offset function
-          if ( fields(5)(1:1) .ne. '-' ) then
-            read (fields(5)(1:lfields(5)),*) 
-     &                               mapComboDynks(i1,nComboDynks(i1),4)
-            if ( mapComboDynks(i1,nComboDynks(i1),4).lt.0 ) then
-              write(*,*) ''
-              write(*,*) ' invalid declaration of offset fun in line:'
-              write(*,*) ch(:80)
-              write(*,*) ''
-              call prror(51)
-            endif
-          endif
-        endif
-        if ( nfields.ge.6 ) then
-*         store nstart
-          if ( fields(6)(1:1) .ne. '-' ) then
-            read (fields(6)(1:lfields(6)),*)
-     &                              nTurnsComboDynks(i1,nComboDynks(i1))
-            if ( nTurnsComboDynks(i1,nComboDynks(i1)).lt.0 ) then
-              write(*,*)''
-              write(*,*)' invalid declaration of starting turn in line:'
-              write(*,*)ch(:80)
-              write(*,*)''
-              call prror(51)
-            endif
-          endif
-        endif
-        if ( nfields.ge.7 ) then
-*         activate logging and store unit
-          if ( fields(7)(1:1) .ne. '-' ) then
-            read (fields(7)(1:lfields(7)),*) uSEDlog(i1)
-            if ( uSEDlog(i1).lt.0 ) then
-              write(*,*)''
-              write(*,*)' invalid declaration of logging unit in line:'
-              write(*,*)ch(:80)
-              write(*,*)''
-              call prror(51)
-            endif
-            lSEDlog(i1) = .true.
-            nSEDlog(i1) = 1 ! default frequency
-          endif
-        endif
-        if ( nfields.ge.8 ) then
-*         update frequency of logging
-          if ( fields(8)(1:1) .ne. '-' ) then
-            read (fields(8)(1:lfields(8)),*) nSEDlog(i1)
-            if ( nSEDlog(i1).le.0 ) nSEDlog(i1)=1
-          endif
-        endif
-*       if no combo has been declared, set default to use
-*         original smiv and a constant profile
-        if ( mapComboDynks(i1,nComboDynks(i1),1).eq.-1 .and.
-     &       mapComboDynks(i1,nComboDynks(i1),2).eq.-1 .and.
-     &       mapComboDynks(i1,nComboDynks(i1),3).eq.-1 .and.
-     &       mapComboDynks(i1,nComboDynks(i1),4).eq.-1 )
-     &                    mapComboDynks(i1,nComboDynks(i1),1)=0
-*       activate dyn kicks only in case at least one meaningful
-*         line has been issued
-        if (.not.ldynk) ldynk = .true.
-        goto 2222
-      endif
-
- 2222 continue
-!     go to next line
-      goto 2200
+      ! Should never be here
+      write (*,*) "*****************************"
+      write (*,*) "*LOGIC ERROR IN PARSING DYNK*"
+      write (*,*) "*****************************"
+      call prror(51)
 
 !-----------------------------------------------------------------------
 !  BEAM MATRIX
@@ -26151,12 +25722,6 @@ C Should get me a NaN
 !     call abend('ado 260                                           ')
 +ei
 
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 17-07-2013
-!     in case, load profiles of dynamic kicks from files
-!     always in main code
-      if ( ldynk ) call dynkload
-
 !hr05 napx=napx*imc*mmac
       napx=(napx*imc)*mmac                                               !hr05
 +if fluka
@@ -26799,17 +26364,8 @@ C Should get me a NaN
 
 !     A.Mereghetti, for the FLUKA Team
 !     last modified: 02-09-2014
-!     open units for logging dynks
+!     WAS: open units for logging dynks
 !     always in main code
-      if ( ldynk ) then
-         do i=1,NacqDynkSEs
-            if ( lSEDlog(i) ) then
-!              the same file could be used by more than one SINGLE ELEMENT
-               inquire( unit=uSEDlog(i), opened=lopen )
-               if ( .not.lopen ) open(uSEDlog(i),form='formatted')
-            endif
-         enddo
-      endif
 
       do i=1,il
         if (lbmat(i)) then
@@ -27722,7 +27278,6 @@ C Should get me a NaN
 !     last modified: 17-07-2013
 !     save original kicks
 !     always in main code
-      if (ldynk) call saveorigsmiv
       if (ldynk) call dynk_pretrack
 
 +if fluka
@@ -29118,7 +28673,6 @@ C Should get me a NaN
       napxto = 0
 
 +ei
-+ca dynkinittrack
 +if cr
       if (restart) then
         call crstart
@@ -30232,7 +29786,6 @@ C Should get me a NaN
       napxto = 0
 
 +ei
-+ca dynkinittrack
 +if cr
       if (restart) then
         call crstart
@@ -33824,7 +33377,6 @@ C Should get me a NaN
       napxto = 0
 
 +ei
-+ca dynkinittrack
 +if cr
       if (restart) then
         call crstart
@@ -36312,7 +35864,6 @@ C Should get me a NaN
 !     last modified: 17-07-2013
 !     save original kicks
 !     always in main code
-      if (ldynk) call saveorigsmiv
       if (ldynk) call dynk_pretrack
 
 +if fluka
@@ -36458,7 +36009,6 @@ C Should get me a NaN
       napxto = 0
 
 +ei
-+ca dynkinittrack
 +if cr
       if (restart) then
         call crstart
@@ -37116,7 +36666,6 @@ C Should get me a NaN
       napxto = 0
 
 +ei
-+ca dynkinittrack
 ! Now the outer loop over turns
 +if cr
       if (restart) then
@@ -37904,7 +37453,6 @@ C Should get me a NaN
       napxto = 0
 
 +ei
-+ca dynkinittrack
 +if cr
       if (restart) then
         call crstart
@@ -41133,55 +40681,6 @@ C Should get me a NaN
          do j=1, maxstrlen_dynk
             csets_dynk(i,1)(j:j) = char(0)
             csets_dynk(i,2)(j:j) = char(0)
-         enddo
-      enddo
-
-C     OLD
-!     - variables describing the basic functions:
-      NacqDynkFuns = 0
-      do i1=1,NmaxDynkFuns
-         iDynkFun(i1) = 0
-         jDynkFun(i1) = 0
-         do i2=1,NmaxDynkFunPar
-            parDynkFun(i1,i2)  = zero
-            lparDynkFun(i1,i2) = .false.
-         enddo
-      enddo
-!     - default function: constant profile, with original kick
-      iDynkFun(0) = 1
-      do i2=1,NmaxDynkFunPar
-         parDynkFun(0,i2)  = zero
-         lparDynkFun(0,i2) = .false.
-      enddo
-      parDynkFun(0,1)  = one
-      lparDynkFun(0,1) = .true.
-!     - variables describing profiles from files
-      numdynkprofiles = 0
-      do i1=1,maxdynkprofiles
-         do i2=1,maxdynknamelen
-            dynkprofname(i1)(i2:i2) = ' '
-         enddo
-         numdynkpoints(i1) = 0
-         do i2=1,maxdynkpoints
-            dynkpx(i1,i2) = 0
-            dynkpy(i1,i2) = zero
-         enddo
-      enddo
-!     - variables describing combos
-      NacqDynkSEs = 0
-      do i1=1,NmaxDynkSEs
-         iSEDynks(i1) = 0
-         nComboDynks(i1) = 0
-         iComboDynks(i1) = 0
-         oriSmivSEDynks(i1) = zero
-         uSEDlog(i1) = 998
-         nSEDlog(i1) = 1
-         lSEDlog(i1) = .false.
-         do i2=1,NmaxDynkIcombo
-            nTurnsComboDynks(i1,i2) = 0
-            do i3=1,4
-               mapComboDynks(i1,i2,i3) = -1
-            enddo
          enddo
       enddo
 !
@@ -45592,133 +45091,7 @@ C     OLD
       dynk_stringzerotrim = trim(dynk_stringzerotrim)
 
       end function
-
-      subroutine dynkload
-!
-!-----------------------------------------------------------------------
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 17-07-2013
-!     load profiles for dynamic kicks from files
-!     always in main code
-!-----------------------------------------------------------------------
-!
-      implicit none
-
-+ca parpro
-+ca comdynk
-
-!     temporary variables:
-      character*(maxdynknamelen) tmpfilename
-      character*160 line
-      integer ifile, ipoint
-      integer tmpx
-      double precision tmpy
-      logical lexist
-      logical lfirst
-
-      character comment_char
-      parameter ( comment_char = '*' )
-      integer temp_unit
-      parameter ( temp_unit = 883 )
- 
-      save
-
-      write (*,*)''
-      write (*,10010)
-      write (*,*) ''
-      write (*,*) ' CALL TO DYNKLOAD '
-      write (*,*) ''
-
-!     cycle on files:
-      do ifile=1,numdynkprofiles
-        write (*,*) ' file ',dynkprofname(ifile)
-        inquire(file=dynkprofname(ifile),exist=lexist)
-        if (.not.lexist) then
-          write(*,*) ' --> does not exist!'
-          call prror(-1)
-        endif
-        open(temp_unit,file=dynkprofname(ifile),form='formatted',
-     &          status='old')
-        lfirst = .true.
-
-!       cycle on lines in each file:
- 1980   read(temp_unit,10000,end=1983,err=1982) line
-!       a comment line
-        if (line(1:1).eq.comment_char) goto 1980
-!       parse data and store them
-        read(line,*,err=1981) tmpx, tmpy
-!       check profile is surjective (only if at least one point has been read):
-        if ( lfirst ) then
-          lfirst = .false.
-        else
-          if ( tmpx.lt.dynkpx(ifile,numdynkpoints(ifile)) ) then
-            write(*,*)' x values are not listed in increasing order'
-            write(*,*)'     in this profile'
-            write(*,*)''
-            call prror(-1)
-          elseif ( tmpx.eq.dynkpx(ifile,numdynkpoints(ifile)) ) then
-            write(*,*)' two y-values for the same x: ',tmpx
-            write(*,*)dynkpy(ifile,numdynkpoints(ifile))
-            write(*,*)tmpy
-            write(*,*)''
-            call prror(-1)
-          endif
-        endif
-!       check there's place in memory:
-        numdynkpoints(ifile)=numdynkpoints(ifile)+1
-        if (numdynkpoints(ifile).gt.maxdynkpoints) then
-          write(*,*)' exceeded allowed # of points for a profile!!'
-          write(*,*)' please increase this parameter:'
-          write(*,*)'     maxdynkpoints: ', maxdynkpoints
-          write(*,*)'     and then recompile!'
-          write(*,*)''
-          call prror(-1)
-        endif
-!       store data:
-        dynkpx(ifile,numdynkpoints(ifile)) = tmpx
-        dynkpy(ifile,numdynkpoints(ifile)) = tmpy
-        goto 1980
-
-!       some error messages
- 1981   write(*,*) 'invalid line in file: ',dynkprofname(ifile)
-        write(*,*) 'line: ',line
-        write(*,*) ''
-        call prror(-1)
- 1982   write(*,*) 'error while reading file: ',dynkprofname(ifile)
-        write(*,*) ''
-        call prror(-1)
- 1983   close(temp_unit)
-        write (*,*) ' ...loaded ',numdynkpoints(ifile),' points!'
-        write (*,*) ''
-
-!     go to next file
-      enddo
-
-!     dump for debugging purposes:
-      if ( ldynkdebug ) then
-        if ( numdynkprofiles .gt. 1 ) then
-          write(*,*) ''
-          write(*,*) ' debugging DYNK - profiles:'
-          do ifile=1,numdynkprofiles
-            write(*,*) ' file: ',dynkprofname(ifile)
-            write(*,*) ' number of points: ',numdynkpoints(ifile)
-            do ipoint=1,numdynkpoints(ifile)
-              write(*,*) dynkpx(ifile,ipoint),dynkpy(ifile,ipoint)
-            enddo
-            write(*,*) ''
-          enddo
-        else
-          write(*,*) ''
-          write(*,*) ' debugging DYNK - no profile to load!'
-        endif
-      endif
-
-!     au revoir:
-      return
-10000 format(a160)
-10010 format(132('-'))
-      end subroutine
-
+      
       subroutine dynk_pretrack
 !
 !-----------------------------------------------------------------------
@@ -45753,120 +45126,6 @@ C     &           dynk_getvalue("CRAB5","voltage")
       
       end subroutine
 
-      subroutine saveorigsmiv
-!
-!-----------------------------------------------------------------------
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 03-09-2014
-!     save original values of smiv variable
-!     always in main code
-!
-!     the idea is to loop over all those SINGLE ELEMENTs flagged for
-!         dynamic kicks, and save the original value of smiv;
-!     at the same time, check that all the concerned entries in
-!         the accelerator structure have the same smiv value;
-!
-!     NB: originally, the smiv variable is used only in case of non-linear
-!         SINGLE ELEMENTs: thus, dynamic kicks can be applied only to
-!         non-linear SINGLE ELEMENTs
-!-----------------------------------------------------------------------
-!
-      implicit none
-
-+ca parpro
-+ca parnum
-+ca common
-+ca commonmn
-+ca commontr
-+ca comdynk
-
-!     temporary variables
-      logical lfirst, lerr
-      integer ii, jj, kk
-
-      save
-
-      write (*,*)''
-      write (*,10010)
-      write (*,*) ''
-      write (*,*) ' CALL TO SAVEORIGSMIV '
-      write (*,*) '    ...with checks of possible incosistencies '
-      write (*,*) ''
-
-      lerr = .false.
-
-!     loop over all the SINGLE ELEMENTs flagged for dynamic kicks:
-      do kk=1,NacqDynkSEs
-
-        ii=iSEDynks(kk)
-
-!       loop over the entries in the accelerator structure:
-!          get the value of smiv of the first entry in the structure,
-!          and then check that all other entries have the same value
-        lfirst = .true.
-        do jj=1,iu
-          if ( ktrack(jj).ne.1 ) then
-!           a SINGLE ELEMENT (skip the blocs)
-            if ( ic(jj)-nblo.eq.ii ) then
-!             current entry is another instance of the selected
-!               SINGLE ELEMENT
-              if ( lfirst ) then
-                oriSmivSEDynks(kk) = smiv(1,jj)
-                lfirst = .false.
-              else
-                if ( smiv(1,jj).ne.oriSmivSEDynks(kk) ) then
-                  write(*,*)''
-                  write(*,*)' inconsistency in accelerator structure:'
-                  write(*,*)' for SINGLE ELEMENT ',bez(ii)
-                  write(*,*)' smiv at first occurrence: ',
-     &                                                oriSmivSEDynks(kk)
-                  write(*,*)' smiv of ',jj,' entry: ',smiv(1,jj)
-                  write(*,*)''
-                  lerr= .true.
-                endif
-              endif
-            endif
-          endif
-!       go to next entry in accelerator structure
-        enddo
-
-        if ( lfirst ) then
-          write(*,*)''
-          write(*,*)' inconsistency in accelerator structure:'
-          write(*,*)' SINGLE ELEMENT ',bez(ii)
-          write(*,*)'    was flagged to be applied a dynamic kick'
-          write(*,*)'    but no entry was found in the structure'
-          write(*,*)''
-          lerr= .true.
-        else
-          if ( ldynkdebug ) then
-            write(*,*) 'original value of smiv for SINGLE ELEMENT ',
-     &                  bez(ii),': ',oriSmivSEDynks(kk)
-          endif
-          if ( lSEDlog(kk) ) then
-*            dump original value of smiv in log
-             write(uSEDlog(kk),*) '# original value of smiv: ',
-     &                                                oriSmivSEDynks(kk)
-          endif
-        endif
-
-!     go to next flagged SINGLE ELEMENT
-      enddo
-
-!     at least one inconsistency that should be solved by the user:
-      if ( lerr ) then
-        write(*,*) ''
-        write(*,*) ' at least one incosistency in flagging elements'
-        write(*,*) '    for dynamic kicks: please check carefully...'
-        write(*,*) ''
-        call prror(-1)
-      endif
-
-!     au revoir:
-      return
-10010 format(132('-'))
-      end subroutine
-!
 +dk dynktrack
       subroutine applydynks(n)
 !
@@ -45897,39 +45156,10 @@ C     &           dynk_getvalue("CRAB5","voltage")
 
 !     interface variables
       integer n  ! current turn number
-      integer dn ! number of turns since beginning of current combo
-      
+
 !     temporary variables
       integer ii, jj, kk
       logical lactive
-      double precision tmpsmiv, compute_smiv, powerscale
-!     smiv values are scaled by a certain power of 10, according
-!       to the multipole order
-      dimension powerscale( 65 )
-      data powerscale /
-!
-! ktrack  1     2     3     4     5     6     7     8     9    10
-     &  one,  one, zero, zero, zero, zero, zero, zero, zero, zero,
-!
-! ktrack 11    12    13    14    15    16    17    18    19    20
-     & c1e3,  one, c1m3, c1m6, c1m9,c1m12,c1m15,c1m18,c1m21,c1m24,
-!
-! ktrack 21    22    23    24    25    26    27    28    29    30
-     & c1e3,  one, c1m3, c1m6, c1m9,c1m12,c1m15,c1m18,c1m21,c1m24,
-!
-! ktrack 31    32    33    34    35    36    37    38    39    40
-     & zero, zero, c1e3, c1e3, c1e3, c1e3, c1e3, c1e3, c1e3, c1e3,
-!
-! ktrack 41    42    43    44    45    46    47    48    49    50
-     & zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
-!
-! ktrack 51    52    53    54    55    56    57    58    59    60
-     & zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
-!
-! ktrack 61    62    63    64    65
-     & zero, zero, zero, zero, zero     /
-!
-      save
 
       double precision dynk_computeFUN, dynk_getvalue
       character(maxstrlen_dynk) dynk_stringzerotrim
@@ -45975,81 +45205,7 @@ C     &           dynk_getvalue("CRAB5","voltage")
      &        dynk_getvalue(csets_dynk(kk,1), csets_dynk(kk,2))
          
       end do
-      
-      return ! return early
 
-!     loop over all the SINGLE ELEMENTs flagged for dynamic kicks:
-      do kk=1,NacqDynkSEs
-
-        ii=iSEDynks(kk)
-
-!       is the current combo still valid or should I start using the
-!         following one?
-        if ( iComboDynks(kk).lt.NmaxDynkIcombo .and.
-     &       n.eq.nTurnsComboDynks(kk,iComboDynks(kk)+1) ) then
-!          the next combo should be used
-           iComboDynks(kk)=iComboDynks(kk)+1
-        endif
-        dn = n - nTurnsComboDynks(kk,iComboDynks(kk))
-
-!       initialise new value of smiv
-        tmpsmiv = zero
-
-!       compute the new value of smiv
-!       - first function
-        if ( mapComboDynks(kk,iComboDynks(kk),1).gt.-1 ) then
-           tmpsmiv = compute_smiv(dn,kk,iComboDynks(kk),1)
-        endif
-!       - second function
-        if ( mapComboDynks(kk,iComboDynks(kk),3).ne.-1 ) then
-           if     ( mapComboDynks(kk,iComboDynks(kk),2).eq.1 ) then
-              tmpsmiv = tmpsmiv + compute_smiv(dn,kk,iComboDynks(kk),3)
-           elseif ( mapComboDynks(kk,iComboDynks(kk),2).eq.2 ) then
-              tmpsmiv = tmpsmiv - compute_smiv(dn,kk,iComboDynks(kk),3)
-           elseif ( mapComboDynks(kk,iComboDynks(kk),2).eq.3 ) then
-              tmpsmiv = tmpsmiv * compute_smiv(dn,kk,iComboDynks(kk),3)
-           elseif ( mapComboDynks(kk,iComboDynks(kk),2).eq.4 ) then
-              tmpsmiv = tmpsmiv / compute_smiv(dn,kk,iComboDynks(kk),3)
-           endif
-        endif
-!       - offset
-        if ( mapComboDynks(kk,iComboDynks(kk),4).ne.-1 ) then
-           tmpsmiv = tmpsmiv + compute_smiv(dn,kk,iComboDynks(kk),4)
-        endif
-
-        if ( ldynkdebug ) then
-           write(*,*) 'new value of smiv of SINGLE ELEMENT ',
-     &                bez(ii),': ',tmpsmiv
-        endif
-        if ( lSEDlog(kk) ) then
-*          dump updated value of smiv in log
-           if ( nSEDlog(kk).eq.1 .or. mod(n,nSEDlog(kk)).eq.1 ) then
-              write(uSEDlog(kk),*) n, tmpsmiv
-           endif
-        endif
-
-!       copy it to all occurrences of the current SINGLE ELEMENT
-        do jj=1,iu
-           if ( ktrack(jj).ne.1 ) then
-!             SINGLE ELEMENT, not a BLOCK
-              if ( ic(jj)-nblo.eq.ii ) then
-!                current entry is another instance of the selected
-!                   SINGLE ELEMENT
-                 smiv(1,jj) = tmpsmiv
-!                same code as in ripple:
-                 strack(jj)=smiv(1,jj) *powerscale( ktrack(jj) )
-                 strackc(jj)=strack(jj)*tiltc(jj)
-                 stracks(jj)=strack(jj)*tilts(jj)
-              endif
-           endif
-!       go to next entry in accelerator structure
-        enddo
-
-!     go to next flagged SINGLE ELEMENT
-      enddo
-
-!     au revoir:
-      return
       end subroutine
 !
       
@@ -46108,140 +45264,7 @@ c$$$         call dynk_dumpdata
       end if
 
       end function
-	
-      double precision function compute_smiv( dn, kk, iCombo, iSet )
-!
-!-----------------------------------------------------------------------
-!
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 02-09-2014
-!     function for actually computing the current value of smiv,
-!         retrieving the required parameters from the dynk commons;
-!     always in main code
-!
-!-----------------------------------------------------------------------
-!
-      implicit none
-
-!     interface variables
-      integer dn                ! turn number since beginning of combo
-      integer kk                ! SINGLE ELEMENT flagged in the dynk input block
-      integer iCombo            ! index of combo currently active
-      integer iSet              ! function to be computed (1st,2nd or offset)
-
-+ca parpro
-+ca parnum
-+ca common
-+ca comdynk
-
-!     temporary variables
-      integer iFun, jPrf
-      double precision tmPar( NmaxDynkFunPar )
-      integer ii
-      double precision ddn, lininterp, tmp
-
-      compute_smiv = zero
-
-!     retrieve function type
-      iFun = mapComboDynks( kk, iCombo, iSet )
-!     ...and actual parameters
-      do ii=1,NmaxDynkFunPar
-         tmPar(ii) = parDynkFun( iFun, ii )
-!        take into account the original value of smiv, in case
-         if ( lparDynkFun( iFun, ii ) ) then
-            tmPar(ii) = tmPar(ii)*oriSmivSEDynks( kk )
-         endif
-      enddo
-!     turn number in double precision
-      ddn = dble(dn)
-!     profile from file (in case)
-      jPrf = 0
-      if ( mapComboDynks( kk, iCombo, iSet ) .gt. 0 )
-     &     jPrf = jDynkFun( mapComboDynks( kk, iCombo, iSet ) )
-
-      select case( iDynkFun(iFun) )
-      case(1)
-!        constant profile
-         compute_smiv = tmPar(1)
-      case(2)
-!        line
-         compute_smiv = tmPar(1)*ddn+tmPar(2)
-      case(3)
-!        hyperbola
-         tmp = ddn**2-tmPar(2)
-         if ( tmp .lt. zero ) then
-!           set argument of sqrt to 0.0; consequently, only tmPar(3) remains
-            compute_smiv = tmPar(3)
-         else
-!           go with full formula
-            compute_smiv = tmPar(1)*sqrt(tmp)+tmPar(3)
-         endif
-      case(4)
-!        hyperbola (referred to its own axes)
-         if ( ddn .eq. tmPar(2) ) then
-            write(*,*) ''
-            write(*,*) ' error: ddn .eq. tmPar(2) (HP2 formula)'
-            write(*,*) ''
-            goto 1982
-         endif
-         compute_smiv = tmPar(1)/(ddn-tmPar(2))+tmPar(3)
-      case(5)
-!        square root
-         tmp = ddn-tmPar(2)
-         if ( tmp .lt. zero ) then
-!           set argument of sqrt to 0.0; consequently, only tmPar(3) remains
-            compute_smiv = tmPar(3)
-         else
-!           go with full formula
-            compute_smiv = tmPar(1)*sqrt(tmp)+tmPar(3)
-         endif
-      case(6)
-!        parabola
-         compute_smiv = ((tmPar(1)*ddn)+two*tmPar(2))*ddn+tmPar(3)
-      case(7)
-!        exponential
-         compute_smiv = tmPar(1)*exp((ddn-tmPar(2))/tmPar(3))+tmPar(4)
-      case(8)
-!        logarithm
-         tmp = ddn-tmPar(2)
-         if ( tmp .lt. zero ) then
-!           set argument of log to 1.0; consequently, only tmPar(1) and tmPar(4)
-!             remain
-            compute_smiv = tmPar(1)+tmPar(4)
-         else
-            compute_smiv = tmPar(1)*log((ddn-tmPar(2))/tmPar(3)+one)
-     &                     +tmPar(4)
-         endif
-      case(9)
-!        sinusoidal
-         compute_smiv = tmPar(1)*sin(two*pi*ddn/tmPar(2)+tmPar(3))
-     &                  +tmPar(4)
-      case(10)
-!        profile from file
-         compute_smiv = tmPar(1)*lininterp( dn,
-!            array of x-values for interpolation:
-     &       dynkpx( jPrf, 1:numdynkpoints( jPrf ) ),
-!            array of y-values for interpolation:
-     &       dynkpy( jPrf, 1:numdynkpoints( jPrf ) ),
-!            number of points:
-     &                            numdynkpoints( jPrf ) ) +tmPar(2)
-      case default
-         write(*,*) ''
-         write(*,*) ' error: unidentified type of function'
-         write(*,*) ''
-         goto 1982
-      end select
-
-      return
-
- 1982 write(*,*) ''
-      write(*,*) ' error in compute_smiv'
-      write(*,*) ' iFun, dn, kk, iCombo, iSet:', 
-     &             iFun, dn, kk, iCombo, iSet
-      write(*,*) ''
-      call prror(-1)
-      end function
-
+      
       subroutine dynk_setvalue(element_name, att_name, 
      &     funNum, turn, setR)
 !-----------------------------------------------------------------------
