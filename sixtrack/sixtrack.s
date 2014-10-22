@@ -1237,7 +1237,7 @@
 !     always in main code
 
 *     parameters for the parser
-      integer n_max_fields, l_max_string
+      integer n_max_fields, l_max_string 
       parameter ( n_max_fields = 10  ) ! max number of returned fields
       parameter ( l_max_string = 132 ) ! max len of parsed line and its fields
 *     line to be split
@@ -1250,6 +1250,12 @@
       integer lfields( n_max_fields )
 *     an error flag
       logical lerr
+      !integer maxstrlen_dynk
+      character*20 element_name, att_name
+      integer funNum, turn
+      logical setR
+
+
 
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
@@ -18525,6 +18531,9 @@ cc2008
          endif
          call dynk_parseSET(fields,lfields,nfields)
          goto 2200 !loop DYNK
+
+         call dynk_setvalue(element_name, att_name, 
+     &     funNum, turn, setR)
 
       else if (ch(:4).eq.next) then
          if (ldynkdebug) then
@@ -45784,6 +45793,7 @@ C     OLD
 !     temporary variables
       integer ii, jj, kk
       logical lactive
+      
       double precision tmpsmiv, compute_smiv, powerscale
 !     smiv values are scaled by a certain power of 10, according
 !       to the multipole order
@@ -45854,6 +45864,7 @@ C     OLD
      &           cexpr_dynk(funcs_dynk(sets_dynk(kk,1),1)) ),
      &        lactive,
      &        dynk_getvalue(csets_dynk(kk,1), csets_dynk(kk,2))
+  
          
       end do
       
@@ -46141,21 +46152,20 @@ c$$$     &        retval
 +ca commonmn
 +ca commontr
 +ca comdynk
++ca comgetfields
 
-
-      character(maxstrlen_dynk) element_name, att_name
-      integer funNum, turn
-      logical setR
       intent (in) element_name, att_name, funNum, turn, setR
       !Functions
       double precision dynk_computeFUN
       character(maxstrlen_dynk) dynk_stringzerotrim
       ! temp variables
       integer el_type, ii
-      double precision fun_val
+      double precision fun_val, fun_val_orig
       character(maxstrlen_dynk) element_name_stripped
+      character(maxstrlen_dynk) att_name_stripped
       
       element_name_stripped = trim(dynk_stringzerotrim(element_name))
+      att_name_stripped = trim(dynk_stringzerotrim(att_name))
       
       write (*,*)
       write (*,*) "In dynk_setvalue()"
@@ -46168,19 +46178,28 @@ c$$$     &        retval
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
       ! Get type
-      fun_val= dynk_computeFUN(funNum,turn)
+c      fun_val= dynk_computeFUN(funNum,turn)
       do ii=1,il
-        write (*,*) element_name_stripped,bez(ii)
+        write (*,*) element_name,bez(ii)
         if (element_name_stripped.eq.bez(ii)) then  ! name found
           el_type=kz(ii)  ! type found
-          write (*,*) "FOUND!", ii, el_type
+          write (*,*) "Attr.: ", bez(ii), kz(ii), ed(ii), ek(ii), el(ii)
           if (abs(el_type).eq.23) then ! crab cavity
-             if (att_name.eq."voltage") then
-                ed(ii)=fun_val
-             elseif (att_name.eq."phase") then
-                el(ii)=fun_val
-             elseif (att_name.eq."frequency") then
-                ek(ii)=fun_val
+             if (att_name_stripped.eq."voltage") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: voltage (MV)", fun_val_orig
+                fun_val= dynk_computeFUN(funNum,turn)
+                write(*,*) "New value: voltage (MV)", fun_val
+             elseif (att_name_stripped.eq."phase") then
+                fun_val_orig=el(ii)
+                write(*,*) "Selected att: phase (rad)", fun_val_orig
+                fun_val= dynk_computeFUN(funNum,turn)
+                write(*,*) "New value: phase (rad)", fun_val
+             elseif (att_name_stripped.eq."frequency") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: frequency (MHz)", fun_val_orig
+                fun_val= dynk_computeFUN(funNum,turn)
+                write(*,*) "New value: frequency (MHz)", fun_val
              endif
           endif
         endif
@@ -46199,12 +46218,35 @@ C     Here comes the logic for setting the value of the attribute for all instan
 !     
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
++ca parnum
++ca common
++ca commonmn
++ca commontr
 +ca comdynk
++ca comgetfields
+      
+      integer el_type, ii
+      character(maxstrlen_dynk) dynk_stringzerotrim
+      character(maxstrlen_dynk) el_name_s, att_name_s
+      
+      el_name_s = trim(dynk_stringzerotrim(el_name))
+      att_name_s = trim(dynk_stringzerotrim(att_name))
 
-      character(maxstrlen_dynk) el_name, att_name
-
-C     Placeholder code...
-      dynk_getvalue = 42.0
+      do ii=1,il
+        if (el_name_s.eq.bez(ii)) then  ! name found
+          el_type=kz(ii)
+          if (abs(el_type).eq.23) then ! crab cavity
+             if (att_name_s.eq."voltage") then
+                dynk_getvalue=ed(ii)
+             elseif (att_name_s.eq."phase") then
+                dynk_getvalue=el(ii)
+             elseif (att_name_s.eq."frequency") then
+                dynk_getvalue=ek(ii)
+             endif
+          endif
+        endif
+      enddo
       
       end function
 
