@@ -1237,7 +1237,7 @@
 !     always in main code
 
 *     parameters for the parser
-      integer n_max_fields, l_max_string
+      integer n_max_fields, l_max_string 
       parameter ( n_max_fields = 10  ) ! max number of returned fields
       parameter ( l_max_string = 132 ) ! max len of parsed line and its fields
 *     line to be split
@@ -45161,7 +45161,7 @@ C     &           dynk_getvalue("CRAB5","voltage")
 !     temporary variables
       integer ii, jj, kk
       logical lactive
-
+!     functions
       double precision dynk_computeFUN, dynk_getvalue
       character(maxstrlen_dynk) dynk_stringzerotrim
 
@@ -45206,6 +45206,7 @@ C     &           dynk_getvalue("CRAB5","voltage")
      &           cexpr_dynk(funcs_dynk(sets_dynk(kk,1),1)) ),
      &        lactive, 1,
      &        dynk_getvalue(csets_dynk(kk,1), csets_dynk(kk,2))
+  
          
       end do
 
@@ -45289,7 +45290,6 @@ c$$$         call dynk_dumpdata
 +ca commontr
 +ca comdynk
 
-
       character(maxstrlen_dynk) element_name, att_name
       integer funNum, turn
       logical setR
@@ -45299,10 +45299,12 @@ c$$$         call dynk_dumpdata
       character(maxstrlen_dynk) dynk_stringzerotrim
       ! temp variables
       integer el_type, ii
-      double precision fun_val
+      double precision fun_val, fun_val_orig
       character(maxstrlen_dynk) element_name_stripped
+      character(maxstrlen_dynk) att_name_stripped
       
       element_name_stripped = trim(dynk_stringzerotrim(element_name))
+      att_name_stripped = trim(dynk_stringzerotrim(att_name))
       
       write (*,*)
       write (*,*) "In dynk_setvalue()"
@@ -45315,19 +45317,33 @@ c$$$         call dynk_dumpdata
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
       ! Get type
-      fun_val= dynk_computeFUN(funNum,turn)
+c      fun_val= dynk_computeFUN(funNum,turn)
       do ii=1,il
-        write (*,*) element_name_stripped,bez(ii)
+        write (*,*) element_name,bez(ii)
         if (element_name_stripped.eq.bez(ii)) then  ! name found
           el_type=kz(ii)  ! type found
-          write (*,*) "FOUND!", ii, el_type
+          write (*,*) "Attr.: ", bez(ii), kz(ii), ed(ii), ek(ii), el(ii)
           if (abs(el_type).eq.23) then ! crab cavity
-             if (att_name.eq."voltage") then
-                ed(ii)=fun_val
-             elseif (att_name.eq."phase") then
-                el(ii)=fun_val
-             elseif (att_name.eq."frequency") then
-                ek(ii)=fun_val
+             if (att_name_stripped.eq."voltage") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: voltage (MV)", fun_val_orig
+                ed(ii)= dynk_computeFUN(funNum,turn)
+                write(*,*) "New value: voltage (MV)", ed(ii)
+             elseif (att_name_stripped.eq."phase") then
+                fun_val_orig=el(ii)
+                write(*,*) "Selected att: phase (rad)", fun_val_orig
+                el(ii)= dynk_computeFUN(funNum,turn)
+                write(*,*) "New value: phase (rad)", el(ii)
+             elseif (att_name_stripped.eq."frequency") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: frequency (MHz)", fun_val_orig
+                ek(ii)= dynk_computeFUN(funNum,turn)
+                write(*,*) "New value: frequency (MHz)", ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
              endif
           endif
         endif
@@ -45335,23 +45351,46 @@ C     Here comes the logic for setting the value of the attribute for all instan
       
       end subroutine
 
-      double precision function dynk_getvalue(el_name, att_name)
+      double precision function dynk_getvalue(element_name, att_name)
 !-----------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 20-10-2014
+!     A.Santamaria, BE-ABP/HSS
+!     last modified: 22-10-2014
 !     
-!     Returns the value currently set by an element.
+!     Returns the original value currently set by an element.
 !     
-!     Todo: what to do if there are several instances of same element?
 !     
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
++ca parnum
++ca common
++ca commonmn
++ca commontr
 +ca comdynk
+      character(maxstrlen_dynk) element_name, att_name
+      integer el_type, ii
+      character(maxstrlen_dynk) dynk_stringzerotrim
+      character(maxstrlen_dynk) element_name_s, att_name_s
+      
+      element_name_s = trim(dynk_stringzerotrim(element_name))
+      att_name_s = trim(dynk_stringzerotrim(att_name))
 
-      character(maxstrlen_dynk) el_name, att_name
-
-C     Placeholder code...
-      dynk_getvalue = 42.0
+      do ii=1,il
+        if (element_name_s.eq.bez(ii)) then  ! name found
+          el_type=kz(ii)
+          if (abs(el_type).eq.23) then ! crab cavity
+             if (att_name_s.eq."voltage") then
+                dynk_getvalue=ed(ii)
+             elseif (att_name_s.eq."phase") then
+                dynk_getvalue=el(ii)
+             elseif (att_name_s.eq."frequency") then
+                dynk_getvalue=ek(ii)
+             else
+                stop 10
+             endif
+          endif
+        endif
+      enddo
       
       end function
 
