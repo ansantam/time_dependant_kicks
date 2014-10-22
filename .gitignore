@@ -54,3 +54,8 @@ test_case/*
 !test_case/dynksets.dat
 !test_case/input
 !test_case/output
+!test_case/SixTrack_4518_cernlib_coll_gfortran_O4
+!test_case/fort.2
+!test_case/fort.3
+!test_case/CollDB.alltclp-tcld.b1.new
+!test_case/CollPositions.alltclp-tcld.b1.dat
