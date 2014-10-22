@@ -1250,12 +1250,6 @@
       integer lfields( n_max_fields )
 *     an error flag
       logical lerr
-      !integer maxstrlen_dynk
-      character*20 element_name, att_name
-      integer funNum, turn
-      logical setR
-
-
 
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
@@ -18531,9 +18525,6 @@ cc2008
          endif
          call dynk_parseSET(fields,lfields,nfields)
          goto 2200 !loop DYNK
-
-         call dynk_setvalue(element_name, att_name, 
-     &     funNum, turn, setR)
 
       else if (ch(:4).eq.next) then
          if (ldynkdebug) then
@@ -46152,8 +46143,10 @@ c$$$     &        retval
 +ca commonmn
 +ca commontr
 +ca comdynk
-+ca comgetfields
 
+      character(maxstrlen_dynk) element_name, att_name
+      integer funNum, turn
+      logical setR
       intent (in) element_name, att_name, funNum, turn, setR
       !Functions
       double precision dynk_computeFUN
@@ -46188,18 +46181,23 @@ c      fun_val= dynk_computeFUN(funNum,turn)
              if (att_name_stripped.eq."voltage") then
                 fun_val_orig=ed(ii)
                 write(*,*) "Selected att: voltage (MV)", fun_val_orig
-                fun_val= dynk_computeFUN(funNum,turn)
-                write(*,*) "New value: voltage (MV)", fun_val
+                ed(ii)= dynk_computeFUN(funNum,turn)
+                write(*,*) "New value: voltage (MV)", ed(ii)
              elseif (att_name_stripped.eq."phase") then
                 fun_val_orig=el(ii)
                 write(*,*) "Selected att: phase (rad)", fun_val_orig
-                fun_val= dynk_computeFUN(funNum,turn)
-                write(*,*) "New value: phase (rad)", fun_val
+                el(ii)= dynk_computeFUN(funNum,turn)
+                write(*,*) "New value: phase (rad)", el(ii)
              elseif (att_name_stripped.eq."frequency") then
                 fun_val_orig=ek(ii)
                 write(*,*) "Selected att: frequency (MHz)", fun_val_orig
-                fun_val= dynk_computeFUN(funNum,turn)
-                write(*,*) "New value: frequency (MHz)", fun_val
+                ek(ii)= dynk_computeFUN(funNum,turn)
+                write(*,*) "New value: frequency (MHz)", ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
              endif
           endif
         endif
@@ -46207,14 +46205,13 @@ c      fun_val= dynk_computeFUN(funNum,turn)
       
       end subroutine
 
-      double precision function dynk_getvalue(el_name, att_name)
+      double precision function dynk_getvalue(element_name, att_name)
 !-----------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 20-10-2014
+!     A.Santamaria, BE-ABP/HSS
+!     last modified: 22-10-2014
 !     
-!     Returns the value currently set by an element.
+!     Returns the original value currently set by an element.
 !     
-!     Todo: what to do if there are several instances of same element?
 !     
 !-----------------------------------------------------------------------
       implicit none
@@ -46224,17 +46221,16 @@ c      fun_val= dynk_computeFUN(funNum,turn)
 +ca commonmn
 +ca commontr
 +ca comdynk
-+ca comgetfields
-      
+      character(maxstrlen_dynk) element_name, att_name
       integer el_type, ii
       character(maxstrlen_dynk) dynk_stringzerotrim
-      character(maxstrlen_dynk) el_name_s, att_name_s
+      character(maxstrlen_dynk) element_name_s, att_name_s
       
-      el_name_s = trim(dynk_stringzerotrim(el_name))
+      element_name_s = trim(dynk_stringzerotrim(element_name))
       att_name_s = trim(dynk_stringzerotrim(att_name))
 
       do ii=1,il
-        if (el_name_s.eq.bez(ii)) then  ! name found
+        if (element_name_s.eq.bez(ii)) then  ! name found
           el_type=kz(ii)
           if (abs(el_type).eq.23) then ! crab cavity
              if (att_name_s.eq."voltage") then
@@ -46243,6 +46239,8 @@ c      fun_val= dynk_computeFUN(funNum,turn)
                 dynk_getvalue=el(ii)
              elseif (att_name_s.eq."frequency") then
                 dynk_getvalue=ek(ii)
+             else
+                stop 10
              endif
           endif
         endif
