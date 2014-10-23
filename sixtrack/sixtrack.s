@@ -45225,6 +45225,7 @@ C     &           dynk_getvalue("CRAB5","voltage")
 !     functions
       double precision dynk_computeFUN, dynk_getvalue
       character(maxstrlen_dynk) dynk_stringzerotrim
+      integer dynk_findSETindex
 
       save ldynksetsEnable
 
@@ -45268,7 +45269,11 @@ C     &           dynk_getvalue("CRAB5","voltage")
      &           dynk_computeFUN(sets_dynk(kk,1),turn)
          end if
          
-         if (ldynksetsEnable) then
+         !Write output file ONLY if (1) first pass and
+         ! (2) this is the last SET to affect this elem/attr
+         if (ldynksetsEnable .and. 
+     &       dynk_findSETindex(
+     &        csets_dynk(kk,1),csets_dynk(kk,2),kk+1) .eq. -1 ) then
             write(665,*) turn, kk,
      &           dynk_stringzerotrim(csets_dynk(kk,1)),
      &           dynk_stringzerotrim(csets_dynk(kk,2)), 
