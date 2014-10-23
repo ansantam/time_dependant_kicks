@@ -1385,8 +1385,9 @@ C     Store the SET statements
       integer nsets_dynk ! Number of used positions in arrays
       
       character(maxstrlen_dynk) csets_unique_dynk (maxsets_dynk,2) !Similar to csets_dynk,
-                                                                   ! but only one entry per elem/attr
-      integer ncsets_unique_dynk
+                                                                  ! but only one entry per elem/attr
+      double precision fsets_origvalue_dynk(maxsets_dynk) ! Store original value from dynk
+      integer nsets_unique_dynk
       
 !     fortran COMMON declaration follows padding requirements
       common /dynkComGen/ ldynk, ldynkdebug, ldynkfileopen
@@ -1395,8 +1396,9 @@ C     Store the SET statements
      &     iexpr_dynk, fexpr_dynk, cexpr_dynk,
      &     nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk
 
-      common /dynkComSet/ sets_dynk, csets_dynk, lsets_dynk, nsets_dynk, 
-     &     csets_unique_dynk, ncsets_unique_dynk
+      common /dynkComSet/ sets_dynk, csets_dynk, lsets_dynk, nsets_dynk
+      common /dynkComUniqueSet/ 
+     &     csets_unique_dynk, fsets_origvalue_dynk, nsets_unique_dynk
 
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
@@ -45137,10 +45139,11 @@ C Should get me a NaN
      &        lsets_dynk(ii)
       end do
       
-      write (*,*) "csets_unique_dynk: (",ncsets_unique_dynk,")"
-      do ii=1,ncsets_unique_dynk
+      write (*,*) "csets_unique_dynk: (",nsets_unique_dynk,")"
+      do ii=1,nsets_unique_dynk
          write (*,*) ii, ":", "'"//csets_unique_dynk(ii,1)//"' ",
-     &                        "'"//csets_unique_dynk(ii,2)//"'"
+     &                        "'"//csets_unique_dynk(ii,2)//"' = ",
+     &                             fsets_origvalue_dynk(ii)
       end do
 
       
@@ -45186,17 +45189,25 @@ C Should get me a NaN
       write(*,*) "In dynk_pretrack()"
       
       ! Find which elem/attr combos are affected by SET
-      ncsets_unique_dynk = 0
+      nsets_unique_dynk = 0 !Assuming this is only run once
       do ii=1,nsets_dynk
          if ( dynk_findSETindex(
      &        csets_dynk(ii,1),csets_dynk(ii,2), ii+1 ) .eq. -1 ) then
             ! Last SET which has this attribute, store it
-            ncsets_unique_dynk = ncsets_unique_dynk+1
-            csets_unique_dynk(ncsets_unique_dynk,1) = csets_dynk(ii,1)
-            csets_unique_dynk(ncsets_unique_dynk,2) = csets_dynk(ii,2)
+
+            nsets_unique_dynk = nsets_unique_dynk+1
+
+            csets_unique_dynk(nsets_unique_dynk,1) = csets_dynk(ii,1)
+            csets_unique_dynk(nsets_unique_dynk,2) = csets_dynk(ii,2)
+            write(*,*) csets_unique_dynk(nsets_unique_dynk,1)
+            write(*,*) csets_unique_dynk(nsets_unique_dynk,2)
+
+            ! Store original value of data point
+            fsets_origvalue_dynk(nsets_unique_dynk) =  
+     &           dynk_getvalue( csets_dynk(ii,1),csets_dynk(ii,2) )
          endif
       enddo
-      
+
       ! Save original values for GET functions
       do ii=1,nfuncs_dynk
          if (funcs_dynk(ii,2) .eq. 0) then !GET
@@ -45258,7 +45269,15 @@ C Should get me a NaN
       
       if (ldynkfileopen .and. turn .eq. 1) then
          ! Only write to output file in first "pass"
-         ldynksetsEnable = .false.
+         ldynksetsEnable = .false. ! (comment out for debugging)
+         ! Reset values
+         do ii=1, nsets_unique_dynk
+            write (*,*) "resetting: '",csets_unique_dynk(ii,1), "'",
+     &           csets_unique_dynk(ii,2),"'", -ii, 0, .false.
+            call dynk_setvalue(csets_unique_dynk(ii,1),
+     &                         csets_unique_dynk(ii,2),
+     &                         -ii, 0, .false. )
+         enddo
       endif
       if (.not. ldynkfileopen) then
          open(unit=665, file="dynksets.dat",
@@ -45279,17 +45298,17 @@ C Should get me a NaN
          else
             lactive = .false.
          end if
-         if ( ldynkdebug ) then
-            write (*,*) "Setting DYNK using function '",
-     &           cexpr_dynk(funcs_dynk(sets_dynk(kk,1),1)), 
-     &           "' on element='", csets_dynk(kk,1), "' property='", 
-     &           csets_dynk(kk,2), "', SETR=", lsets_dynk(kk)
-            write (*,*) " firstturn=", sets_dynk(kk,2),
-     &           " lastturn=", sets_dynk(kk,3),
-     &           " active=", lactive
-            write (*,*) "F(turn) = ", 
-     &           dynk_computeFUN(sets_dynk(kk,1),turn)
-         end if
+c$$$         if ( ldynkdebug ) then
+c$$$            write (*,*) "Setting DYNK using function '",
+c$$$     &           cexpr_dynk(funcs_dynk(sets_dynk(kk,1),1)), 
+c$$$     &           "' on element='", csets_dynk(kk,1), "' property='", 
+c$$$     &           csets_dynk(kk,2), "', SETR=", lsets_dynk(kk)
+c$$$            write (*,*) " firstturn=", sets_dynk(kk,2),
+c$$$     &           " lastturn=", sets_dynk(kk,3),
+c$$$     &           " active=", lactive
+c$$$            write (*,*) "F(turn) = ", 
+c$$$     &           dynk_computeFUN(sets_dynk(kk,1),turn)
+c$$$         end if
          
          !Write output file ONLY if (1) first pass and
          ! (2) this is the last SET to affect this elem/attr
@@ -45321,15 +45340,18 @@ C Should get me a NaN
 +ca comdynk
       integer funNum, turn
       intent (in) funNum, turn
+
+C     For some reason, write(*,*) statements here hangs the program.
       
-C      write (*,*) "In dynk_computeFUN(", funNum,turn,")"
-      
-      if (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
-c$$$         write (*,*) "ERROR in dynk_computeFUN"
-c$$$         write (*,*) "funNum =", funNum, "nfuncs_dynk =",
-c$$$     &        nfuncs_dynk, "turn =", turn
-c$$$         call dynk_dumpdata
-         stop 2
+      if (  funNum .lt. 0 .and. 
+     &     -funNum .le. nsets_unique_dynk .and. 
+     &        turn .eq. 0 ) then
+         ! Recall at first turn
+         retval = fsets_origvalue_dynk(-funNum)
+         return
+      elseif (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
+         !Error
+         stop 1
       endif
       
       if     ( funcs_dynk(funNum,2) .eq. 0  ) then !GET
@@ -45337,31 +45359,15 @@ c$$$         call dynk_dumpdata
       elseif ( funcs_dynk(funNum,2) .eq. 1  ) then !LIN
          retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
      &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
-c$$$         write (*,*) "Computing LIN at turn=", turn, "dy/dt=",
-c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)), "b=",
-c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)+1), "ret=",
-c$$$     &        retval
       elseif ( funcs_dynk(funNum,2) .eq. 10 ) then !SIN
          retval = fexpr_dynk(funcs_dynk(funNum,3))
      &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
      &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
-c$$$         write (*,*) "Computing SIN at turn=", turn, "A=",
-c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)),      "omega=",
-c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)+1),    "phi=",
-c$$$     &        fexpr_dynk(funcs_dynk(funNum,3)+2),    "ret=",
-c$$$     &        retval
       elseif ( funcs_dynk(funNum,2) .eq. 20 ) then !ADD
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
-c$$$         write (*,*) "Computing ADD at turn=", turn, "ret=",
-c$$$     &        retval
       else ! UNKNOWN
-c$$$         write (*,*) "ERROR in dynk_computeFUN"
-c$$$         write (*,*) "funNum =", funNum, "nfuncs_dynk =",
-c$$$     &        nfuncs_dynk, "turn =", turn
-c$$$         write (*,*) "Unknown function type = ", funcs_dynk(funNum,2)
-c$$$         call dynk_dumpdata
-         stop 1
+         stop 2
       end if
 
       end function
@@ -45405,8 +45411,14 @@ c$$$         call dynk_dumpdata
       
       write (*,*)
       write (*,*) "In dynk_setvalue()"
-      write (*,*) "Using function number =", funNUM,
-     &     "named '", cexpr_dynk(funcs_dynk(funNum,1)), "'"
+      if (funNUM .gt. 0) then
+         write (*,*) "Using function number =", funNUM,
+     &        "named '", cexpr_dynk(funcs_dynk(funNum,1)), "'"
+      elseif (funNUM .lt. 0) then
+         write (*,*) "Using function number =", funNUM,
+     &    "reffering to origvalue of '",csets_unique_dynk(-funNUM,1),
+     &    "':'", csets_unique_dynk(-funNUM,2),"'"
+      end if
       write (*,*) "Turn =", turn, "setR =", setR
       write (*,*) "Element = '", element_name, 
      &     "', attribute = '", att_name, "'"
