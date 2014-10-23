@@ -45221,16 +45221,22 @@ C     &           dynk_getvalue("CRAB5","voltage")
 
 !     temporary variables
       integer ii, jj, kk
-      logical lactive
+      logical lactive, ldynksetsEnable
 !     functions
       double precision dynk_computeFUN, dynk_getvalue
       character(maxstrlen_dynk) dynk_stringzerotrim
 
+      save ldynksetsEnable
+
       if ( ldynkdebug ) then
          write(*,*) ''
-         write(*,*) ' CALL TO APPLYDYNKS AT TURN ', turn
+         write(*,*) ' CALL TO dynk_apply AT TURN ', turn
       endif
       
+      if (ldynkfileopen .and. turn .eq. 1) then
+         ! Only write to output file in first "pass"
+         ldynksetsEnable = .false.
+      endif
       if (.not. ldynkfileopen) then
          open(unit=665, file="dynksets.dat",
      &        status="replace",action="write") 
@@ -45238,6 +45244,7 @@ C     &           dynk_getvalue("CRAB5","voltage")
      &        "element attribute function active " //
      &        "nvalues value1 value2 ..."
          ldynkfileopen = .true.
+         ldynksetsEnable = .true.
       endif
       
       do kk=1,nsets_dynk
@@ -45260,15 +45267,16 @@ C     &           dynk_getvalue("CRAB5","voltage")
             write (*,*) "F(turn) = ", 
      &           dynk_computeFUN(sets_dynk(kk,1),turn)
          end if
-
-         write(665,*) turn, kk,
-     &        dynk_stringzerotrim(csets_dynk(kk,1)),
-     &        dynk_stringzerotrim(csets_dynk(kk,2)), 
-     &        dynk_stringzerotrim(
+         
+         if (ldynksetsEnable) then
+            write(665,*) turn, kk,
+     &           dynk_stringzerotrim(csets_dynk(kk,1)),
+     &           dynk_stringzerotrim(csets_dynk(kk,2)), 
+     &           dynk_stringzerotrim(
      &           cexpr_dynk(funcs_dynk(sets_dynk(kk,1),1)) ),
-     &        lactive, 1,
-     &        dynk_getvalue(csets_dynk(kk,1), csets_dynk(kk,2))
-  
+     &           lactive, 1,
+     &           dynk_getvalue(csets_dynk(kk,1), csets_dynk(kk,2))
+         endif
          
       end do
 

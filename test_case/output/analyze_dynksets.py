@@ -31,10 +31,10 @@ for l in ifile:
         function [setidx] = []
         active   [setidx] = []
         data     [setidx] = []
-    if len(turn[setidx]) > 0:
-        if int(ls[0]) < turn[setidx][-1]:
-            #break
-            pass
+    # if len(turn[setidx]) > 0:
+    #     if int(ls[0]) < turn[setidx][-1]:
+    #         #break
+    #         pass
         
     turn     [setidx].append(  int(ls[0]) )
     element  [setidx].append(      ls[2]  )
