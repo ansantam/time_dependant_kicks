@@ -1379,10 +1379,14 @@ C     Store the SET statements
                                          ! (2) = first turn num. where it is active
                                          ! (3) =  last turn num. where it is active
       character(maxstrlen_dynk) csets_dynk (maxsets_dynk,2) ! 1 row/SET (same ordering as sets_dynk), cols are:
-                                                             ! (1) element name
-                                                             ! (2) attribute name
+                                                            ! (1) element name
+                                                            ! (2) attribute name
       logical lsets_dynk(maxsets_dynk) ! 1 entry/SET. True if SETR, false if SET.
       integer nsets_dynk ! Number of used positions in arrays
+      
+      character(maxstrlen_dynk) csets_unique_dynk (maxsets_dynk,2) !Similar to csets_dynk,
+                                                                   ! but only one entry per elem/attr
+      integer ncsets_unique_dynk
       
 !     fortran COMMON declaration follows padding requirements
       common /dynkComGen/ ldynk, ldynkdebug, ldynkfileopen
@@ -1391,7 +1395,8 @@ C     Store the SET statements
      &     iexpr_dynk, fexpr_dynk, cexpr_dynk,
      &     nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk
 
-      common /dynkComSet/ sets_dynk, csets_dynk, lsets_dynk, nsets_dynk
+      common /dynkComSet/ sets_dynk, csets_dynk, lsets_dynk, nsets_dynk, 
+     &     csets_unique_dynk, ncsets_unique_dynk
 
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
@@ -45131,7 +45136,14 @@ C Should get me a NaN
      &        "'"//csets_dynk(ii,1)//"' ", "'"//csets_dynk(ii,2)//"'",
      &        lsets_dynk(ii)
       end do
+      
+      write (*,*) "csets_unique_dynk: (",ncsets_unique_dynk,")"
+      do ii=1,ncsets_unique_dynk
+         write (*,*) ii, ":", "'"//csets_unique_dynk(ii,1)//"' ",
+     &                        "'"//csets_unique_dynk(ii,2)//"'"
+      end do
 
+      
       end subroutine
 
       function dynk_stringzerotrim(instring)
@@ -45167,23 +45179,33 @@ C Should get me a NaN
 +ca comdynk
       !Functions
       double precision dynk_getvalue
+      integer dynk_findSETindex
       !Temp variables
       integer ii
 
       write(*,*) "In dynk_pretrack()"
       
+      ! Find which elem/attr combos are affected by SET
+      ncsets_unique_dynk = 0
+      do ii=1,nsets_dynk
+         if ( dynk_findSETindex(
+     &        csets_dynk(ii,1),csets_dynk(ii,2), ii+1 ) .eq. -1 ) then
+            ! Last SET which has this attribute, store it
+            ncsets_unique_dynk = ncsets_unique_dynk+1
+            csets_unique_dynk(ncsets_unique_dynk,1) = csets_dynk(ii,1)
+            csets_unique_dynk(ncsets_unique_dynk,2) = csets_dynk(ii,2)
+         endif
+      enddo
+      
       ! Save original values for GET functions
       do ii=1,nfuncs_dynk
          if (funcs_dynk(ii,2) .eq. 0) then !GET
             fexpr_dynk(funcs_dynk(ii,3)) =
-C     &           dynk_getvalue("CRAB5","voltage")
      &           dynk_getvalue( cexpr_dynk(funcs_dynk(ii,1)+1),
      &                          cexpr_dynk(funcs_dynk(ii,1)+2) )
          endif
       enddo
       if (ldynkdebug) call dynk_dumpdata
-
-      ! Sanity check of SET elements/attributes
       
       end subroutine
 
