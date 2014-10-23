@@ -44953,12 +44953,22 @@ C Should get me a NaN
          write (*,*) "*************************************"
          call prror(51)
       endif
-      if (lfields(2) .gt. 16) then ! length of BEZ elements
+      if (lfields(2) .gt. 16) then ! length of BEZ elements is 16
          write (*,*) "*************************************"
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
          write (*,*) "SET got an element name with length =",lfields(2),
      &        "> 16."
          write (*,*) "The name was: '",fields(2)(1:lfields(2)),"'"
+         write (*,*) "*************************************"
+         call prror(51)
+      end if
+      if (sets_dynk(nsets_dynk,2) .gt. sets_dynk(nsets_dynk,3) ) then
+         write (*,*) "*************************************"
+         write (*,*) "ERROR in DYNK block parsing (fort.3):"
+         write (*,*) "SET got first turn num > last turn num"
+         write (*,*) "first=",sets_dynk(nsets_dynk,2)
+         write (*,*) "last =",sets_dynk(nsets_dynk,3)
+         write (*,*) "SET #", nsets_dynk
          write (*,*) "*************************************"
          call prror(51)
       end if
@@ -44993,6 +45003,35 @@ C Should get me a NaN
       
       end function
 
+      integer function dynk_findSETindex
+     &     (element_name, att_name, startfrom)
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 23-10-2014
+!     Find and return the index in the sets array to the set which
+!     matches element_name and att_name, which should be zero-padded.
+!     Return -1 if nothing was found.
+!-----------------------------------------------------------------------
+      implicit none
++ca comdynk
+      character(maxstrlen_dynk) element_name, att_name
+      integer startfrom
+      intent(in) element_name, att_name, startfrom
+      
+      integer ii
+      
+      dynk_findSETindex = -1
+      
+      do ii=startfrom, nsets_dynk
+         if ( csets_dynk(ii,1) .eq. element_name .and.
+     &        csets_dynk(ii,2) .eq. att_name ) then
+            dynk_findSETindex = ii
+            exit                ! break loop
+         endif
+      enddo
+      
+      end function
+      
       subroutine dynk_inputsanitycheck
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
@@ -45001,7 +45040,8 @@ C Should get me a NaN
 !-----------------------------------------------------------------------
       implicit none
 +ca comdynk
-      integer dynk_findFUNindex ! define function return type
+      ! functions
+      integer dynk_findFUNindex , dynk_findSETindex
 
       integer ii, jj
       logical sane
@@ -45017,8 +45057,29 @@ C Should get me a NaN
       end do
       
       ! Check that no SETS work on same elem/att at same time
-      ! TODO
-      
+      do ii=1, nsets_dynk-1
+         jj = ii
+         do while (.true.)
+            jj = dynk_findSETindex(csets_dynk(ii,1),
+     &                             csets_dynk(ii,2),jj+1)
+            if (jj .eq. -1) exit ! next outer loop
+            if ( sets_dynk(jj,2) .le. sets_dynk(ii,2) .and.
+     &           sets_dynk(jj,3) .ge. sets_dynk(ii,2) ) then
+               sane = .false.
+               write (*,*) "Insane: Lower edge of SET #", jj,
+     &         "=", sets_dynk(jj,2)," <= lower edge of SET #",ii,
+     &         "=", sets_dynk(ii,2),"; and also higer edge of SET #",jj,
+     &         "=", sets_dynk(jj,3)," >= lower edge of SET #", ii
+            else if (sets_dynk(jj,3) .ge. sets_dynk(ii,3) .and.
+     &               sets_dynk(jj,2) .le. sets_dynk(ii,3) ) then
+               sane = .false.
+               write (*,*) "Insane: Upper edge of SET #", jj,
+     &         "=", sets_dynk(jj,3)," >= upper edge of SET #",ii,
+     &         "=", sets_dynk(ii,3),"; and also lower edge of SET #",jj,
+     &         "=", sets_dynk(jj,2)," <= upper edge of SET #", ii
+            endif
+         enddo
+      enddo
       if (.not. sane) then
          write (*,*) "****************************************"
          write (*,*) "*******DYNK input was insane************"
