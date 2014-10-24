@@ -45256,7 +45256,7 @@ C Should get me a NaN
       integer ii, jj, kk
       logical lactive, ldynksetsEnable
 !     functions
-      double precision dynk_computeFUN!, dynk_getvalue
+      double precision dynk_computeFUN
       character(maxstrlen_dynk) dynk_stringzerotrim
       integer dynk_findSETindex
       
@@ -45327,7 +45327,7 @@ c$$$         end if
      &           dynk_stringzerotrim(
      &           cexpr_dynk(funcs_dynk(sets_dynk(kk,1),1)) ),
      &           lactive, ngetvaldata,
-     &            getvaldata(1)
+     &            getvaldata(:ngetvaldata)
 !     &           dynk_getvalue(csets_dynk(kk,1), csets_dynk(kk,2))
          endif
          
@@ -45530,6 +45530,10 @@ C      dimension retdata(:)
             stop
          endif
       enddo
+      
+!     Testing:
+!      nretdata = nretdata+1
+!      retdata(2) = retdata(1)
       
       end subroutine
       
