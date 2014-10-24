@@ -45181,7 +45181,7 @@ C Should get me a NaN
       implicit none
 +ca comdynk
       !Functions
-C      double precision dynk_getvalue
+      double precision dynk_getvalue_single
       integer dynk_findSETindex
       !Temp variables
       integer ii
@@ -45194,7 +45194,6 @@ C      double precision dynk_getvalue
          if ( dynk_findSETindex(
      &        csets_dynk(ii,1),csets_dynk(ii,2), ii+1 ) .eq. -1 ) then
             ! Last SET which has this attribute, store it
-
             nsets_unique_dynk = nsets_unique_dynk+1
 
             csets_unique_dynk(nsets_unique_dynk,1) = csets_dynk(ii,1)
@@ -45204,17 +45203,17 @@ C      double precision dynk_getvalue
 
             ! Store original value of data point
             fsets_origvalue_dynk(nsets_unique_dynk) = 42.0
-C            fsets_origvalue_dynk(nsets_unique_dynk) =  
-C     &           dynk_getvalue( csets_dynk(ii,1),csets_dynk(ii,2) )
+            fsets_origvalue_dynk(nsets_unique_dynk) =  
+     &           dynk_getvalue_single(csets_dynk(ii,1),csets_dynk(ii,2))
          endif
       enddo
 
       ! Save original values for GET functions
       do ii=1,nfuncs_dynk
          if (funcs_dynk(ii,2) .eq. 0) then !GET
-            fexpr_dynk(funcs_dynk(ii,3)) = 42
-C     &           dynk_getvalue( cexpr_dynk(funcs_dynk(ii,1)+1),
-C     &                          cexpr_dynk(funcs_dynk(ii,1)+2) )
+            fexpr_dynk(funcs_dynk(ii,3)) =
+     &           dynk_getvalue_single( cexpr_dynk(funcs_dynk(ii,1)+1),
+     &                                 cexpr_dynk(funcs_dynk(ii,1)+2) )
          endif
       enddo
       if (ldynkdebug) call dynk_dumpdata
@@ -45533,6 +45532,48 @@ C      dimension retdata(:)
       enddo
       
       end subroutine
+      
+      double precision function 
+     &     dynk_getvalue_single(element_name, att_name)
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 24-10-2014
+!     
+!     Get the value of an element/attribute under the assumption
+!     that all instances are identical.
+!     Wraps dynk_getvalue.
+!-----------------------------------------------------------------------
+      implicit none
++ca comdynk      
+      character(maxstrlen_dynk) element_name, att_name
+      intent(in) element_name, att_name
+      
+      double precision getvaldata(20), foo
+      integer ngetvaldata,ii
+      
+      ngetvaldata = 20
+      call dynk_getvalue( element_name, att_name,
+     &                    getvaldata, ngetvaldata )
+      
+      if (ngetvaldata .eq. 0) then
+         write (*,*) "Error in dynk_getvaldata_single: got no data!"
+         write (*,*) "Incorrect element/attribute name?"
+         write (*,*) "'",element_name,"', '",att_name,"'"
+         stop
+      endif
+      
+      foo = getvaldata(1)
+      
+      do ii=2,ngetvaldata
+         if (foo .ne. getvaldata(2)) then !They should be copies
+            write (*,*) "Error in dynk_getvaldata_single: Varied data!"
+            stop
+         endif
+      enddo
+      
+      dynk_getvalue_single = foo
+      
+      end function
 
       double precision function lininterp(xval,xarray,yarray,idimen)
 !
