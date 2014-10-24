@@ -45181,7 +45181,7 @@ C Should get me a NaN
       implicit none
 +ca comdynk
       !Functions
-      double precision dynk_getvalue
+C      double precision dynk_getvalue
       integer dynk_findSETindex
       !Temp variables
       integer ii
@@ -45203,17 +45203,18 @@ C Should get me a NaN
             write(*,*) csets_unique_dynk(nsets_unique_dynk,2)
 
             ! Store original value of data point
-            fsets_origvalue_dynk(nsets_unique_dynk) =  
-     &           dynk_getvalue( csets_dynk(ii,1),csets_dynk(ii,2) )
+            fsets_origvalue_dynk(nsets_unique_dynk) = 42.0
+C            fsets_origvalue_dynk(nsets_unique_dynk) =  
+C     &           dynk_getvalue( csets_dynk(ii,1),csets_dynk(ii,2) )
          endif
       enddo
 
       ! Save original values for GET functions
       do ii=1,nfuncs_dynk
          if (funcs_dynk(ii,2) .eq. 0) then !GET
-            fexpr_dynk(funcs_dynk(ii,3)) =
-     &           dynk_getvalue( cexpr_dynk(funcs_dynk(ii,1)+1),
-     &                          cexpr_dynk(funcs_dynk(ii,1)+2) )
+            fexpr_dynk(funcs_dynk(ii,3)) = 42
+C     &           dynk_getvalue( cexpr_dynk(funcs_dynk(ii,1)+1),
+C     &                          cexpr_dynk(funcs_dynk(ii,1)+2) )
          endif
       enddo
       if (ldynkdebug) call dynk_dumpdata
@@ -45256,10 +45257,13 @@ C Should get me a NaN
       integer ii, jj, kk
       logical lactive, ldynksetsEnable
 !     functions
-      double precision dynk_computeFUN, dynk_getvalue
+      double precision dynk_computeFUN!, dynk_getvalue
       character(maxstrlen_dynk) dynk_stringzerotrim
       integer dynk_findSETindex
-
+      
+      double precision getvaldata(20)
+      integer ngetvaldata
+      
       save ldynksetsEnable
 
       if ( ldynkdebug ) then
@@ -45315,13 +45319,17 @@ c$$$         end if
          if (ldynksetsEnable .and. 
      &       dynk_findSETindex(
      &        csets_dynk(kk,1),csets_dynk(kk,2),kk+1) .eq. -1 ) then
+            ngetvaldata = 20
+            call dynk_getvalue( csets_dynk(kk,1), csets_dynk(kk,2),
+     &                          getvaldata, ngetvaldata )
             write(665,*) turn, kk,
      &           dynk_stringzerotrim(csets_dynk(kk,1)),
      &           dynk_stringzerotrim(csets_dynk(kk,2)), 
      &           dynk_stringzerotrim(
      &           cexpr_dynk(funcs_dynk(sets_dynk(kk,1),1)) ),
-     &           lactive, 1,
-     &           dynk_getvalue(csets_dynk(kk,1), csets_dynk(kk,2))
+     &           lactive, ngetvaldata,
+     &            getvaldata(1)
+!     &           dynk_getvalue(csets_dynk(kk,1), csets_dynk(kk,2))
          endif
          
       end do
@@ -45426,9 +45434,10 @@ C     For some reason, write(*,*) statements here hangs the program.
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
       ! Get type
-c      fun_val= dynk_computeFUN(funNum,turn)
+      if (.not.setR) then
+        fun_val= dynk_computeFUN(funNum,turn)
+      endif
       do ii=1,il
-        write (*,*) element_name,bez(ii)
         if (element_name_stripped.eq.bez(ii)) then  ! name found
           el_type=kz(ii)  ! type found
           write (*,*) "Attr.: ", bez(ii), kz(ii), ed(ii), ek(ii), el(ii)
@@ -45436,7 +45445,11 @@ c      fun_val= dynk_computeFUN(funNum,turn)
              if (att_name_stripped.eq."voltage") then
                 fun_val_orig=ed(ii)
                 write(*,*) "Selected att: voltage (MV)", fun_val_orig
-                ed(ii)= dynk_computeFUN(funNum,turn)
+                if (setR) then
+                  ed(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ed(ii)=fun_val
+                endif
                 write(*,*) "New value: voltage (MV)", ed(ii)
              elseif (att_name_stripped.eq."phase") then
                 fun_val_orig=el(ii)
@@ -45460,7 +45473,7 @@ c      fun_val= dynk_computeFUN(funNum,turn)
       
       end subroutine
 
-      double precision function dynk_getvalue(element_name, att_name)
+      subroutine dynk_getvalue(element_name, att_name, retdata,nretdata)
 !-----------------------------------------------------------------------
 !     A.Santamaria, BE-ABP/HSS
 !     last modified: 22-10-2014
@@ -45477,31 +45490,49 @@ c      fun_val= dynk_computeFUN(funNum,turn)
 +ca commontr
 +ca comdynk
       character(maxstrlen_dynk) element_name, att_name
-      integer el_type, ii
+      intent(in) element_name, att_name
+      double precision retdata(*)
+C      dimension retdata(:)
+      integer nretdata
+      intent(out) retdata
+      intent(inout) nretdata
+
+      integer el_type, ii, nretdata_max
       character(maxstrlen_dynk) dynk_stringzerotrim
       character(maxstrlen_dynk) element_name_s, att_name_s
+      
+      nretdata_max = nretdata
+      nretdata = 0
       
       element_name_s = trim(dynk_stringzerotrim(element_name))
       att_name_s = trim(dynk_stringzerotrim(att_name))
 
       do ii=1,il
-        if (element_name_s.eq.bez(ii)) then  ! name found
-          el_type=kz(ii)
-          if (abs(el_type).eq.23) then ! crab cavity
-             if (att_name_s.eq."voltage") then
-                dynk_getvalue=ed(ii)
-             elseif (att_name_s.eq."phase") then
-                dynk_getvalue=el(ii)
-             elseif (att_name_s.eq."frequency") then
-                dynk_getvalue=ek(ii)
-             else
-                stop 10
-             endif
-          endif
-        endif
+         if (element_name_s.eq.bez(ii)) then ! name found
+            el_type=kz(ii)
+            if (abs(el_type).eq.23) then ! crab cavity
+               if (att_name_s.eq."voltage") then
+                  nretdata = nretdata+1
+                  retdata(nretdata) = ed(ii)
+               elseif (att_name_s.eq."phase") then
+                  nretdata = nretdata+1
+                  retdata(nretdata) = el(ii)
+               elseif (att_name_s.eq."frequency") then
+                  nretdata = nretdata+1
+                  retdata(nretdata) = ek(ii)
+               else
+                  write(*,*) "Unknown attribute '", att_name_s, "'"
+                  stop
+               endif
+            endif
+         endif
+         if (nretdata .gt. nretdata_max) then
+            write (*,*) "dynk_getvalue: Returning too many values"
+            stop
+         endif
       enddo
       
-      end function
+      end subroutine
 
       double precision function lininterp(xval,xarray,yarray,idimen)
 !
