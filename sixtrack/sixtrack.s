@@ -44744,13 +44744,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          end if
 
       !!! Operators: #20-39 !!!
-      else if (fields(3)(1:lfields(3)) .eq. "ADD" ) then ! type 20
+      else if ( fields(3)(1:lfields(3)) .eq. "ADD" .or.   ! type 20
+     &          fields(3)(1:lfields(3)) .eq. "SUB" .or.   ! type 21
+     &          fields(3)(1:lfields(3)) .eq. "MUL" .or.   ! type 22
+     &          fields(3)(1:lfields(3)) .eq. "DIV" ) then ! type 23
          ! ADD functions y = f1 + f2
          if (nfields .ne. 5) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "ADD function expected 5 arguments, got",nfields
-            write (*,*) "Expected syntax:"
-            write (*,*) "SET funname ADD funname1 funname2"
+            write (*,*)"ERROR in DYNK block parsing (fort.3)"
+            write (*,*)"ADD function expected 5 arguments, got",nfields
+            write (*,*)"Expected syntax:"
+            write (*,*)"SET funname {ADD|SUB|MUL|DIV} funname1 funname2"
             call prror(51)
          endif
 
@@ -44771,7 +44774,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 20          !TYPE (ADD)
+         if      ( fields(3)(1:lfields(3)) .eq. "ADD" ) then
+              funcs_dynk(nfuncs_dynk,2) = 20 !TYPE (ADD)
+         else if ( fields(3)(1:lfields(3)) .eq. "SUB" ) then
+              funcs_dynk(nfuncs_dynk,2) = 21 !TYPE (SUB)
+         else if ( fields(3)(1:lfields(3)) .eq. "MUL" ) then
+              funcs_dynk(nfuncs_dynk,2) = 22 !TYPE (MUL)
+         else if ( fields(3)(1:lfields(3)) .eq. "DIV" ) then
+              funcs_dynk(nfuncs_dynk,2) = 23 !TYPE (DIV)
+         else
+            write (*,*) "LOGIC ERROR"
+            call prror(51)
+         endif
          funcs_dynk(nfuncs_dynk,3) = 
      &        dynk_findFUNindex(fields(4)(1:lfields(4)), 1) !Index to f1
          funcs_dynk(nfuncs_dynk,4) = 
@@ -45414,6 +45428,15 @@ C     For some reason, write(*,*) statements here hangs the program.
       elseif ( funcs_dynk(funNum,2) .eq. 20 ) then !ADD
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      elseif ( funcs_dynk(funNum,2) .eq. 21 ) then !SUB
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          - dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      elseif ( funcs_dynk(funNum,2) .eq. 22 ) then !MUL
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          * dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      elseif ( funcs_dynk(funNum,2) .eq. 23 ) then !DIV
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          / dynk_computeFUN(funcs_dynk(funNum,4),turn)
       elseif ( funcs_dynk(funNum,2) .eq. 40 ) then !CONST
          retval = fexpr_dynk(funcs_dynk(funNum,3))
       elseif ( funcs_dynk(funNum,2) .eq. 41 ) then !LIN

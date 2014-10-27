@@ -1,151 +1,201 @@
  # turn setidx element attribute function active nvalues value1 value2 ...
            1           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
            1           3 CRAB6               frequency           rise1                F           1   400.78960260000002     
-           1           6 CRAB5               phase               adder                F           1   42.000000000000000     
+           1           4 CRAB5               phase               muller               T           1   0.0000000000000000     
+           1           5 CRAB6               phase               divver               T           1   0.0000000000000000     
            2           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
            2           3 CRAB6               frequency           rise1                F           1   400.78960260000002     
-           2           6 CRAB5               phase               adder                F           1   42.000000000000000     
+           2           4 CRAB5               phase               muller               T           1   88.167787756744858     
+           2           5 CRAB6               phase               divver               T           1  0.13994886945515056     
            3           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
            3           3 CRAB6               frequency           rise1                F           1   400.78960260000002     
-           3           6 CRAB5               phase               adder                F           1   42.000000000000000     
+           3           4 CRAB5               phase               muller               T           1   237.76412896285768     
+           3           5 CRAB6               phase               divver               T           1  0.22644202758367399     
            4           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
            4           3 CRAB6               frequency           rise1                F           1   400.78960260000002     
-           4           6 CRAB5               phase               adder                F           1   42.000000000000000     
+           4           4 CRAB5               phase               muller               T           1   332.86978093625822     
+           4           5 CRAB6               phase               divver               T           1  0.22644202784779471     
            5           2 CRAB4               voltage             defval               F           1   5.8778525461583602     
            5           3 CRAB6               frequency           rise1                T           1   45.000000000000000     
-           5           6 CRAB5               phase               adder                F           1   42.000000000000000     
+           5           4 CRAB5               phase               muller               T           1   264.50336457712621     
+           5           5 CRAB6               phase               divver               T           1  0.13994887014662763     
            6           2 CRAB4               voltage             defval               F           1  3.58979302983756729E-008
            6           3 CRAB6               frequency           rise1                T           1   55.000000000000000     
-           6           6 CRAB5               phase               adder                F           1   42.000000000000000     
+           6           4 CRAB5               phase               muller               T           1  1.97438616641066201E-006
+           6           5 CRAB6               phase               divver               T           1  8.54712626151801696E-010
            7           2 CRAB4               voltage             defval               F           1  -5.8778524880742884     
            7           3 CRAB6               frequency           rise1                T           1   65.000000000000000     
-           7           6 CRAB5               phase               adder                F           1   42.000000000000000     
+           7           4 CRAB5               phase               muller               T           1  -382.06041172482873     
+           7           5 CRAB6               phase               divver               T           1 -0.13994886876367355     
            8           2 CRAB4               voltage             defval               F           1  -9.5105651474212376     
            8           3 CRAB6               frequency           rise1                T           1   75.000000000000000     
-           8           6 CRAB5               phase               adder                F           1   42.000000000000000     
+           8           4 CRAB5               phase               muller               T           1  -713.29238605659282     
+           8           5 CRAB6               phase               divver               T           1 -0.22644202731955326     
            9           2 CRAB4               voltage             defval               F           1  -9.5105651807004481     
            9           3 CRAB6               frequency           rise1                T           1   85.000000000000000     
-           9           6 CRAB5               phase               adder                F           1   42.000000000000000     
+           9           4 CRAB5               phase               muller               T           1  -808.39804035953807     
+           9           5 CRAB6               phase               divver               T           1 -0.22644202811191544     
           10           2 CRAB4               voltage             defval               F           1  -5.8778525752003992     
           10           3 CRAB6               frequency           rise1                T           1   95.000000000000000     
-          10           6 CRAB5               phase               adder                F           1   89.122147424799607     
+          10           4 CRAB5               phase               muller               T           1  -558.39599464403796     
+          10           5 CRAB6               phase               divver               T           1 -0.13994887083810476     
           11           2 CRAB4               voltage             defval               F           1 -7.17958605967513458E-008
           11           3 CRAB6               frequency           rise1                T           1   105.00000000000000     
-          11           6 CRAB5               phase               adder                F           1   104.99999992820413     
+          11           4 CRAB5               phase               muller               T           1 -7.53856536265889131E-006
+          11           5 CRAB6               phase               divver               T           1 -1.70942525230360339E-009
           12           2 CRAB4               voltage             defval               F           1   5.8778524590322565     
           12           3 CRAB6               frequency           rise1                T           1   115.00000000000000     
-          12           6 CRAB5               phase               adder                F           1   120.87785245903225     
+          12           4 CRAB5               phase               muller               T           1   675.95303278870949     
+          12           5 CRAB6               phase               divver               T           1  0.13994886807219659     
           13           2 CRAB4               voltage             defval               F           1   9.5105651363281662     
           13           3 CRAB6               frequency           rise1                T           1   125.00000000000000     
-          13           6 CRAB5               phase               adder                F           1   134.51056513632815     
+          13           4 CRAB5               phase               muller               T           1   1188.8206420410208     
+          13           5 CRAB6               phase               divver               T           1  0.22644202705543254     
           14           2 CRAB4               voltage             defval               F           1   9.5105651917935194     
           14           3 CRAB6               frequency           rise1                T           1   135.00000000000000     
-          14           6 CRAB5               phase               adder                F           1   144.51056519179352     
+          14           4 CRAB5               phase               muller               T           1   1283.9263008921253     
+          14           5 CRAB6               phase               divver               T           1  0.22644202837603616     
           15           2 CRAB4               voltage             defval               F           1   5.8778526042424240     
           15           3 CRAB6               frequency           rise1                T           1   145.00000000000000     
-          15           6 CRAB5               phase               adder                F           1   150.87785260424243     
+          15           4 CRAB5               phase               muller               T           1   852.28862761515143     
+          15           5 CRAB6               phase               divver               T           1  0.13994887152958152     
           16           2 CRAB4               voltage             defval               F           1  1.07693786454234920E-007
           16           3 CRAB6               frequency           rise1                T           1   155.00000000000000     
-          16           6 CRAB5               phase               adder                F           1   155.00000010769378     
+          16           4 CRAB5               phase               muller               T           1  1.66925369004064126E-005
+          16           5 CRAB6               phase               divver               T           1  2.56413777271987903E-009
           17           2 CRAB4               voltage             defval               F           1  -5.8778524299902166     
           17           3 CRAB6               frequency           rise1                T           1   165.00000000000000     
-          17           6 CRAB5               phase               adder                F           1   159.12214757000979     
+          17           4 CRAB5               phase               muller               T           1  -969.84565094838581     
+          17           5 CRAB6               phase               divver               T           1 -0.13994886738071943     
           18           2 CRAB4               voltage             defval               F           1  -9.5105651252350931     
           18           3 CRAB6               frequency           rise1                T           1   175.00000000000000     
-          18           6 CRAB5               phase               adder                F           1   165.48943487476490     
+          18           4 CRAB5               phase               muller               T           1  -1664.3488969161415     
+          18           5 CRAB6               phase               divver               T           1 -0.22644202679131173     
           19           2 CRAB4               voltage             defval               F           1  -9.5105652028865908     
           19           3 CRAB6               frequency           rise1                T           1   185.00000000000000     
-          19           6 CRAB5               phase               adder                F           1   175.48943479711340     
+          19           4 CRAB5               phase               muller               T           1  -1759.4545625340195     
+          19           5 CRAB6               phase               divver               T           1 -0.22644202864015692     
           20           2 CRAB4               voltage             defval               F           1  -5.8778526332844629     
           20           3 CRAB6               frequency           rise1                T           1   195.00000000000000     
-          20           6 CRAB5               phase               adder                F           1   189.12214736671552     
+          20           4 CRAB5               phase               muller               T           1  -1146.1812634904702     
+          20           5 CRAB6               phase               divver               T           1 -0.13994887222105865     
           21           2 CRAB4               voltage             defval               T           1   3.8834872450000000     
           21           3 CRAB6               frequency           rise1                T           1   205.00000000000000     
-          21           6 CRAB5               phase               adder                F           1   204.99999985640827     
+          21           4 CRAB5               phase               muller               T           1 -2.94363028446680518E-005
+          21           5 CRAB6               phase               divver               T           1 -3.41885050460720679E-009
           22           2 CRAB4               voltage             defval               T           1   3.8834872450000000     
           22           3 CRAB6               frequency           rise1                T           1   215.00000000000000     
-          22           6 CRAB5               phase               adder                F           1   220.87785240094817     
+          22           4 CRAB5               phase               muller               T           1   1263.7382662038581     
+          22           5 CRAB6               phase               divver               T           1  0.13994886668924233     
           23           2 CRAB4               voltage             defval               T           1   3.8834872450000000     
           23           3 CRAB6               frequency           rise1                T           1   225.00000000000000     
-          23           6 CRAB5               phase               adder                F           1   234.51056511414203     
+          23           4 CRAB5               phase               muller               T           1   2139.8771506819562     
+          23           5 CRAB6               phase               divver               T           1  0.22644202652719111     
           24           2 CRAB4               voltage             defval               T           1   3.8834872450000000     
           24           3 CRAB6               frequency           rise1                T           1   235.00000000000000     
-          24           6 CRAB5               phase               adder                F           1   244.51056521397965     
+          24           4 CRAB5               phase               muller               T           1   2234.9828252852194     
+          24           5 CRAB6               phase               divver               T           1  0.22644202890427753     
           25           2 CRAB4               voltage             defval               T           1   3.8834872450000000     
           25           3 CRAB6               frequency           rise1                T           1   245.00000000000000     
-          25           6 CRAB5               phase               adder                F           1   250.87785266232649     
+          25           4 CRAB5               phase               muller               T           1   1440.0739022699929     
+          25           5 CRAB6               phase               divver               T           1  0.13994887291253577     
           26           2 CRAB4               voltage             defval               T           1   3.8834872450000000     
           26           3 CRAB6               frequency           rise1                T           1   255.00000000000000     
-          26           6 CRAB5               phase               adder                F           1   255.00000017948966     
+          26           4 CRAB5               phase               muller               T           1  4.57698622628564681E-005
+          26           5 CRAB6               phase               divver               T           1  4.27356323649453495E-009
           27           2 CRAB4               voltage             defval               T           1   3.8834872450000000     
           27           3 CRAB6               frequency           rise1                T           1   265.00000000000000     
-          27           6 CRAB5               phase               adder                F           1   259.12214762809384     
+          27           4 CRAB5               phase               muller               T           1  -1557.6308785551264     
+          27           5 CRAB6               phase               divver               T           1 -0.13994886599776518     
           28           2 CRAB4               voltage             defval               T           1   3.8834872450000000     
           28           3 CRAB6               frequency           rise1                T           1   275.00000000000000     
-          28           6 CRAB5               phase               adder                F           1   265.48943489695102     
+          28           4 CRAB5               phase               muller               T           1  -2615.4054033384623     
+          28           5 CRAB6               phase               divver               T           1 -0.22644202626307033     
           29           2 CRAB4               voltage             defval               T           1   3.8834872450000000     
           29           3 CRAB6               frequency           rise1                T           1   285.00000000000000     
-          29           6 CRAB5               phase               adder                F           1   275.48943477492730     
+          29           4 CRAB5               phase               muller               T           1  -2710.5110891457261     
+          29           5 CRAB6               phase               divver               T           1 -0.22644202916839817     
           30           2 CRAB4               voltage             defval               T           1   3.8834872450000000     
           30           3 CRAB6               frequency           rise1                T           1   295.00000000000000     
-          30           6 CRAB5               phase               adder                F           1   289.12214730863144     
+          30           4 CRAB5               phase               muller               T           1  -1733.9665439537196     
+          30           5 CRAB6               phase               divver               T           1 -0.13994887360401287     
           31           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           31           3 CRAB6               frequency           rise1                T           1   305.00000000000000     
-          31           6 CRAB5               phase               adder                F           1   304.99999978461244     
+          31           4 CRAB5               phase               muller               T           1 -6.56932097370833013E-005
+          31           5 CRAB6               phase               divver               T           1 -5.12827554543975724E-009
           32           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           32           3 CRAB6               frequency           rise1                T           1   315.00000000000000     
-          32           6 CRAB5               phase               adder                F           1   320.87785234286412     
+          32           4 CRAB5               phase               muller               T           1   1851.5234880021908     
+          32           5 CRAB6               phase               divver               T           1  0.13994886530628806     
           33           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           33           3 CRAB6               frequency           rise1                T           1   325.00000000000000     
-          33           6 CRAB5               phase               adder                F           1   334.51056509195587     
+          33           4 CRAB5               phase               muller               T           1   3090.9336548856618     
+          33           5 CRAB6               phase               divver               T           1  0.22644202599894958     
           34           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           34           3 CRAB6               frequency           rise1                T           1   335.00000000000000     
-          34           6 CRAB5               phase               adder                F           1   344.51056523616580     
+          34           4 CRAB5               phase               muller               T           1   3186.0393541155413     
+          34           5 CRAB6               phase               divver               T           1  0.22644202943251890     
           35           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           35           3 CRAB6               frequency           rise1                T           1   345.00000000000000     
-          35           6 CRAB5               phase               adder                F           1   350.87785272041060     
+          35           4 CRAB5               phase               muller               T           1   2027.8591885416499     
+          35           5 CRAB6               phase               divver               T           1  0.13994887429548997     
           36           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           36           3 CRAB6               frequency           rise1                T           1   355.00000000000000     
-          36           6 CRAB5               phase               adder                F           1   355.00000025128548     
+          36           4 CRAB5               phase               muller               T           1  8.92063552149468386E-005
+          36           5 CRAB6               phase               divver               T           1  5.98298827732708623E-009
           37           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           37           3 CRAB6               frequency           rise1                T           1   365.00000000000000     
-          37           6 CRAB5               phase               adder                F           1   359.12214768617793     
+          37           4 CRAB5               phase               muller               T           1  -2145.4160945450512     
+          37           5 CRAB6               phase               divver               T           1 -0.13994886461481090     
           38           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           38           3 CRAB6               frequency           rise1                T           1   375.00000000000000     
-          38           6 CRAB5               phase               adder                F           1   365.48943491913718     
+          38           4 CRAB5               phase               muller               T           1  -3566.4619053235533     
+          38           5 CRAB6               phase               divver               T           1 -0.22644202573482880     
           39           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           39           3 CRAB6               frequency           rise1                T           1   385.00000000000000     
-          39           6 CRAB5               phase               adder                F           1   375.48943475274115     
+          39           4 CRAB5               phase               muller               T           1  -3661.5676201946630     
+          39           5 CRAB6               phase               divver               T           1 -0.22644202969663965     
           40           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           40           3 CRAB6               frequency           rise1                T           1   395.00000000000000     
-          40           6 CRAB5               phase               adder                F           1   389.12214725054736     
+          40           4 CRAB5               phase               muller               T           1  -2321.7518360337840     
+          40           5 CRAB6               phase               divver               T           1 -0.13994887498696709     
           41           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           41           3 CRAB6               frequency           rise1                T           1   405.00000000000000     
-          41           6 CRAB5               phase               adder                F           1   404.99999971281653     
+          41           4 CRAB5               phase               muller               T           1 -1.16309294166737167E-004
+          41           5 CRAB6               phase               divver               T           1 -6.83770100921441274E-009
           42           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           42           3 CRAB6               frequency           rise1                T           1   415.00000000000000     
-          42           6 CRAB5               phase               adder                F           1   420.87785228478003     
+          42           4 CRAB5               phase               muller               T           1   2439.3086981837196     
+          42           5 CRAB6               phase               divver               T           1  0.13994886392333447     
           43           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           43           3 CRAB6               frequency           rise1                T           1   425.00000000000000     
-          43           6 CRAB5               phase               adder                F           1   434.51056506976971     
+          43           4 CRAB5               phase               muller               T           1   4041.9901546521378     
+          43           5 CRAB6               phase               divver               T           1  0.22644202547070802     
           44           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           44           3 CRAB6               frequency           rise1                T           1   435.00000000000000     
-          44           6 CRAB5               phase               adder                F           1   444.51056525835196     
+          44           4 CRAB5               phase               muller               T           1   4137.0958873830923     
+          44           5 CRAB6               phase               divver               T           1  0.22644202996076040     
           45           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           45           3 CRAB6               frequency           rise1                T           1   445.00000000000000     
-          45           6 CRAB5               phase               adder                F           1   450.87785277849463     
+          45           4 CRAB5               phase               muller               T           1   2615.6444864301093     
+          45           5 CRAB6               phase               divver               T           1  0.13994887567844352     
           46           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           46           3 CRAB6               frequency           rise1                T           1   455.00000000000000     
-          46           6 CRAB5               phase               adder                F           1   455.00000032308139     
+          46           4 CRAB5               phase               muller               T           1  1.47002026592454258E-004
+          46           5 CRAB6               phase               divver               T           1  7.69241374110174091E-009
           47           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           47           3 CRAB6               frequency           rise1                T           1   465.00000000000000     
-          47           6 CRAB5               phase               adder                F           1   459.12214774426201     
+          47           4 CRAB5               phase               muller               T           1  -2733.2012989181735     
+          47           5 CRAB6               phase               divver               T           1 -0.13994886323185729     
           48           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           48           3 CRAB6               frequency           rise1                T           1   475.00000000000000     
-          48           6 CRAB5               phase               adder                F           1   465.48943494132334     
+          48           4 CRAB5               phase               muller               T           1  -4517.5184028714148     
+          48           5 CRAB6               phase               divver               T           1 -0.22644202520658721     
           49           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           49           3 CRAB6               frequency           rise1                T           1   485.00000000000000     
-          49           6 CRAB5               phase               adder                F           1   475.48943473055499     
+          49           4 CRAB5               phase               muller               T           1  -4612.6241556808282     
+          49           5 CRAB6               phase               divver               T           1 -0.22644203022488110     
           50           2 CRAB4               voltage             defval               F           1   3.8834872450000000     
           50           3 CRAB6               frequency           rise1                T           1   495.00000000000000     
-          50           6 CRAB5               phase               adder                F           1   489.12214719246333     
+          50           4 CRAB5               phase               muller               T           1  -2909.5371397306499     
+          50           5 CRAB6               phase               divver               T           1 -0.13994887636992065     
