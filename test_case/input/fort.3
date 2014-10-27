@@ -62,12 +62,15 @@ FUN divver DIV mysin meaningOfLiff
 SET  CRAB4 voltage mysin 5 20
 SET CRAB4 voltage defval 21 30
 SETR CRAB6 frequency rise1 5 100
-/SET  CRAB5 phase adder 10 100
-/SET  CRAB5 phase meaningOfLiff 1 9
-/SET  CRAB5 phase adder 101 101
+SET  CRAB5 phase adder 10 100
+SET  CRAB5 phase meaningOfLiff 1 9
+SET  CRAB5 phase adder 101 101
 /SET CRAB6 phase subber 1 101
-SET  CRAB5 phase muller  1 101
-SET CRAB6 phase divver 1 101
+/SET  CRAB5 phase muller  1 101
+/SET CRAB6 phase divver 1 101
+SET mcbxdv.a2r1 average_ms rise1 5 40
+SET mqxc.3r1..1 random_ms rise1 5 40
+SET ms.13r1.b1 random_ms rise1 5 40
 NEXT
 COLLIMATION
 .TRUE. 
