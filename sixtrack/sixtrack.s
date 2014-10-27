@@ -45826,7 +45826,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
              else
                 WRITE (*,*) "ERROR in dynk_setvalue"
                 WRITE (*,*) "attribute '",att_name_stripped,"' ",
-     &            "does not expist"
+     &                      "does not exist"
                 call prror(-1)
              endif
           endif
