@@ -45440,7 +45440,297 @@ C     Here comes the logic for setting the value of the attribute for all instan
         if (element_name_stripped.eq.bez(ii)) then  ! name found
           el_type=kz(ii)  ! type found
           write (*,*) "Attr.: ", bez(ii), kz(ii), ed(ii), ek(ii), el(ii)
-          if (abs(el_type).eq.23) then ! crab cavity
+          if (abs(el_type).eq.1) then ! horizontal bending kick
+             if (att_name_stripped.eq."average_ms") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: average mult. strength 
+     &          (rad.m^0)", fun_val_orig
+                if (setR) then
+                  ed(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ed(ii)=fun_val
+                endif
+                write(*,*) "New value: average mult. strength (rad.m^0)"
+     &            , ed(ii)
+             elseif (att_name_stripped.eq."random_ms") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: random mult. strength 
+     &          (rad.m^0)", fun_val_orig
+                if (setR) then
+                  ek(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ek(ii)=fun_val
+                endif
+                write(*,*) "New value: random mult. strength (rad.m^0)"
+     &            , ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.2) then ! quadrupole kick
+             if (att_name_stripped.eq."average_ms") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: average mult. strength 
+     &          (rad.m^-1)", fun_val_orig
+                if (setR) then
+                  ed(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ed(ii)=fun_val
+                endif
+                write(*,*) "New value: average mult. strength
+     &          (rad.m^-1)", ed(ii)
+             elseif (att_name_stripped.eq."random_ms") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: random mult. strength 
+     &          (rad.m^-1)", fun_val_orig
+                if (setR) then
+                  ek(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ek(ii)=fun_val
+                endif
+                write(*,*) "New value: random mult. strength (rad.m^-1)"
+     &            , ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.3) then ! sextupole kick
+             if (att_name_stripped.eq."average_ms") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: average mult. strength 
+     &          (rad.m^-2)", fun_val_orig
+                if (setR) then
+                  ed(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ed(ii)=fun_val
+                endif
+                write(*,*) "New value: average mult. strength
+     &          (rad.m^-2)", ed(ii)
+             elseif (att_name_stripped.eq."random_ms") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: random mult. strength 
+     &          (rad.m^-2)", fun_val_orig
+                if (setR) then
+                  ek(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ek(ii)=fun_val
+                endif
+                write(*,*) "New value: random mult. strength (rad.m^-2)"
+     &            , ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.4) then ! octupole kick
+             if (att_name_stripped.eq."average_ms") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: average mult. strength 
+     &          (rad.m^-3)", fun_val_orig
+                if (setR) then
+                  ed(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ed(ii)=fun_val
+                endif
+                write(*,*) "New value: average mult. strength
+     &          (rad.m^-3)", ed(ii)
+             elseif (att_name_stripped.eq."random_ms") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: random mult. strength 
+     &          (rad.m^-3)", fun_val_orig
+                if (setR) then
+                  ek(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ek(ii)=fun_val
+                endif
+                write(*,*) "New value: random mult. strength (rad.m^-3)"
+     &            , ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.5) then ! decapole kick
+             if (att_name_stripped.eq."average_ms") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: average mult. strength 
+     &          (rad.m^-4)", fun_val_orig
+                if (setR) then
+                  ed(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ed(ii)=fun_val
+                endif
+                write(*,*) "New value: average mult. strength
+     &          (rad.m^-4)", ed(ii)
+             elseif (att_name_stripped.eq."random_ms") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: random mult. strength 
+     &          (rad.m^-4)", fun_val_orig
+                if (setR) then
+                  ek(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ek(ii)=fun_val
+                endif
+                write(*,*) "New value: random mult. strength (rad.m^-4)"
+     &            , ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.6) then ! dodecapole kick
+             if (att_name_stripped.eq."average_ms") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: average mult. strength 
+     &          (rad.m^-5)", fun_val_orig
+                if (setR) then
+                  ed(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ed(ii)=fun_val
+                endif
+                write(*,*) "New value: average mult. strength
+     &          (rad.m^-5)" , ed(ii)
+             elseif (att_name_stripped.eq."random_ms") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: random mult. strength 
+     &          (rad.m^5)", fun_val_orig
+                if (setR) then
+                  ek(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ek(ii)=fun_val
+                endif
+                write(*,*) "New value: random mult. strength (rad.m^5)"
+     &            , ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.7) then ! 14th pole kick
+             if (att_name_stripped.eq."average_ms") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: average mult. strength 
+     &          (rad.m^-6)", fun_val_orig
+                if (setR) then
+                  ed(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ed(ii)=fun_val
+                endif
+                write(*,*) "New value: average mult. strength 
+     &          (rad.m^-6)", ed(ii)
+             elseif (att_name_stripped.eq."random_ms") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: random mult. strength 
+     &          (rad.m^-6)", fun_val_orig
+                if (setR) then
+                  ek(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ek(ii)=fun_val
+                endif
+                write(*,*) "New value: random mult. strength (rad.m^-6)"
+     &            , ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.8) then ! 16th pole kick
+             if (att_name_stripped.eq."average_ms") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: average mult. strength 
+     &          (rad.m^-7)", fun_val_orig
+                if (setR) then
+                  ed(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ed(ii)=fun_val
+                endif
+                write(*,*) "New value: average mult. strength 
+     &          (rad.m^-7)", ed(ii)
+             elseif (att_name_stripped.eq."random_ms") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: random mult. strength 
+     &          (rad.m^-7)", fun_val_orig
+                if (setR) then
+                  ek(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ek(ii)=fun_val
+                endif
+                write(*,*) "New value: random mult. strength (rad.m^-7)"
+     &            , ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.9) then ! 18th pole kick
+             if (att_name_stripped.eq."average_ms") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: average mult. strength 
+     &          (rad.m^-8)", fun_val_orig
+                if (setR) then
+                  ed(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ed(ii)=fun_val
+                endif
+                write(*,*) "New value: average mult. strength 
+     &          (rad.m^-8)", ed(ii)
+             elseif (att_name_stripped.eq."random_ms") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: random mult. strength 
+     &          (rad.m^-8)", fun_val_orig
+                if (setR) then
+                  ek(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ek(ii)=fun_val
+                endif
+                write(*,*) "New value: random mult. strength (rad.m^-8)"
+     &            , ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.10) then ! 20th pole kick
+             if (att_name_stripped.eq."average_ms") then
+                fun_val_orig=ed(ii)
+                write(*,*) "Selected att: average mult. strength 
+     &          (rad.m^-9)", fun_val_orig
+                if (setR) then
+                  ed(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ed(ii)=fun_val
+                endif
+                write(*,*) "New value: average mult. strength 
+     &          (rad.m^-9)", ed(ii)
+             elseif (att_name_stripped.eq."random_ms") then
+                fun_val_orig=ek(ii)
+                write(*,*) "Selected att: random mult. strength 
+     &          (rad.m^-9)", fun_val_orig
+                if (setR) then
+                  ek(ii)= dynk_computeFUN(funNum,turn)
+                else
+                  ek(ii)=fun_val
+                endif
+                write(*,*) "New value: random mult. strength (rad.m^-9)"
+     &            , ek(ii)
+             else
+                WRITE (*,*) "ERROR in dynk_setvalue"
+                WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &            "does not exist"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.23) then ! crab cavity
              if (att_name_stripped.eq."voltage") then
                 fun_val_orig=ed(ii)
                 write(*,*) "Selected att: voltage (MV)", fun_val_orig
@@ -45463,7 +45753,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
              else
                 WRITE (*,*) "ERROR in dynk_setvalue"
                 WRITE (*,*) "attribute '",att_name_stripped,"' ",
-     &            "does not exist"
+     &            "does not expist"
                 call prror(-1)
              endif
           endif
@@ -45509,7 +45799,27 @@ C      dimension retdata(:)
       do ii=1,il
          if (element_name_s.eq.bez(ii)) then ! name found
             el_type=kz(ii)
-            if (abs(el_type).eq.23) then ! crab cavity
+            if ((abs(el_type).eq.1).or.
+     &         (abs(el_type).eq.2).or.
+     &         (abs(el_type).eq.3).or.
+     &         (abs(el_type).eq.4).or.
+     &         (abs(el_type).eq.5).or.
+     &         (abs(el_type).eq.6).or.
+     &         (abs(el_type).eq.7).or.
+     &         (abs(el_type).eq.8).or.
+     &         (abs(el_type).eq.9).or.
+     &         (abs(el_type).eq.10)) then
+               if (att_name_s.eq."average_ms") then
+                  nretdata = nretdata+1
+                  retdata(nretdata) = ed(ii)
+               elseif (att_name_s.eq."random_ms") then
+                  nretdata = nretdata+1
+                  retdata(nretdata) = ek(ii)
+               else
+                  write(*,*) "Unknown attribute '", att_name_s, "'"
+                  stop
+               endif
+            elseif (abs(el_type).eq.23) then ! crab cavity
                if (att_name_s.eq."voltage") then
                   nretdata = nretdata+1
                   retdata(nretdata) = ed(ii)
