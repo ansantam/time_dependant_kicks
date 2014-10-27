@@ -19787,6 +19787,8 @@ C Should get me a NaN
 !hr05   r(j) = real(iz)*4.656613e-10
         r(j) = dble(iz)*4.656613d-10                                     !hr05
    20 continue
+
+C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sigmas):
 +if crlibm
 !hr05 rvec0 = ((-two*log_rn(r(1)))**half)*cos_rn(two*pi*r(2))
 !     rvec0 = (((-1d0*two)*log_rn(r(1)))**half)*cos_rn((two*pi)*r(2))    !hr05
@@ -44737,7 +44739,7 @@ C Should get me a NaN
             call prror(51)
          end if
          
-      else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! type 1
+      else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! type 41
          ! LIN: Linear ramp y = dy/dt*T+b
          
          if (nfields .ne. 5) then
@@ -44766,7 +44768,7 @@ C Should get me a NaN
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 1           !TYPE (LIN)
+         funcs_dynk(nfuncs_dynk,2) = 41          !TYPE (LIN)
          funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
@@ -44778,7 +44780,7 @@ C Should get me a NaN
          read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) ! b
          nfexpr_dynk = nfexpr_dynk + 1
          
-      else if (fields(3)(1:lfields(3)) .eq. "SIN" ) then ! type 10
+      else if (fields(3)(1:lfields(3)) .eq. "SIN" ) then ! type 60
          ! SIN: Sin functions y = A*sin(omega*T+phi)
          if (nfields .ne. 6) then
             write (*,*) "ERROR in DYNK block parsing (fort.3)"
@@ -44806,7 +44808,7 @@ C Should get me a NaN
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 10          !TYPE (SIN)
+         funcs_dynk(nfuncs_dynk,2) = 60          !TYPE (SIN)
          funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
@@ -45363,10 +45365,10 @@ C     For some reason, write(*,*) statements here hangs the program.
       
       if     ( funcs_dynk(funNum,2) .eq. 0  ) then !GET
          retval = fexpr_dynk(funcs_dynk(funNum,3))
-      elseif ( funcs_dynk(funNum,2) .eq. 1  ) then !LIN
+      elseif ( funcs_dynk(funNum,2) .eq. 41  ) then !LIN
          retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
      &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
-      elseif ( funcs_dynk(funNum,2) .eq. 10 ) then !SIN
+      elseif ( funcs_dynk(funNum,2) .eq. 60 ) then !SIN
          retval = fexpr_dynk(funcs_dynk(funNum,3))
      &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
      &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
