@@ -44684,7 +44684,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          call prror(51)
       endif
       
-      ! Which type of function?
+      ! ! ! ! ! ! ! ! ! ! ! ! ! !
+      ! Which type of function? !
+      ! ! ! ! ! ! ! ! ! ! ! ! ! !
+
+      !!! System functions: #0-19 !!!
       if ( fields(3)(1:lfields(3)) .eq. "GET" ) then ! type 0
          ! GET: Store the value of an element/value
 
@@ -44738,89 +44742,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             write (*,*) "*************************************"
             call prror(51)
          end if
-         
-      else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! type 41
-         ! LIN: Linear ramp y = dy/dt*T+b
-         
-         if (nfields .ne. 5) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "LIN function expected 5 arguments, got",nfields
-            write (*,*) "Expected syntax:"
-            write (*,*) "SET funname LIN dy/dt b"
-            call prror(51)
-         endif
-         
-         ! Check for sufficient space
-         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+2 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 41          !TYPE (LIN)
-         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
-         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
-         
-         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! dy/dt
-         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) ! b
-         nfexpr_dynk = nfexpr_dynk + 1
-         
-      else if (fields(3)(1:lfields(3)) .eq. "SIN" ) then ! type 60
-         ! SIN: Sin functions y = A*sin(omega*T+phi)
-         if (nfields .ne. 6) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "SIN function expected 5 arguments, got",nfields
-            write (*,*) "Expected syntax:"
-            write (*,*) "SET funname SIN amplitude omega phase"
-            call prror(51)
-         endif
-         
-         ! Check for sufficient space
-         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+2 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 60          !TYPE (SIN)
-         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
-         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
-         
-         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   !A
-         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) !omega
-         read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk+2) !phi
-         nfexpr_dynk = nfexpr_dynk + 2
 
+      !!! Operators: #20-39 !!!
       else if (fields(3)(1:lfields(3)) .eq. "ADD" ) then ! type 20
          ! ADD functions y = f1 + f2
          if (nfields .ne. 5) then
@@ -44874,7 +44797,91 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             call dynk_dumpdata
             call prror(51)
          end if
+
+      !!! Polynomial & Elliptical functions: # 40-59 !!!
+      else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! type 41
+         ! LIN: Linear ramp y = dy/dt*T+b
          
+         if (nfields .ne. 5) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "LIN function expected 5 arguments, got",nfields
+            write (*,*) "Expected syntax:"
+            write (*,*) "SET funname LIN dy/dt b"
+            call prror(51)
+         endif
+         
+         ! Check for sufficient space
+         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (nfexpr_dynk+2 .gt. maxdata_dynk) .or.
+     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Max number of maxdata_dynk to be exceeded"
+            write (*,*) "niexpr_dynk:", niexpr_dynk
+            write (*,*) "nfexpr_dynk:", nfexpr_dynk
+            write (*,*) "ncexpr_dynk:", ncexpr_dynk
+            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+            call prror(51)
+         endif
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 41          !TYPE (LIN)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         
+         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! dy/dt
+         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) ! b
+         nfexpr_dynk = nfexpr_dynk + 1
+      
+      !!! Trancedental functions: #60-79 !!!
+      else if (fields(3)(1:lfields(3)) .eq. "SIN" ) then ! type 60
+         ! SIN: Sin functions y = A*sin(omega*T+phi)
+         if (nfields .ne. 6) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "SIN function expected 5 arguments, got",nfields
+            write (*,*) "Expected syntax:"
+            write (*,*) "SET funname SIN amplitude omega phase"
+            call prror(51)
+         endif
+         
+         ! Check for sufficient space
+         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (nfexpr_dynk+2 .gt. maxdata_dynk) .or.
+     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Max number of maxdata_dynk to be exceeded"
+            write (*,*) "niexpr_dynk:", niexpr_dynk
+            write (*,*) "nfexpr_dynk:", nfexpr_dynk
+            write (*,*) "ncexpr_dynk:", ncexpr_dynk
+            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+            call prror(51)
+         endif
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 60          !TYPE (SIN)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         
+         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   !A
+         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) !omega
+         read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk+2) !phi
+         nfexpr_dynk = nfexpr_dynk + 2         
+
       else
          ! UNKNOWN function
          write (*,*) "*************************************"
@@ -45365,16 +45372,16 @@ C     For some reason, write(*,*) statements here hangs the program.
       
       if     ( funcs_dynk(funNum,2) .eq. 0  ) then !GET
          retval = fexpr_dynk(funcs_dynk(funNum,3))
-      elseif ( funcs_dynk(funNum,2) .eq. 41  ) then !LIN
+      elseif ( funcs_dynk(funNum,2) .eq. 20 ) then !ADD
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      elseif ( funcs_dynk(funNum,2) .eq. 41 ) then !LIN
          retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
      &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
       elseif ( funcs_dynk(funNum,2) .eq. 60 ) then !SIN
          retval = fexpr_dynk(funcs_dynk(funNum,3))
      &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
      &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
-      elseif ( funcs_dynk(funNum,2) .eq. 20 ) then !ADD
-         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
-     &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
       else ! UNKNOWN
          stop 2
       end if

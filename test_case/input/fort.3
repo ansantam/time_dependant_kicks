@@ -52,7 +52,7 @@ DEBU
 FUN rise1 LIN 10 -5
 FUN rise2 LIN 3.14   1.55
 /A = 1, turn 1 = 0, 10 turns/period
-FUN mysin SIN 1 0.62831853 -0.62831853
+FUN mysin SIN 10 0.62831853 -0.62831853
 FUN adder ADD rise1 mysin
 FUN defval GET CRAB4 voltage
 SET  CRAB4 voltage mysin 5 20
