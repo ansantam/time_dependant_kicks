@@ -44799,6 +44799,45 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          end if
 
       !!! Polynomial & Elliptical functions: # 40-59 !!!
+      else if ( fields(3)(1:lfields(3)) .eq. "CONST" ) then ! type 40
+         ! CONST: Just a constant value
+         
+         if (nfields .ne. 4) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "LIN function expected 5 arguments, got",nfields
+            write (*,*) "Expected syntax:"
+            write (*,*) "SET funname CONST val"
+            call prror(51)
+         endif
+         
+         ! Check for sufficient space
+         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (nfexpr_dynk+1 .gt. maxdata_dynk) .or.
+     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Max number of maxdata_dynk to be exceeded"
+            write (*,*) "niexpr_dynk:", niexpr_dynk
+            write (*,*) "nfexpr_dynk:", nfexpr_dynk
+            write (*,*) "ncexpr_dynk:", ncexpr_dynk
+            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+            call prror(51)
+         endif
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 40          !TYPE (CONST)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         
+         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! value
+
       else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! type 41
          ! LIN: Linear ramp y = dy/dt*T+b
          
@@ -45375,6 +45414,8 @@ C     For some reason, write(*,*) statements here hangs the program.
       elseif ( funcs_dynk(funNum,2) .eq. 20 ) then !ADD
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      elseif ( funcs_dynk(funNum,2) .eq. 40 ) then !CONST
+         retval = fexpr_dynk(funcs_dynk(funNum,3))
       elseif ( funcs_dynk(funNum,2) .eq. 41 ) then !LIN
          retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
      &                 fexpr_dynk(funcs_dynk(funNum,3)+1)

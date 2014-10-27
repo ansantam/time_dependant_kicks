@@ -55,11 +55,12 @@ FUN rise2 LIN 3.14   1.55
 FUN mysin SIN 10 0.62831853 -0.62831853
 FUN adder ADD rise1 mysin
 FUN defval GET CRAB4 voltage
+FUN meaningOfLiff CONST 42
 SET  CRAB4 voltage mysin 5 20
 SET CRAB4 voltage defval 21 30
 SETR CRAB6 frequency rise1 5 100
 SET  CRAB5 phase adder 10 100
-SET  CRAB5 phase adder 1 9
+SET  CRAB5 phase meaningOfLiff 1 9
 SET  CRAB5 phase adder 101 101
 NEXT
 COLLIMATION
