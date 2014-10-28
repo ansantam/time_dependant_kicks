@@ -59,12 +59,14 @@ FUN adder ADD rise1 mysin
 FUN subber SUB rise1 mysin
 FUN muller MUL rise1 mysin
 FUN divver DIV mysin meaningOfLiff
+FUN filedata FILE testdata.dat
 SET  CRAB4 voltage mysin 5 20
 SET CRAB4 voltage defval 21 30
 SETR CRAB6 frequency rise1 5 100
-SET  CRAB5 phase adder 10 100
-SET  CRAB5 phase meaningOfLiff 1 9
-SET  CRAB5 phase adder 101 101
+/SET  CRAB5 phase adder 10 100
+/SET  CRAB5 phase meaningOfLiff 1 9
+/SET  CRAB5 phase adder 101 101
+SET  CRAB5 phase filedata 1 10
 /SET CRAB6 phase subber 1 101
 /SET  CRAB5 phase muller  1 101
 /SET CRAB6 phase divver 1 101
