@@ -44692,14 +44692,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       ! ! ! ! ! ! ! ! ! ! ! ! ! !
 
       !!! System functions: #0-19 !!!
-      if ( fields(3)(1:lfields(3)) .eq. "GET" ) then ! type 0
+      if ( fields(3)(1:lfields(3)) .eq. "GET" ) then ! GET / type 0
          ! GET: Store the value of an element/value
 
          if (nfields .ne. 5) then
             write (*,*) "ERROR in DYNK block parsing (fort.3)"
             write (*,*) "GET function expected 5 arguments, got",nfields
             write (*,*) "Expected syntax:"
-            write (*,*) "SET funname GET elementName attribute"
+            write (*,*) "FUN funname GET elementName attribute"
             call prror(51)
          endif
 
@@ -44746,7 +44746,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             call prror(51)
          end if
 
-      else if ( fields(3)(1:lfields(3)) .eq. "FILE" ) then ! type 1
+      else if ( fields(3)(1:lfields(3)) .eq. "FILE" ) then ! FILE / type 1
          ! FILE: Load the contents from a file
          ! File format: two ASCII columns of numbers,
          ! first  column = turn number (all turns should be there, starting from 1)
@@ -44756,7 +44756,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             write (*,*) "ERROR in DYNK block parsing (fort.3)"
             write (*,*) "GET function expected 5 arguments, got",nfields
             write (*,*) "Expected syntax:"
-            write (*,*) "SET funname FILE filename"
+            write (*,*) "FUN funname FILE filename"
             call prror(51)
          endif
 
@@ -44825,20 +44825,73 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,5) = ii
          
          close(664)
+      
+      else if ( fields(3)(1:lfields(3)) .eq. "RANDG" ) then ! type 6 / RANDG
+         ! RANDG: Gausian random number with mu, sigma, and optional cutoff
          
+         if (nfields .ne. 8) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "RANDG function expected 5 arguments, got",
+     &                   nfields
+            write (*,*) "Expected syntax:"
+            write (*,*) "FUN funname RANDG seed1 seed2 mu sigma cut"
+            call prror(51)
+         endif
          
+         ! Check for sufficient space
+         if ( (niexpr_dynk+5 .gt. maxdata_dynk) .or.
+     &        (nfexpr_dynk+2 .gt. maxdata_dynk) .or.
+     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Max number of maxdata_dynk to be exceeded"
+            write (*,*) "niexpr_dynk:", niexpr_dynk
+            write (*,*) "nfexpr_dynk:", nfexpr_dynk
+            write (*,*) "ncexpr_dynk:", ncexpr_dynk
+            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+            call prror(51)
+         endif
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         niexpr_dynk = niexpr_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 6           !TYPE (RANDG)
+         funcs_dynk(nfuncs_dynk,3) = niexpr_dynk !seed1, seed2, mcut (in iexpr_dynk)
+         funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk !mu, sigma (in fexpr_dynk)
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         
+         read(fields(4)(1:lfields(4)),*) iexpr_dynk(niexpr_dynk)   ! seed1 (initial)
+         read(fields(5)(1:lfields(5)),*) iexpr_dynk(niexpr_dynk+1) ! seed2 (initial)
+         read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk)   ! mu
+         read(fields(7)(1:lfields(7)),*) fexpr_dynk(nfexpr_dynk+1) ! sigma
+         read(fields(8)(1:lfields(8)),*) iexpr_dynk(niexpr_dynk+2) ! mcut
+         iexpr_dynk(niexpr_dynk+3) = 0 ! seed1 (current)
+         iexpr_dynk(niexpr_dynk+4) = 0 ! seed2 (current)
+         niexpr_dynk = niexpr_dynk+4
+         nfexpr_dynk = nfexpr_dynk+1
+         if (iexpr_dynk(niexpr_dynk) .lt. 0) then
+            !mcut < 0
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "mcut must be >= 0"
+            call prror(51)
+         endif
       !!! Operators: #20-39 !!!
-      else if ( fields(3)(1:lfields(3)) .eq. "ADD" .or.   ! type 20
-     &          fields(3)(1:lfields(3)) .eq. "SUB" .or.   ! type 21
-     &          fields(3)(1:lfields(3)) .eq. "MUL" .or.   ! type 22
-     &          fields(3)(1:lfields(3)) .eq. "DIV" .or.   ! type 23
-     &          fields(3)(1:lfields(3)) .eq. "POW" ) then ! type 24
+      else if ( fields(3)(1:lfields(3)) .eq. "ADD" .or.   ! ADD / type 20
+     &          fields(3)(1:lfields(3)) .eq. "SUB" .or.   ! SUB / type 21
+     &          fields(3)(1:lfields(3)) .eq. "MUL" .or.   ! MUL / type 22
+     &          fields(3)(1:lfields(3)) .eq. "DIV" .or.   ! DIV / type 23
+     &          fields(3)(1:lfields(3)) .eq. "POW" ) then ! POW / type 24
          ! Two-argument operators  y = OP(f1, f2)
          if (nfields .ne. 5) then
             write (*,*)"ERROR in DYNK block parsing (fort.3)"
             write (*,*)"ADD function expected 5 arguments, got",nfields
             write (*,*)"Expected syntax:"
-            write (*,*)"SET funname {ADD|SUB|MUL|DIV|POW} ",
+            write (*,*)"FUN funname {ADD|SUB|MUL|DIV|POW} ",
      &                 "funname1 funname2"
             call prror(51)
          endif
@@ -44900,14 +44953,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             call prror(51)
          end if
 
-      else if ( fields(3)(1:lfields(3)) .eq. "MINUS" .or.   ! type 30
-     &          fields(3)(1:lfields(3)) .eq. "SQRT"  ) then ! type 31
+      else if ( fields(3)(1:lfields(3)) .eq. "MINUS" .or.   ! MINUS / type 30
+     &          fields(3)(1:lfields(3)) .eq. "SQRT"  ) then ! SQRT  / type 31
          ! One-argument operators  y = OP(f1)
          if (nfields .ne. 4) then
             write (*,*)"ERROR in DYNK block parsing (fort.3)"
             write (*,*)"ADD function expected 5 arguments, got",nfields
             write (*,*)"Expected syntax:"
-            write (*,*)"SET funname {MINUS|SQRT} funname"
+            write (*,*)"FUN funname {MINUS|SQRT} funname"
             call prror(51)
          endif
 
@@ -44958,14 +45011,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          end if
 
       !!! Polynomial & Elliptical functions: # 40-59 !!!
-      else if ( fields(3)(1:lfields(3)) .eq. "CONST" ) then ! type 40
+      else if ( fields(3)(1:lfields(3)) .eq. "CONST" ) then ! CONST / type 40
          ! CONST: Just a constant value
          
          if (nfields .ne. 4) then
             write (*,*) "ERROR in DYNK block parsing (fort.3)"
             write (*,*) "LIN function expected 5 arguments, got",nfields
             write (*,*) "Expected syntax:"
-            write (*,*) "SET funname CONST val"
+            write (*,*) "FUN funname CONST val"
             call prror(51)
          endif
          
@@ -44997,14 +45050,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! value
 
-      else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! type 41
+      else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! LIN / type 41
          ! LIN: Linear ramp y = dy/dt*T+b
          
          if (nfields .ne. 5) then
             write (*,*) "ERROR in DYNK block parsing (fort.3)"
             write (*,*) "LIN function expected 5 arguments, got",nfields
             write (*,*) "Expected syntax:"
-            write (*,*) "SET funname LIN dy/dt b"
+            write (*,*) "FUN funname LIN dy/dt b"
             call prror(51)
          endif
          
@@ -45039,13 +45092,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          nfexpr_dynk = nfexpr_dynk + 1
       
       !!! Trancedental functions: #60-79 !!!
-      else if (fields(3)(1:lfields(3)) .eq. "SIN" ) then ! type 60
+      else if (fields(3)(1:lfields(3)) .eq. "SIN" ) then ! SIN / type 60
          ! SIN: Sin functions y = A*sin(omega*T+phi)
          if (nfields .ne. 6) then
             write (*,*) "ERROR in DYNK block parsing (fort.3)"
             write (*,*) "SIN function expected 5 arguments, got",nfields
             write (*,*) "Expected syntax:"
-            write (*,*) "SET funname SIN amplitude omega phase"
+            write (*,*) "FUN funname SIN amplitude omega phase"
             call prror(51)
          endif
          
@@ -45477,9 +45530,26 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          write(*,*) ' CALL TO dynk_apply AT TURN ', turn
       endif
       
+      if (turn .eq. 1) then
+         ! Reset RNGs
+         do ii=1, nfuncs_dynk
+            if (funcs_dynk(ii,2) .eq. 6) then !RANDG
+               write (*,*) "Resetting RNG for FUN named '",
+     &              cexpr_dynk(funcs_dynk(ii,1)), "'"
+               iexpr_dynk(funcs_dynk(ii,3)+3) =
+     &         iexpr_dynk(funcs_dynk(ii,3) )
+               iexpr_dynk(funcs_dynk(ii,3)+4) =
+     &         iexpr_dynk(funcs_dynk(ii,3)+1)
+            endif
+         enddo
+      endif
+
       if (ldynkfileopen .and. turn .eq. 1) then
+         ! We're in the 2nd pass of the turn loop
+         
          ! Only write to output file in first "pass"
          ldynksetsEnable = .false. ! (comment out for debugging)
+         
          ! Reset values
          do ii=1, nsets_unique_dynk
             write (*,*) "resetting: '",csets_unique_dynk(ii,1), "'",
@@ -45488,7 +45558,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &                         csets_unique_dynk(ii,2),
      &                         -ii, 0, .false. )
          enddo
+         
       endif
+      
       if (.not. ldynkfileopen) then
          open(unit=665, file="dynksets.dat",
      &        status="replace",action="write") 
@@ -45508,18 +45580,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          else
             lactive = .false.
          end if
-c$$$         if ( ldynkdebug ) then
-c$$$            write (*,*) "Setting DYNK using function '",
-c$$$     &           cexpr_dynk(funcs_dynk(sets_dynk(kk,1),1)), 
-c$$$     &           "' on element='", csets_dynk(kk,1), "' property='", 
-c$$$     &           csets_dynk(kk,2), "', SETR=", lsets_dynk(kk)
-c$$$            write (*,*) " firstturn=", sets_dynk(kk,2),
-c$$$     &           " lastturn=", sets_dynk(kk,3),
-c$$$     &           " active=", lactive
-c$$$            write (*,*) "F(turn) = ", 
-c$$$     &           dynk_computeFUN(sets_dynk(kk,1),turn)
-c$$$         end if
-         
+
          !Write output file ONLY if (1) first pass and
          ! (2) this is the last SET to affect this elem/attr
          if (ldynksetsEnable .and. 
@@ -45555,6 +45616,11 @@ c$$$         end if
       integer funNum, turn
       intent (in) funNum, turn
 
+      !Temporaries for random generator functions
+      integer tmpseed1, tmpseed2
+      double precision ranecu_rvec(1)
+      
+      
 C     For some reason, write(*,*) statements here hangs the program.
 C     STOP <integer> is therefore used instead.
       
@@ -45569,13 +45635,28 @@ C     STOP <integer> is therefore used instead.
          stop 1
       endif
       
-      if     ( funcs_dynk(funNum,2) .eq. 0  ) then !GET
+      if     ( funcs_dynk(funNum,2) .eq.  0 ) then !GET
          retval = fexpr_dynk(funcs_dynk(funNum,3))
-      elseif ( funcs_dynk(funNum,2) .eq. 1  ) then !FILE
+      elseif ( funcs_dynk(funNum,2) .eq.  1 ) then !FILE
          if (turn .gt. funcs_dynk(funNum,5) ) then
             stop 3
          endif
          retval = fexpr_dynk(funcs_dynk(funNum,4)+turn-1)
+      elseif ( funcs_dynk(funNum,2) .eq.  6 ) then !RANDG
+         ! Save old seeds and loud our current seeds
+         call recuut(tmpseed1,tmpseed2)
+         call recuin(iexpr_dynk(funcs_dynk(funNum,3)+3),
+     &               iexpr_dynk(funcs_dynk(funNum,3)+4) )
+         ! Run generator for 1 value with current mcut
+         call ranecu( ranecu_rvec, 1,
+     &                iexpr_dynk(funcs_dynk(funNum,3)+2) )
+         ! Save our current seeds and load old seeds
+         call recuut(iexpr_dynk(funcs_dynk(funNum,3)+3),
+     &               iexpr_dynk(funcs_dynk(funNum,3)+4) )
+         call recuin(tmpseed1,tmpseed2)
+         ! Change to mu, sigma
+         retval = fexpr_dynk(funcs_dynk(funNum,4))
+     &          + fexpr_dynk(funcs_dynk(funNum,4)+1)*ranecu_rvec(1)
       elseif ( funcs_dynk(funNum,2) .eq. 20 ) then !ADD
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
