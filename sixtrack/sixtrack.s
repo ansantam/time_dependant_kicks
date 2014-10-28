@@ -44831,13 +44831,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       else if ( fields(3)(1:lfields(3)) .eq. "ADD" .or.   ! type 20
      &          fields(3)(1:lfields(3)) .eq. "SUB" .or.   ! type 21
      &          fields(3)(1:lfields(3)) .eq. "MUL" .or.   ! type 22
-     &          fields(3)(1:lfields(3)) .eq. "DIV" ) then ! type 23
-         ! ADD functions y = f1 + f2
+     &          fields(3)(1:lfields(3)) .eq. "DIV" .or.   ! type 23
+     &          fields(3)(1:lfields(3)) .eq. "POW" ) then ! type 24
+         ! Two-argument operators  y = OP(f1, f2)
          if (nfields .ne. 5) then
             write (*,*)"ERROR in DYNK block parsing (fort.3)"
             write (*,*)"ADD function expected 5 arguments, got",nfields
             write (*,*)"Expected syntax:"
-            write (*,*)"SET funname {ADD|SUB|MUL|DIV} funname1 funname2"
+            write (*,*)"SET funname {ADD|SUB|MUL|DIV|POW} ",
+     &                 "funname1 funname2"
             call prror(51)
          endif
 
@@ -44866,6 +44868,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               funcs_dynk(nfuncs_dynk,2) = 22 !TYPE (MUL)
          else if ( fields(3)(1:lfields(3)) .eq. "DIV" ) then
               funcs_dynk(nfuncs_dynk,2) = 23 !TYPE (DIV)
+         else if ( fields(3)(1:lfields(3)) .eq. "POW" ) then
+              funcs_dynk(nfuncs_dynk,2) = 24 !TYPE (POW)
          else
             write (*,*) "LOGIC ERROR"
             call prror(51)
@@ -44884,12 +44888,69 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             
             write (*,*) "*************************************"
             write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "ADD wanting functions '", 
+            write (*,*) "TWO ARG OPERATOR wanting functions '", 
      &           fields(4)(1:lfields(4)), "' and '", 
      &           fields(5)(1:lfields(5)), "'"
             write (*,*) "Calculated indices:", 
      &           funcs_dynk(nfuncs_dynk,3), funcs_dynk(nfuncs_dynk,4)
-            write (*,*) "One or both of these are not known."
+            write (*,*) "One or both of these are not known (-1)."
+            write (*,*) "*************************************"
+            
+            call dynk_dumpdata
+            call prror(51)
+         end if
+
+      else if ( fields(3)(1:lfields(3)) .eq. "MINUS" .or.   ! type 30
+     &          fields(3)(1:lfields(3)) .eq. "SQRT"  ) then ! type 31
+         ! One-argument operators  y = OP(f1)
+         if (nfields .ne. 4) then
+            write (*,*)"ERROR in DYNK block parsing (fort.3)"
+            write (*,*)"ADD function expected 5 arguments, got",nfields
+            write (*,*)"Expected syntax:"
+            write (*,*)"SET funname {MINUS|SQRT} funname"
+            call prror(51)
+         endif
+
+         ! Check for sufficient space
+         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Max number of maxdata_dynk to be exceeded"
+            write (*,*) "niexpr_dynk:", niexpr_dynk
+            write (*,*) "nfexpr_dynk:", nfexpr_dynk
+            write (*,*) "ncexpr_dynk:", ncexpr_dynk
+            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+            call prror(51)
+         endif
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         if      ( fields(3)(1:lfields(3)) .eq. "MINUS" ) then
+              funcs_dynk(nfuncs_dynk,2) = 30 !TYPE (MINUS)
+         else if ( fields(3)(1:lfields(3)) .eq. "SQRT" ) then
+              funcs_dynk(nfuncs_dynk,2) = 31 !TYPE (SQRT)
+         else
+            write (*,*) "LOGIC ERROR"
+            call prror(51)
+         endif
+         funcs_dynk(nfuncs_dynk,3) = 
+     &        dynk_findFUNindex(fields(4)(1:lfields(4)), 1) !Index to f1
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         ! Sanity check
+         if (funcs_dynk(nfuncs_dynk,3) .eq. -1) then
+            write (*,*) "*************************************"
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "SINGLE OPERATOR FUNC wanting function '", 
+     &           fields(4)(1:lfields(4)), "'"
+            write (*,*) "Calculated index:", 
+     &           funcs_dynk(nfuncs_dynk,3)
+            write (*,*) "One or both of these are not known (-1)."
             write (*,*) "*************************************"
             
             call dynk_dumpdata
@@ -45495,6 +45556,7 @@ c$$$         end if
       intent (in) funNum, turn
 
 C     For some reason, write(*,*) statements here hangs the program.
+C     STOP <integer> is therefore used instead.
       
       if (  funNum .lt. 0 .and. 
      &     -funNum .le. nsets_unique_dynk .and. 
@@ -45526,6 +45588,13 @@ C     For some reason, write(*,*) statements here hangs the program.
       elseif ( funcs_dynk(funNum,2) .eq. 23 ) then !DIV
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          / dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      elseif ( funcs_dynk(funNum,2) .eq. 24 ) then !POW
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &         ** dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      elseif ( funcs_dynk(funNum,2) .eq. 30 ) then !MINUS
+         retval = (-1)*dynk_computeFUN(funcs_dynk(funNum,3),turn)
+      elseif ( funcs_dynk(funNum,2) .eq. 31 ) then !SQRT
+         retval = sqrt(dynk_computeFUN(funcs_dynk(funNum,3),turn))
       elseif ( funcs_dynk(funNum,2) .eq. 40 ) then !CONST
          retval = fexpr_dynk(funcs_dynk(funNum,3))
       elseif ( funcs_dynk(funNum,2) .eq. 41 ) then !LIN
