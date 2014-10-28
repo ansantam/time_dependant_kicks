@@ -1,0 +1,97 @@
+GEOM
+PRINTOUT
+NEXT
+TRACKING
+50 0 32 0 17 0 1
+1 1 0 0 0
+0 0 1 1 1 20000 2
+NEXT
+INITIAL COORDINATES
+2 0 0 1
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.000001
+0.0
+7000000.0
+7000000.0
+7000000.0
+NEXT
+/FLUCTUATION
+/100000 1 7 3
+/NEXT
+ITERATION ACCURACY
+50 0.10E-13 0.10E-14
+10 0.10E-09 0.10E-09
+10 0.10E-04 0.10E-05
+ 0.10E-07 0.10E-11 0.10E-09
+NEXT
+LINEAR OPTICS
+ELEMENT  0 1 1 3.75 3.75
+NEXT
+BEAM
+0.110E+12 3.75 3.75  0.0755E+00  0.4716E-03 1 1 1
+NEXT
+SYNC
+35640 .0003225 16 0 26658.864 938.2796 1
+1 1
+NEXT
+DIST
+ECHO
+READ "initial.dat"
+NEXT
+DYNK
+DEBU
+FUN rise1 LIN 10 -5
+FUN rise2 LIN 3.14   1.55
+/A = 1, turn 1 = 0, 10 turns/period
+FUN mysin SIN 10 0.62831853 -0.62831853
+FUN defval GET CRAB4 voltage
+FUN meaningOfLiff CONST 42
+FUN adder ADD rise1 mysin
+FUN subber SUB rise1 mysin
+FUN muller MUL rise1 mysin
+FUN divver DIV mysin meaningOfLiff
+FUN filedata FILE testdata.dat
+SET  CRAB4 voltage mysin 5 20
+SET CRAB4 voltage defval 21 30
+SETR CRAB6 frequency rise1 5 100
+/SET  CRAB5 phase adder 10 100
+/SET  CRAB5 phase meaningOfLiff 1 9
+/SET  CRAB5 phase adder 101 101
+SET  CRAB5 phase filedata 1 10
+/SET CRAB6 phase subber 1 101
+/SET  CRAB5 phase muller  1 101
+/SET CRAB6 phase divver 1 101
+SET mcbxdv.a2r1 average_ms rise1 5 40
+SET mqxc.3r1..1 random_ms rise1 5 40
+SET ms.13r1.b1 random_ms rise1 5 40
+NEXT
+COLLIMATION
+.TRUE. 
+2 7000000
+3 5.9 .1 0. 0. "initial_dist.txt" 1.129E-4 75.5
+.FALSE.  12.0  15.6  999.  17.6  6.  7.  999.  10.  12.0  999.  8.  7.5   999.0
+8.3  30. 8.3  30.  8.3  30.  8.3  30.0 999.0  999.0	
+0 19789.0 20150.0 1 1
+-1.3899e-6 -9.345e-5 5.05324e-3 -1.6595e-2 2.15955e-2 -9.96261e-3 1.0
+-1.3899e-6 -9.345e-5 5.05324e-3 -1.6595e-2 2.15955e-2 -9.96261e-3 1.0
+0.503E-09 0.503E-09
+.FALSE. .FALSE. 0 .TRUE. TCP.C6L7.B1 .FALSE. .TRUE. .TRUE. .TRUE. 
+0 0 0 0
+0 0 0 0 0 0 0 0 0 0 .FALSE.
+.FALSE. 6.003 .0015
+0 0 .FALSE. .FALSE. 
+0 .0019 0.0 0.275E-3 1
+"CollDB.alltclp-tcld.b1.new" 1
+.TRUE. .FALSE. HoriLowbcoll 101 1 1.
+NEXT
+ENDE
+

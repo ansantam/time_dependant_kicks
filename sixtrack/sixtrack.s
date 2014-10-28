@@ -1360,7 +1360,7 @@
 
 C     Store the FUN statements
       integer maxfuncs_dynk, maxdata_dynk, maxstrlen_dynk
-      parameter (maxfuncs_dynk=100, maxdata_dynk=500,maxstrlen_dynk=20)
+      parameter (maxfuncs_dynk=100,maxdata_dynk=50000,maxstrlen_dynk=20)
 
       integer funcs_dynk (maxfuncs_dynk,5) ! 1 row/FUN, cols are: 
                                            ! (1) = function name in fort.3 (points within cexpr_dynk),
@@ -1371,6 +1371,7 @@ C     Store the FUN statements
       character(maxstrlen_dynk) cexpr_dynk(maxdata_dynk) ! Data for DYNK FUNs (\0 initialized in comdynk)
       
       integer nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk !Number of used positions in arrays
+            
 C     Store the SET statements
       integer maxsets_dynk
       parameter (maxsets_dynk=200)
@@ -44673,9 +44674,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
 +ca comdynk
 +ca comgetfields
-      integer ii
+      integer ii, stat, t
+      double precision x,y
       integer dynk_findFUNindex ! define function return type
-
+      
+      
       if (nfuncs_dynk+1 .gt. maxfuncs_dynk) then
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
          write (*,*) "Maximum number of FUN exceeded, please increase &
@@ -44743,14 +44746,98 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             call prror(51)
          end if
 
+      else if ( fields(3)(1:lfields(3)) .eq. "FILE" ) then ! type 1
+         ! FILE: Load the contents from a file
+         ! File format: two ASCII columns of numbers,
+         ! first  column = turn number (all turns should be there, starting from 1)
+         ! second column = value (as a double)
+
+         if (nfields .ne. 4) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "GET function expected 5 arguments, got",nfields
+            write (*,*) "Expected syntax:"
+            write (*,*) "SET funname FILE filename"
+            call prror(51)
+         endif
+
+         ! Check for sufficient space
+         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (ncexpr_dynk+3 .gt. maxdata_dynk) ) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Max number of maxdata_dynk to be exceeded"
+            write (*,*) "niexpr_dynk:", niexpr_dynk
+            write (*,*) "nfexpr_dynk:", nfexpr_dynk
+            write (*,*) "ncexpr_dynk:", ncexpr_dynk
+            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+            call prror(51)
+         endif
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk   !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 1             !TYPE (FILE)
+         funcs_dynk(nfuncs_dynk,3) = ncexpr_dynk+1 !Filename (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk+1 !Data (in fexpr_dynk)
+         funcs_dynk(nfuncs_dynk,5) = -1            !Below: Length of file
+         ! Store data
+         cexpr_dynk(ncexpr_dynk  )(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk+1)(1:lfields(4)) = !FILE NAME
+     &        fields(4)(1:lfields(4))
+         ncexpr_dynk = ncexpr_dynk+1
+         
+         !Open the file
+         open(unit=664,file=cexpr_dynk(ncexpr_dynk),action='read',
+     &        iostat=stat)
+         if (stat .ne. 0) then
+            write(*,*) "Error opening file '",cexpr_dynk(ncexpr_dynk),
+     &           "'"
+            call prror(51)
+         endif
+         ! Find the size of the file
+         ii = 0 !Number of data lines read
+         do
+            read(664,*, iostat=stat) t,y
+            if (stat .ne. 0) then !EOF
+               exit
+            endif
+            ii = ii+1
+            if (t .ne. ii) then
+               write (*,*) "Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write (*,*) "Missing turn number", ii,
+     &              ", got turn", t
+               call prror(51)
+            endif
+            if (nfexpr_dynk+1 .gt. maxdata_dynk) then
+               write (*,*) "Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write (*,*) "Ran out of memory in fexpr_dynk in turn", t
+               write (*,*) "Please increase maxdata_dynk"
+               call prror(51)
+            endif
+            
+            nfexpr_dynk = nfexpr_dynk+1
+            fexpr_dynk(nfexpr_dynk) = y
+         enddo
+         funcs_dynk(nfuncs_dynk,5) = ii
+         
+         close(664)
+         
+         
       !!! Operators: #20-39 !!!
-      else if (fields(3)(1:lfields(3)) .eq. "ADD" ) then ! type 20
+      else if ( fields(3)(1:lfields(3)) .eq. "ADD" .or.   ! type 20
+     &          fields(3)(1:lfields(3)) .eq. "SUB" .or.   ! type 21
+     &          fields(3)(1:lfields(3)) .eq. "MUL" .or.   ! type 22
+     &          fields(3)(1:lfields(3)) .eq. "DIV" ) then ! type 23
          ! ADD functions y = f1 + f2
          if (nfields .ne. 5) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "ADD function expected 5 arguments, got",nfields
-            write (*,*) "Expected syntax:"
-            write (*,*) "SET funname ADD funname1 funname2"
+            write (*,*)"ERROR in DYNK block parsing (fort.3)"
+            write (*,*)"ADD function expected 5 arguments, got",nfields
+            write (*,*)"Expected syntax:"
+            write (*,*)"SET funname {ADD|SUB|MUL|DIV} funname1 funname2"
             call prror(51)
          endif
 
@@ -44771,7 +44858,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 20          !TYPE (ADD)
+         if      ( fields(3)(1:lfields(3)) .eq. "ADD" ) then
+              funcs_dynk(nfuncs_dynk,2) = 20 !TYPE (ADD)
+         else if ( fields(3)(1:lfields(3)) .eq. "SUB" ) then
+              funcs_dynk(nfuncs_dynk,2) = 21 !TYPE (SUB)
+         else if ( fields(3)(1:lfields(3)) .eq. "MUL" ) then
+              funcs_dynk(nfuncs_dynk,2) = 22 !TYPE (MUL)
+         else if ( fields(3)(1:lfields(3)) .eq. "DIV" ) then
+              funcs_dynk(nfuncs_dynk,2) = 23 !TYPE (DIV)
+         else
+            write (*,*) "LOGIC ERROR"
+            call prror(51)
+         endif
          funcs_dynk(nfuncs_dynk,3) = 
      &        dynk_findFUNindex(fields(4)(1:lfields(4)), 1) !Index to f1
          funcs_dynk(nfuncs_dynk,4) = 
@@ -45411,9 +45509,23 @@ C     For some reason, write(*,*) statements here hangs the program.
       
       if     ( funcs_dynk(funNum,2) .eq. 0  ) then !GET
          retval = fexpr_dynk(funcs_dynk(funNum,3))
+      elseif ( funcs_dynk(funNum,2) .eq. 1  ) then !FILE
+         if (turn .gt. funcs_dynk(funNum,5) ) then
+            stop 3
+         endif
+         retval = fexpr_dynk(funcs_dynk(funNum,4)+turn-1)
       elseif ( funcs_dynk(funNum,2) .eq. 20 ) then !ADD
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      elseif ( funcs_dynk(funNum,2) .eq. 21 ) then !SUB
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          - dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      elseif ( funcs_dynk(funNum,2) .eq. 22 ) then !MUL
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          * dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      elseif ( funcs_dynk(funNum,2) .eq. 23 ) then !DIV
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          / dynk_computeFUN(funcs_dynk(funNum,4),turn)
       elseif ( funcs_dynk(funNum,2) .eq. 40 ) then !CONST
          retval = fexpr_dynk(funcs_dynk(funNum,3))
       elseif ( funcs_dynk(funNum,2) .eq. 41 ) then !LIN
