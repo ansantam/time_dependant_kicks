@@ -4,16 +4,36 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-#data structure:
-# - one key = one setidx
-# - one index = one turn
-turn    = {}
-element = {}
-attribute = {}
-function = {}
-active = {}
- # turn, element, attribute, function, active
-data = {}     # value 1, value2, ...
+class DYNKdata:
+    #Data for one (element,attribute)
+    
+    element   = None
+    attribute = None
+    
+    turn    = None # Array of turn numbers
+    setIDX  = None # Array of setIDX
+    funName = None # Array of funname
+    data    = None # Matrix of data
+    #How many elements are we setting = how many columns in data
+    datalen = None 
+
+    def __init__(self, element, attribute,datalen):
+        self.element   = element
+        self.attribute = attribute
+
+        self.turn    = []
+        self.setIDX  = []
+        self.funName = []
+        self.data    = [] #First index: turn, second, element instance
+        
+        self.datalen = datalen
+        
+    def toNumarray(self):
+        self.turn = np.asarray(self.turn)
+        self.data = np.asarray(self.data)
+        assert self.datalen == self.data.shape[1]
+    
+dynkData = {}
 
 ifile = open("dynksets.dat", 'r')
 for l in ifile:
@@ -22,45 +42,55 @@ for l in ifile:
         continue
     ls = l.split()
     
-    setidx = int(ls[1])
+    TURN = int(ls[0])
+    EL_ATT = (ls[1],ls[2])
+    SETIDX = int(ls[3])
+    FUNCTION = ls[4]
+    DATALEN = int(ls[5])
+    DATA = map(float,ls[6:])
+    
+    if DATALEN != len(DATA):
+        print "ERROR! DATALEN != DATA"
+        exit(1)
 
-    if not setidx in turn:
-        turn     [setidx] = []
-        element  [setidx] = []
-        attribute[setidx] = []
-        function [setidx] = []
-        active   [setidx] = []
-        data     [setidx] = []
-    # if len(turn[setidx]) > 0:
-    #     if int(ls[0]) < turn[setidx][-1]:
-    #         #break
-    #         pass
-        
-    turn     [setidx].append(  int(ls[0]) )
-    element  [setidx].append(      ls[2]  )
-    attribute[setidx].append(      ls[3]  )
-    function [setidx].append(      ls[4]  )
-    active   [setidx].append( bool(ls[5]) )
-    
-    numdata = int(ls[6])
-    assert len(ls) == numdata+7
-    
-    data[setidx].append( map(float,ls[7:]) )
+    if not EL_ATT in dynkData:
+        dynkData[EL_ATT] = DYNKdata(EL_ATT[0],EL_ATT[1],DATALEN)
+
+    dynkData[EL_ATT].turn.append(TURN)
+    dynkData[EL_ATT].setIDX.append(SETIDX)
+    dynkData[EL_ATT].funName.append(FUNCTION)
+    dynkData[EL_ATT].data.append(DATA)
     
 ifile.close()
 
-for k in data:
-    turn[k] = np.asarray(turn[k])
-    data[k] = np.asarray(data[k])
+for (k,i) in zip(dynkData,xrange(len(dynkData))):
+    dynkData[k].toNumarray()
+    
+    #Separate figure:
+    plt.figure(10+i)
+    plt.plot(dynkData[k].turn,dynkData[k].data[:,0])
+    plt.xlabel("Turn")
+    plt.ylabel("Setting")
+    plt.title("%s:%s" %(k[0],k[1]))
+    plt.grid(True)
+    plt.xticks(np.arange(dynkData[k].turn[0], dynkData[k].turn[-1], 1.0))
 
-for k in data:
-    print k
-    # print turn[k]
-    # print data[k][:,0]
-    # print (k,element[k][0],attribute[k][0],function[k][0])
-    plt.figure()
-    plt.title("SET #%i acting on %s:%s by function '%s'" %(k,element[k][0],attribute[k][0],function[k][0]))
-    plt.xlabel("turn")
-    plt.plot(turn[k],data[k][:,0])
+    #Combined figure
+    plt.figure(1)
+    plt.plot(dynkData[k].turn,dynkData[k].data[:,0],
+             label="%s:%s"%(k[0],k[1]) )
+    plt.xlabel("Turn")
+    plt.ylabel("Setting")
+    plt.xticks(np.arange(dynkData[k].turn[0], dynkData[k].turn[-1], 1.0))
+
+#Final touches
+plt.figure(1)
+plt.legend(loc=0)
+plt.grid(True)
 
 plt.show()
+    
+
+#Andrea:
+#plt.grid(True)
+#plt.xticks(np.arange(min(turn[k]), max(turn[k])+1, 1.0))

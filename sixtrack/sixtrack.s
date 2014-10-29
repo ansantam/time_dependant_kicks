@@ -1387,7 +1387,7 @@ C     Store the SET statements
       integer nsets_dynk ! Number of used positions in arrays
       
       character(maxstrlen_dynk) csets_unique_dynk (maxsets_dynk,2) !Similar to csets_dynk,
-                                                                  ! but only one entry per elem/attr
+                                                                   ! but only one entry per elem/attr
       double precision fsets_origvalue_dynk(maxsets_dynk) ! Store original value from dynk
       integer nsets_unique_dynk
       
@@ -45610,8 +45610,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       intent(in) turn
 
 !     temporary variables
-      integer ii, shiftedTurn
-      logical lactive, ldynksetsEnable
+      integer ii, jj, shiftedTurn
+      logical ldynksetsEnable
 !     functions
       double precision dynk_computeFUN
       character(maxstrlen_dynk) dynk_stringzerotrim
@@ -45621,6 +45621,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       double precision getvaldata(getvaldata_len)
       integer ngetvaldata
       
+      character(maxstrlen_dynk) whichFUN(maxsets_dynk) !Which function was used to set a given elem/attr?
+      integer whichSET(maxsets_dynk) !Which SET was used for a given elem/attr?
+      
       save ldynksetsEnable
 
       if ( ldynkdebug ) then
@@ -45628,6 +45631,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          write(*,*) ' CALL TO dynk_apply AT TURN ', turn
       endif
       
+      !Initialize variables
+      do jj=1, nsets_unique_dynk
+         whichSET(jj) = -1
+         do ii=1,maxstrlen_dynk
+            whichFUN(jj)(ii:ii) = char(0)
+         enddo
+      enddo
+
       if (turn .eq. 1) then
          ! Reset RNGs
          do ii=1, nfuncs_dynk
@@ -45662,17 +45673,19 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if (.not. ldynkfileopen) then
          open(unit=665, file="dynksets.dat",
      &        status="replace",action="write") 
-         write(665,*) "# turn setidx " //
-     &        "element attribute function active " //
+         write(665,*) "# turn element attribute SETidx funname ",
      &        "nvalues value1 value2 ..."
          ldynkfileopen = .true.
          ldynksetsEnable = .true.
       endif
       
       do ii=1,nsets_dynk
+         ! Sanity check already confirms that only a single SET
+         ! is active on a given element:attribute on a given turn.
          if (turn .ge. sets_dynk(ii,2) .and.
      &       turn .le. sets_dynk(ii,3)) then
-            lactive = .true.
+            
+            !Shifting
             shiftedTurn = turn + sets_dynk(ii,4)
             if (shiftedTurn .le. 0) then
                write (*,*) "ERROR in dynk_apply(), SET #:", ii
@@ -45681,6 +45694,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                write (*,*) "This is not valid."
                stop
             endif
+            
+            !Set the value
             if (ldynkdebug) then
                write(*,*) "DYNK> Set", ii, "on",
      &              csets_dynk(ii,1), csets_dynk(ii,2),
@@ -45694,28 +45709,40 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &                             getvaldata, ngetvaldata )
                write (*,*) "DYNK>", getvaldata(:ngetvaldata)
             endif
-         else
-            lactive = .false.
+            
+            !For the output file: Which function was used?
+            do jj=1, nsets_unique_dynk
+               if (csets_dynk(ii,1) .eq. csets_unique_dynk(jj,1) .and.
+     &             csets_dynk(ii,1) .eq. csets_unique_dynk(jj,1) ) then
+                  whichSET(jj)=ii
+                  whichFUN(jj)=cexpr_dynk(funcs_dynk(sets_dynk(ii,1),1))
+               endif
+            enddo
          end if
-
-         !Write output file ONLY if (1) first pass and
-         ! (2) this is the last SET to affect this elem/attr
-         if (ldynksetsEnable .and. 
-     &       dynk_findSETindex(
-     &        csets_dynk(ii,1),csets_dynk(ii,2),ii+1) .eq. -1 ) then
-            ngetvaldata = getvaldata_len
-            call dynk_getvalue( csets_dynk(ii,1), csets_dynk(ii,2),
-     &                          getvaldata, ngetvaldata )
-            write(665,*) turn, ii,
-     &           dynk_stringzerotrim(csets_dynk(ii,1)),
-     &           dynk_stringzerotrim(csets_dynk(ii,2)), 
-     &           dynk_stringzerotrim(
-     &           cexpr_dynk(funcs_dynk(sets_dynk(ii,1),1)) ),
-     &           lactive, ngetvaldata,
-     &            getvaldata(:ngetvaldata)
-         endif
-         
       end do
+
+      !Write output file
+      if (ldynksetsEnable) then
+         do jj=1,nsets_unique_dynk
+            ngetvaldata = getvaldata_len
+            call dynk_getvalue(
+     &           csets_unique_dynk(jj,1),
+     &           csets_unique_dynk(jj,2),
+     &           getvaldata, ngetvaldata )
+            
+            if (whichSET(jj) .eq. -1) then
+               whichFUN(jj) = "N/A"
+            endif
+            
+            write(665,*)
+     &           turn, 
+     &           dynk_stringzerotrim(csets_unique_dynk(jj,1)),
+     &           dynk_stringzerotrim(csets_unique_dynk(jj,2)),
+     &           whichSET(jj),
+     &           dynk_stringzerotrim(whichFUN(jj)),
+     &           ngetvaldata, getvaldata(:ngetvaldata)
+         enddo
+      endif
 
       end subroutine
 !
