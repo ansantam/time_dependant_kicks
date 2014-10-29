@@ -89,8 +89,3 @@ plt.legend(loc=0)
 plt.grid(True)
 
 plt.show()
-    
-
-#Andrea:
-#plt.grid(True)
-#plt.xticks(np.arange(min(turn[k]), max(turn[k])+1, 1.0))
