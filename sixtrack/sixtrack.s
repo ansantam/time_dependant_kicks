@@ -33038,13 +33038,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if (dowrite_dist.and.(ie.eq.iu).and.(n.eq.numl)) then
         open(unit=99, file='distn.dat')
         write(99,*)                                                     &
-     &'# 1=x 2=xp 3=y 4=yp'
+     &'# 1=x 2=xp 3=y 4=yp 5=z 6 =E'
         do j = 1, napx
-          write(99,'(5(1X,E15.7))') xgrd(j), xpgrd(j),                  &
-     &ygrd(j), ypgrd(j)
+          write(9998,'(6(1X,E15.7))') (xgrd(j)-torbx(1))/1d3,           &
+     &(xpgrd(j)-torbxp(1))/1d3, (ygrd(j)-torby(1))/1d3,                 &
+     &(ypgrd(j)-torbyp(1))/1d3,sigmvgrd(j),ejfvgrd(j)
 !     2             , S(J)
         end do
-        close(99)
+!        close(99)
       endif
 !
 !GRD
