@@ -44763,7 +44763,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! Check for sufficient space
          if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
      &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+3 .gt. maxdata_dynk) ) then
+     &        (ncexpr_dynk+2 .gt. maxdata_dynk) ) then
             write (*,*) "ERROR in DYNK block parsing (fort.3):"
             write (*,*) "Max number of maxdata_dynk to be exceeded"
             write (*,*) "niexpr_dynk:", niexpr_dynk
@@ -44772,14 +44772,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
             call prror(51)
          endif
-         ! Set pointers to start of funs data blocks
+         ! Set pointers to start of funs data blocks (nfexpr_dynk handled when reading data)
          nfuncs_dynk = nfuncs_dynk+1
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk   !NAME (in cexpr_dynk)
          funcs_dynk(nfuncs_dynk,2) = 1             !TYPE (FILE)
          funcs_dynk(nfuncs_dynk,3) = ncexpr_dynk+1 !Filename (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk+1 !Data (in fexpr_dynk)
+         funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk+1 !Data     (in fexpr_dynk)
          funcs_dynk(nfuncs_dynk,5) = -1            !Below: Length of file
          ! Store data
          cexpr_dynk(ncexpr_dynk  )(1:lfields(2)) = !NAME
@@ -44796,7 +44796,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &           "'"
             call prror(51)
          endif
-         ! Find the size of the file
+
          ii = 0 !Number of data lines read
          do
             read(664,*, iostat=stat) t,y
@@ -44824,6 +44824,100 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          enddo
          funcs_dynk(nfuncs_dynk,5) = ii
          
+         close(664)
+
+      else if ( fields(3)(1:lfields(3)) .eq. "FILELIN" ) then ! FILELIN / type 1
+         ! FILELIN: Load the contents from a file, linearly interpolate
+         ! File format: two ASCII columns of numbers,
+         ! first  column = turn number (as a double)
+         ! second column = value (as a double)
+
+         if (nfields .ne. 4) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "GET function expected 5 arguments, got",nfields
+            write (*,*) "Expected syntax:"
+            write (*,*) "FUN funname FILE filename"
+            call prror(51)
+         endif
+
+         ! Check for sufficient space
+         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (ncexpr_dynk+2 .gt. maxdata_dynk) ) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Max number of maxdata_dynk to be exceeded"
+            write (*,*) "niexpr_dynk:", niexpr_dynk
+            write (*,*) "nfexpr_dynk:", nfexpr_dynk
+            write (*,*) "ncexpr_dynk:", ncexpr_dynk
+            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+            call prror(51)
+         endif
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk   !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 2             !TYPE (FILE)
+         funcs_dynk(nfuncs_dynk,3) = ncexpr_dynk+1 !Filename (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk+1 !Data     (in fexpr_dynk)
+         funcs_dynk(nfuncs_dynk,5) = -1            !Below: Length of file (number of x,y sets)
+         ! Store data
+         cexpr_dynk(ncexpr_dynk  )(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk+1)(1:lfields(4)) = !FILE NAME
+     &        fields(4)(1:lfields(4))
+         ncexpr_dynk = ncexpr_dynk+1
+         
+         !Open the file
+         open(unit=664,file=cexpr_dynk(ncexpr_dynk),action='read',
+     &        iostat=stat)
+         if (stat .ne. 0) then
+            write(*,*) "Error opening file '",cexpr_dynk(ncexpr_dynk),
+     &           "'"
+            call prror(51)
+         endif
+         ! Find the size of the file
+         ii = 0 !Number of data lines read
+         do
+            read(664,*, iostat=stat) x,y
+            if (stat .ne. 0) then !EOF
+               exit
+            endif
+            ii = ii+1
+         enddo
+         t = ii
+         rewind(664)
+         
+         if (nfexpr_dynk+2*t .gt. maxdata_dynk) then
+            write (*,*) "Error reading file '",
+     &           cexpr_dynk(ncexpr_dynk),"'"
+            write (*,*) "Not enough space in fexpr_dynk, need", 2*t
+            write (*,*) "Please increase maxdata_dynk"
+            call prror(51)
+         endif
+
+         !Read the file
+         ii = 0
+         do
+            read(664,*, iostat=stat) x,y
+            if (stat .ne. 0) then !EOF
+               if (ii .ne. t) then
+                  write (*,*) "Unexpected when reading file '",
+     &                 cexpr_dynk(ncexpr_dynk),"'"
+                  write (*,*) "ii=",ii,"t=",t
+                  stop
+               endif
+               exit
+            endif
+            !Current line number
+            ii = ii+1
+            
+            fexpr_dynk(nfexpr_dynk + ii    ) = x
+            fexpr_dynk(nfexpr_dynk + ii + t) = y
+         enddo
+         
+         nfexpr_dynk = nfexpr_dynk+2*t
+         funcs_dynk(nfuncs_dynk,5) = t
          close(664)
       
       else if ( fields(3)(1:lfields(3)) .eq. "RANDG" ) then ! type 6 / RANDG
@@ -45609,18 +45703,24 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
 !     last modified: 17-10-2014
-!     Compute the value of a given DYNK function for the given turn
+!     Compute the value of a given DYNK function (funNum) for the given turn
+!     If turn = 0 and funNum<0: reset to original value
 !-----------------------------------------------------------------------
       implicit none
 +ca comdynk
       integer funNum, turn
       intent (in) funNum, turn
+      
+      !Functions to call
+      double precision dynk_lininterp
 
       !Temporaries for random generator functions
       integer tmpseed1, tmpseed2
       double precision ranecu_rvec(1)
       
-      
+      !Temporaries for FILELIN
+      integer filelin_start, filelin_xypoints
+
 C     For some reason, write(*,*) statements here hangs the program.
 C     STOP <integer> is therefore used instead.
       
@@ -45642,6 +45742,15 @@ C     STOP <integer> is therefore used instead.
             stop 3
          endif
          retval = fexpr_dynk(funcs_dynk(funNum,4)+turn-1)
+      elseif ( funcs_dynk(funNum,2) .eq.  2 ) then !FILELIN
+         filelin_start    = funcs_dynk(funNum,4)
+         filelin_xypoints = funcs_dynk(funNum,5)
+         !Pass the correct array views/sections to dynk_lininterp
+         retval = dynk_lininterp( dble(turn),
+     &       fexpr_dynk(filelin_start:filelin_start+filelin_xypoints-1),
+     &       fexpr_dynk(filelin_start +  filelin_xypoints:
+     &                  filelin_start +2*filelin_xypoints-1),
+     &        filelin_xypoints )
       elseif ( funcs_dynk(funNum,2) .eq.  6 ) then !RANDG
          ! Save old seeds and loud our current seeds
          call recuut(tmpseed1,tmpseed2)
@@ -46103,59 +46212,75 @@ C      dimension retdata(:)
       
       end function
 
-      double precision function lininterp(xval,xarray,yarray,idimen)
-!
-!-----------------------------------------------------------------------
-!
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 17-07-2013
-!     linear interpolation of a value y in correspondence of an abscissa
-!         xval, given an array of abscissae xarray and the respective 
-!         ordinates yarray
-!     always in main code
-!
-!     idimen is the dimension of the two arrays
-!     if xval is outside the range, the closest extreme value is used:
-!         - x<=x_min: y=y(x_min)
-!         - x>=x_max: y=y(x_max)
-!
-!     NB: the xarray is an array of integer values, in increasing order,
-!             and the function described by the two arrays is surjective
-!         since xval is integer, it can fall onto a specific value of xarray
-!
-!-----------------------------------------------------------------------
-!
+      double precision function dynk_lininterp(x,xvals,yvals,datalen)
       implicit none
-
-!     interface variables
-      integer xval, xarray, idimen
-      double precision yarray
-      dimension xarray(idimen), yarray(idimen)
-
-!     temporary variables
+!-----------------------------------------------------------------------
+!
+!     A.Mereghetti, for the FLUKA Team and K.Sjobak for BE-ABP/HSS
+!     last modified: 29-10-2014
+!     
+!     Define a linear function with a set of x,y-coordinates xvals, yvals
+!     Return this function evaluated at the point x.
+!     The length of the arrays xvals and yvals should be given in datalen.
+!
+!     xvals should be in increasing order, if not then program is aborted.
+!     If x < min(xvals) or x>max(xvals), program is aborted.
+!     If datalen <= 0, program is aborted. 
+!     
+!-----------------------------------------------------------------------
+      double precision x, xvals(*),yvals(*)
+      integer datalen
+      intent(in) x,xvals,yvals,datalen
+      
       integer ii
-      double precision m, q
+      double precision dydx, y0
 
-      if ( xval.le.xarray(1) ) then
-         lininterp=yarray(1)
-      elseif ( xval.ge.xarray(idimen) ) then
-         lininterp=yarray(idimen)
-      else
-         do ii=2,idimen
-            if ( xval.eq.xarray(ii) ) then
-               lininterp=yarray(ii)
-            elseif ( xval.gt.xarray(ii-1).and.xval.lt.xarray(ii) ) then
-               m=(yarray(ii)-yarray(ii-1))/dble(xarray(ii)-xarray(ii-1))
-               q=yarray(ii-1)-m*dble(xarray(ii-1))
-               lininterp=m*dble(xval)+q
-            endif
-         enddo
+C     For some reason, write(*,*) statements when called from dynk_computeFUN
+C     hangs the program. STOP <integer> is therefore used instead.
+            
+
+      !Sanity checks
+      if (datalen .le. 0) then
+C         write(*,*) "ERROR in dynk_lininterp: datalen=0"
+         stop 10
+      endif
+      if ( x .lt. xvals(1) .or. x .gt. xvals(datalen) ) then
+C         write(*,*) "ERROR in dynk_lininterp: x =", x,
+C     &              "outside range", xvals(1),xvals(datalen)
+         stop 11
       endif
 
-!     au revoir:
-      return
-      end function
+      !Find the right indexes i1 and i2
+      ! Special case: first value at first point
+      if (x .eq. xvals(1)) then
+         dynk_lininterp = yvals(1)
+         return
+      endif
+      
+      do ii=1, datalen-1
+         if (xvals(ii).ge. xvals(ii+1)) then
+C            write (*,*) "ERROR in dynk_lininterp"
+C            write (*,*) "xvals should be in increasing order"
+C            write (*,*) "xvals =", xvals(:datalen)
+            stop 12
+         endif
+         
+         if (x .le. xvals(ii+1)) then
+            ! we're in the right interval
+            dydx = (yvals(ii+1)-yvals(ii)) / (xvals(ii+1)-xvals(ii))
+            y0   = yvals(ii) - dydx*xvals(ii)
+            dynk_lininterp = dydx*x+y0
+            return
+         endif
+      enddo
+      
+      !We didn't return yet: Something wrong
+C      write (*,*) "ERROR in dynk_lininterp: Reached end of function"
+C      write (*,*) "This should not happen - please contact developers"
+      stop 13
 
+      end function
+      
 +dk cadcum
       subroutine cadcum
 !
