@@ -33038,13 +33038,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if (dowrite_dist.and.(ie.eq.iu).and.(n.eq.numl)) then
         open(unit=99, file='distn.dat')
         write(99,*)                                                     &
-     &'# 1=x 2=xp 3=y 4=yp'
+     &'# 1=x 2=xp 3=y 4=yp 5=z 6 =E'
         do j = 1, napx
-          write(99,'(5(1X,E15.7))') xgrd(j), xpgrd(j),                  &
-     &ygrd(j), ypgrd(j)
+          write(9998,'(6(1X,E15.7))') (xgrd(j)-torbx(1))/1d3,           &
+     &(xpgrd(j)-torbxp(1))/1d3, (ygrd(j)-torby(1))/1d3,                 &
+     &(ypgrd(j)-torbyp(1))/1d3,sigmvgrd(j),ejfvgrd(j)
 !     2             , S(J)
         end do
-        close(99)
+!        close(99)
       endif
 !
 !GRD
@@ -45830,7 +45831,7 @@ C     STOP <integer> is therefore used instead.
       character(maxstrlen_dynk) dynk_stringzerotrim
       ! temp variables
       integer el_type, ii
-      double precision fun_val, fun_val_orig
+      double precision fun_val
       character(maxstrlen_dynk) element_name_stripped
       character(maxstrlen_dynk) att_name_stripped
       
@@ -45871,7 +45872,6 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &        (abs(el_type).eq.9).or.    ! 18th pole kick
      &        (abs(el_type).eq.10)) then ! 20th pole kick
             if (att_name_stripped.eq."average_ms") then !
-               fun_val_orig=ed(ii)
               if (setR) then
                 ed(ii)=dynk_computeFUN(funNum,turn)
               else
@@ -45891,14 +45891,12 @@ C     Here comes the logic for setting the value of the attribute for all instan
             endif
           elseif (abs(el_type).eq.11) then ! multipoles 
             if (att_name_stripped.eq."bending_str") then ! [rad]
-              fun_val_orig=ed(ii)
               if (setR) then
                 ed(ii)= dynk_computeFUN(funNum,turn)
               else
                 ed(ii)=fun_val
               endif
             elseif (att_name_stripped.eq."radius") then ![m]
-              fun_val_orig=ek(ii)
               if (setR) then
                 ek(ii)= dynk_computeFUN(funNum,turn)
               else
@@ -45912,21 +45910,18 @@ C     Here comes the logic for setting the value of the attribute for all instan
             endif
           elseif (abs(el_type).eq.12) then ! cavities 
             if (att_name_stripped.eq."voltage") then ! [MV]
-              fun_val_orig=ed(ii)
               if (setR) then
                 ed(ii)= dynk_computeFUN(funNum,turn)
               else
                 ed(ii)=fun_val
               endif
             elseif (att_name_stripped.eq."harmonic") then !
-              fun_val_orig=ek(ii)
               if (setR) then
                 ek(ii)= dynk_computeFUN(funNum,turn)
               else
                 ek(ii)=fun_val
               endif
             elseif (att_name_stripped.eq."lag_angle") then ! [deg]
-              fun_val_orig=el(ii)
               if (setR) then
                 el(ii)= dynk_computeFUN(funNum,turn)
               else
@@ -45940,21 +45935,18 @@ C     Here comes the logic for setting the value of the attribute for all instan
             endif
           elseif (abs(el_type).eq.16) then ! AC dipole 
             if (att_name_stripped.eq."amplitude") then ! [T.m]
-              fun_val_orig=ed(ii)
               if (setR) then
                 ed(ii)= dynk_computeFUN(funNum,turn)
               else
                 ed(ii)=fun_val
               endif
             elseif (att_name_stripped.eq."frequency") then ! [2pi]
-              fun_val_orig=ek(ii)
               if (setR) then
                 ek(ii)= dynk_computeFUN(funNum,turn)
               else
                 ek(ii)=fun_val
               endif
             elseif (att_name_stripped.eq."phase") then ! [rad]
-              fun_val_orig=el(ii)
               if (setR) then
                 el(ii)= dynk_computeFUN(funNum,turn)
               else
@@ -45968,21 +45960,18 @@ C     Here comes the logic for setting the value of the attribute for all instan
             endif
           elseif (abs(el_type).eq.20) then ! beam-beam separation
             if (att_name_stripped.eq."horizontal") then ! [mm]
-              fun_val_orig=ed(ii)
               if (setR) then
                 ed(ii)= dynk_computeFUN(funNum,turn)
               else
                 ed(ii)=fun_val
               endif
             elseif (att_name_stripped.eq."vertical") then ! [mm]
-               fun_val_orig=ek(ii)
               if (setR) then
                 ek(ii)= dynk_computeFUN(funNum,turn)
               else
                 ek(ii)=fun_val
               endif
             elseif (att_name_stripped.eq."strength") then ! [m]
-              fun_val_orig=el(ii)
               if (setR) then
                 el(ii)= dynk_computeFUN(funNum,turn)
               else
@@ -45999,21 +45988,18 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &            (abs(el_type).eq.27).or.    ! cc mult. kick order 3
      &            (abs(el_type).eq.28)) then  ! cc mult. kick order 4
             if (att_name_stripped.eq."voltage") then ![MV]
-                fun_val_orig=ed(ii)
               if (setR) then
                 ed(ii)=dynk_computeFUN(funNum,turn)
               else
                 ed(ii)=fun_val
               endif
             elseif (att_name_stripped.eq."frequency") then ![MHz]
-              fun_val_orig=ek(ii)
               if (setR) then
                 ek(ii)= dynk_computeFUN(funNum,turn)
               else
                 ek(ii)=fun_val
               endif
             elseif (att_name_stripped.eq."phase") then ![rad]
-              fun_val_orig=el(ii)
               if (setR) then
                 el(ii)= dynk_computeFUN(funNum,turn)
               else
