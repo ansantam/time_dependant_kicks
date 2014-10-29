@@ -1,0 +1,119 @@
+GEOM
+PRINTOUT
+NEXT
+TRACKING
+52 0 32 0 17 0 1
+1 1 0 0 0
+0 0 1 1 1 20000 2
+NEXT
+INITIAL COORDINATES
+2 0 0 1
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.000001
+0.0
+7000000.0
+7000000.0
+7000000.0
+NEXT
+FLUCTUATION
+100000 1 7 3
+NEXT
+ITERATION ACCURACY
+50 0.10E-13 0.10E-14
+10 0.10E-09 0.10E-09
+10 0.10E-04 0.10E-05
+0.10E-07 0.10E-11 0.10E-09
+NEXT
+LINEAR OPTICS
+ELEMENT  0 1 1 3.75 3.75
+NEXT
+BEAM
+0.110E+12 3.75 3.75  0.0755E+00  0.4716E-03 1 1 1
+NEXT
+SYNC
+35640 .0003225 16 0 26658.864 938.2796 1
+1 1
+NEXT
+DYNK
+DEBU
+FUN initial CONST 0.0
+FUN plateau CONST 3.568626888 
+FUN ramp LIN 0.509803841142857 -1.529411523428571
+FUN failure LIN -0.446078361 21.857839689
+FUN failure_phase LIN 0.196349540849 -8.05033117482
+/--------------------------------
+/SETTINGS FOR CRAB CAVITY 4
+/--------------------------------
+/VOLTAGE
+/--------------------------------
+SET CRAB4 voltage initial 1 2 0
+SET CRAB4 voltage ramp    3 10 0
+SET CRAB4 voltage plateau 11 40 0
+SET CRAB4 voltage failure 41 49 0
+/--------------------------------
+/PHASE
+/--------------------------------
+SET CRAB4 phase failure_phase 41 49 0
+/--------------------------------
+/SETTINGS FOR CRAB CAVITY 5
+/--------------------------------
+/VOLTAGE
+/--------------------------------
+SET CRAB5 voltage initial 0 1 1
+SET CRAB5 voltage ramp    2 9 1
+SET CRAB5 voltage plateau 10 39 1
+SET CRAB5 voltage failure 40 48 1
+/--------------------------------
+/PHASE
+/--------------------------------
+SET CRAB5 phase failure_phase 40 48 1
+/--------------------------------
+/SETTINGS FOR CRAB CAVITY 6
+/--------------------------------
+/VOLTAGE
+/--------------------------------
+SET CRAB6 voltage initial 0 1 1
+SET CRAB6 voltage ramp    2 9 1
+SET CRAB6 voltage plateau 10 39 1
+SET CRAB6 voltage failure 40 48 1
+/--------------------------------
+/PHASE
+/--------------------------------
+SET CRAB6 phase failure_phase 40 48 1
+/--------------------------------
+/DEACTIVATE CRABS
+/--------------------------------
+SET CRAB2 voltage initial 1 52 0
+SET CRAB3 voltage initial 1 52 0
+SET CRAB1 voltage initial 1 52 0
+SET CRAB7 voltage initial 1 52 0
+NEXT
+COLLIMATION
+.TRUE. 
+10 7000000
+3 5.1 .1 0. 0. "initial_dist.txt" 1.129E-4 75.5
+.FALSE.  12.0  15.6  999.  17.6  6.  7.  999.  10.  12.0  999.  8.  7.5   999.0
+8.3  30. 8.3  30.  8.3  30.  8.3  30.0 999.0  999.0	
+0 19789.0 20150.0 1 1
+-1.3899e-6 -9.345e-5 5.05324e-3 -1.6595e-2 2.15955e-2 -9.96261e-3 1.0
+-1.3899e-6 -9.345e-5 5.05324e-3 -1.6595e-2 2.15955e-2 -9.96261e-3 1.0
+0.503E-09 0.503E-09
+.FALSE. .FALSE. 1 .TRUE. TCP.C6L7.B1 .FALSE. .TRUE. .TRUE. .TRUE. 
+0 0 0 0
+0 0 0 0 0 0 0 0 0 0 .FALSE.
+.FALSE. 6.003 .0015
+0 0 .FALSE. .FALSE. 
+0 .0019 0.0 0.275E-3 1
+"CollDB.alltclp-tcld.b1.new" 1
+.TRUE. .FALSE. HoriLowbcoll 101 1 1.
+NEXT
+ENDE
