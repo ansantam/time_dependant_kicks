@@ -33036,7 +33036,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !++  Write final distribution
 !
       if (dowrite_dist.and.(ie.eq.iu).and.(n.eq.numl)) then
-        open(unit=99, file='distn.dat')
+        open(unit=9998, file='distn.dat')
         write(99,*)                                                     &
      &'# 1=x 2=xp 3=y 4=yp 5=z 6 =E'
         do j = 1, napx
