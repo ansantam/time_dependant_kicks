@@ -6,8 +6,8 @@ This repository contains the code adding the functionality of dynamic kicks to [
 
 The `DYNK` block allows the user to modify the original attributes of the elements of the lattice of the accelerator, per turn, with a user defined function.
 
-* The function is defined by the user in the _fort.3_ input file, inside the `DYNK` block, via the `FUN` flag.
-* The element's attribute to be changed is defined by the user in the _fort.3_ input file, inside the `DYNK` block, via the `FUN` flag.
+* The *function* is defined by the user in the _fort.3_ input file, inside the `DYNK` block, via the `FUN` flag.
+* The *element's attribute* to be changed (and the turns when this is applicable) is defined by the user in the _fort.3_ input file, inside the `DYNK` block, via the `SET` flag.
 
 Multiple `FUN` functions can be defined. They may also depend on the functions defined above them in the `DYNK` block. Similarly, multiple `SET` may be defined for multiple element/attribute combinations, and for the same element/attribute given that they are not active on the same turns.
 
