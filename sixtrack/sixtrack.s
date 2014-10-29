@@ -1375,10 +1375,11 @@ C     Store the FUN statements
 C     Store the SET statements
       integer maxsets_dynk
       parameter (maxsets_dynk=200)
-      integer sets_dynk(maxsets_dynk, 3) ! 1 row/SET, cols are:
+      integer sets_dynk(maxsets_dynk, 4) ! 1 row/SET, cols are:
                                          ! (1) = function index (points within funcs_dynk)
                                          ! (2) = first turn num. where it is active
                                          ! (3) =  last turn num. where it is active
+                                         ! (4) = Turn shift - number added to turn before evaluating the FUN
       character(maxstrlen_dynk) csets_dynk (maxsets_dynk,2) ! 1 row/SET (same ordering as sets_dynk), cols are:
                                                             ! (1) element name
                                                             ! (2) attribute name
@@ -45262,18 +45263,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
       if (nsets_dynk+1 .gt. maxsets_dynk) then
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
-         write (*,*) "Maximum number of SET exceeded, please increase &
-     &parameter maxsets_dynk."
+         write (*,*) "Maximum number of SET exceeded, please increase",
+     &               " parameter maxsets_dynk."
          write (*,*) "Current value of maxsets_dynk:", maxsets_dynk
          call prror(51)
       endif
 
-      if (nfields .ne. 6) then
+      if (nfields .ne. 7) then
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
          write (*,*) "Expected 6 fields on line while parsing SET."
          write (*,*) "Correct syntax:"
-         write (*,*) "SET element_name attribute_name function_name &
-     &startTurn endTurn"
+         write (*,*) "SET element_name attribute_name function_name",
+     &               " startTurn endTurn turnShift"
          write (*,*) "got field:"
          do ii=1,nfields
             write (*,*) "Field(",ii,") ='",
@@ -45294,6 +45295,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       endif
       read(fields(5)(1:lfields(5)),*) sets_dynk(nsets_dynk,2)
       read(fields(6)(1:lfields(6)),*) sets_dynk(nsets_dynk,3)
+      read(fields(7)(1:lfields(7)),*) sets_dynk(nsets_dynk,4)
 
       csets_dynk(nsets_dynk,1)(1:lfields(2)) = fields(2)(1:lfields(2))
       csets_dynk(nsets_dynk,2)(1:lfields(3)) = fields(3)(1:lfields(3))
@@ -45608,14 +45610,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       intent(in) turn
 
 !     temporary variables
-      integer ii, jj, kk
+      integer ii, shiftedTurn
       logical lactive, ldynksetsEnable
 !     functions
       double precision dynk_computeFUN
       character(maxstrlen_dynk) dynk_stringzerotrim
       integer dynk_findSETindex
       
-      double precision getvaldata(20)
+      integer, parameter :: getvaldata_len=20
+      double precision getvaldata(getvaldata_len)
       integer ngetvaldata
       
       save ldynksetsEnable
@@ -45666,12 +45669,31 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ldynksetsEnable = .true.
       endif
       
-      do kk=1,nsets_dynk
-         if (turn .ge. sets_dynk(kk,2) .and.
-     &       turn .le. sets_dynk(kk,3)) then
+      do ii=1,nsets_dynk
+         if (turn .ge. sets_dynk(ii,2) .and.
+     &       turn .le. sets_dynk(ii,3)) then
             lactive = .true.
-            call dynk_setvalue(csets_dynk(kk,1), csets_dynk(kk,2),
-     &           sets_dynk(kk,1), turn, lsets_dynk(kk) )
+            shiftedTurn = turn + sets_dynk(ii,4)
+            if (shiftedTurn .le. 0) then
+               write (*,*) "ERROR in dynk_apply(), SET #:", ii
+               write (*,*) "Shifting turn",turn,"with",sets_dynk(ii,4),
+     &              "yielded negative result", shiftedTurn
+               write (*,*) "This is not valid."
+               stop
+            endif
+            if (ldynkdebug) then
+               write(*,*) "DYNK> Set", ii, "on",
+     &              csets_dynk(ii,1), csets_dynk(ii,2),
+     &              "shiftedTurn=",shiftedTurn
+            endif
+            call dynk_setvalue(csets_dynk(ii,1), csets_dynk(ii,2),
+     &           sets_dynk(ii,1), shiftedTurn, lsets_dynk(ii) )
+            if (ldynkdebug) then
+               ngetvaldata = getvaldata_len
+               call dynk_getvalue( csets_dynk(ii,1), csets_dynk(ii,2),
+     &                             getvaldata, ngetvaldata )
+               write (*,*) "DYNK>", getvaldata(:ngetvaldata)
+            endif
          else
             lactive = .false.
          end if
@@ -45680,18 +45702,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! (2) this is the last SET to affect this elem/attr
          if (ldynksetsEnable .and. 
      &       dynk_findSETindex(
-     &        csets_dynk(kk,1),csets_dynk(kk,2),kk+1) .eq. -1 ) then
-            ngetvaldata = 20
-            call dynk_getvalue( csets_dynk(kk,1), csets_dynk(kk,2),
+     &        csets_dynk(ii,1),csets_dynk(ii,2),ii+1) .eq. -1 ) then
+            ngetvaldata = getvaldata_len
+            call dynk_getvalue( csets_dynk(ii,1), csets_dynk(ii,2),
      &                          getvaldata, ngetvaldata )
-            write(665,*) turn, kk,
-     &           dynk_stringzerotrim(csets_dynk(kk,1)),
-     &           dynk_stringzerotrim(csets_dynk(kk,2)), 
+            write(665,*) turn, ii,
+     &           dynk_stringzerotrim(csets_dynk(ii,1)),
+     &           dynk_stringzerotrim(csets_dynk(ii,2)), 
      &           dynk_stringzerotrim(
-     &           cexpr_dynk(funcs_dynk(sets_dynk(kk,1),1)) ),
+     &           cexpr_dynk(funcs_dynk(sets_dynk(ii,1),1)) ),
      &           lactive, ngetvaldata,
      &            getvaldata(:ngetvaldata)
-!     &           dynk_getvalue(csets_dynk(kk,1), csets_dynk(kk,2))
          endif
          
       end do
