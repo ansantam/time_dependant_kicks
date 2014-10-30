@@ -45657,13 +45657,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             
             !Shifting
             shiftedTurn = turn + sets_dynk(ii,4)
-            if (shiftedTurn .le. 0) then
-               write (*,*) "ERROR in dynk_apply(), SET #:", ii
-               write (*,*) "Shifting turn",turn,"with",sets_dynk(ii,4),
-     &              "yielded negative result", shiftedTurn
-               write (*,*) "This is not valid."
-               stop
-            endif
             
             !Set the value
             if (ldynkdebug) then
@@ -45847,7 +45840,7 @@ C     STOP <integer> is therefore used instead.
 !     Set the value of the element's attribute 
 !     to the value provided by dynk_computeFUN(funNum, turn)
 !
-!     To be implemented later: If setR=.true., recompute function value
+!     If setR=.true., recompute function value
 !     for each sub-element, else compute it once
 !     per SET statement in fort.3 and per turn.
 !-----------------------------------------------------------------------
