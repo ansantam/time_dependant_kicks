@@ -45767,7 +45767,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             !For the output file: Which function was used?
             do jj=1, nsets_unique_dynk
                if (csets_dynk(ii,1) .eq. csets_unique_dynk(jj,1) .and.
-     &             csets_dynk(ii,1) .eq. csets_unique_dynk(jj,1) ) then
+     &             csets_dynk(ii,2) .eq. csets_unique_dynk(jj,2) ) then
                   whichSET(jj)=ii
                   whichFUN(jj)=cexpr_dynk(funcs_dynk(sets_dynk(ii,1),1))
                endif
