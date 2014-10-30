@@ -1284,74 +1284,16 @@
 !
 +cd   comdynk
 
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 03-09-2014
-!     COMMON for dynamic kicks
-!     always in main code
-
-!     in case the DYNK input block is issued, the kick of selected SINGLE
-!       ELEMENTs (and all their entries in the accelerator sequence)
-!       is modulated turn by turn, according user's specifications
-
-!     the user defines a set of basic functions, with their parameters
-!     then, for each SINGLE ELEMENT, the user declares how these functions
-!       should be combined in order to get the actual profile, and their
-!       sequence, including turn numbers
-
-!     Possible functions:
-!       the parameters can be expressed as fractions/multiples of the
-!       original kick.
+!     A.Mereghetti, for the FLUKA Team,
+!     K.Sjobak and A. Santamaria, BE-ABP/HSS
+!     last modified: 30/10-2014
 !     
-!     Profile		name	index	expression
-!     ----------------------------------------------------
-!     constant          CNS	1	a
-!     linear		LIN	2	a*dt+b
-!     hyperbola	        HP1	3	a*sqrt(dt^2-b)+c
-!                                       a*sqrt()=0 if (dt^2-b)<0
-!     hyperbola 	HP2	4	a/(dt-b)+c 
-!     (ref axes)                        abort in case dt=b
-!     sqrt		SQR	5	a*sqrt(dt-b)+c
-!                                       a*sqrt()=0 if (dt-b)<0
-!     parabola	        PAR	6	a*dt^2+2b*dt+c
-!     exponential	EXP	7	a*exp((dt-b)/c)+d
-!     logarithm	        LOG	8	a*log((dt-b)/c+1)+d
-!                                       log()=1 in case (dt-b)<0
-!     sinusoidal	SIN	9	a*sin(2pi*dt/b+c)+d
-!     from file	        FLE	10	a*interp(dt)+b
-!     noise		NSE		???
+!     COMMON for dynamic kicks (DYNK)
+!     always in main code
+!     
+!     See TWIKI for documentation
+!
 
-!     Combinations:
-!       a combo is a combination of two functions over a certain turn range
-!     Only two functions can be combined per combo, so that it's easy to
-!       combine them with the four algebraic operations. An offset
-!       (not necessarily constant) can be added as well.
-!     Possible operations: 'add'/'sub'/'mul'/'div'/'-'
-!       (the last one means 'no operation', and it is used when only one profile
-!       is needed)
-!     Turn numbers:
-!       - always specify the starting turn number;
-!       - when specifying turns, please go in increasing order;
-!       - if, for a given SINGLE ELEMENT, there's no combo on a given range of
-!         turns, the original kick is used;
-
-!     important remarks:
-!     - dynamic kicks are applied ONLY to thin lens non linear SINGLE ELEMENTs
-!       (type -10:10): all entries in the accelerator lattice are assigned
-!       the same value
-!     - the chosen SINGLE ELEMENT(s) must be outside a BLOC, and BLOCs cannot
-!       be chosen
-!     - the value of the kick is ALWAYS updated at the beginning of the turn
-!     - no dependence of kick on bunch structure or synchrotron motion: the
-!       dynamics of the changing kick is much slower than the revolution time
-!     - it's the user responsibility to take care of the correct units,
-!       either of the basic functions or of their combos, either
-!       actual intensities or factors scaling the original kick
-!     - the user can request to log the values of the computed kicks during the
-!       simulation, the unit where to dump and the dumping frequency
-!     - any profile contained in a file should be given with turns in
-!       increasing order, and it should be a surjective mapping.
-!       Turns must be integer values
-!     - never use tab chars in fort.3
 
 *     general-purpose variables
       logical ldynk            ! dynamic kick requested, i.e. DYNK input bloc issued in the fort.3 file
@@ -1366,7 +1308,7 @@ C     Store the FUN statements
       integer funcs_dynk (maxfuncs_dynk,5) ! 1 row/FUN, cols are: 
                                            ! (1) = function name in fort.3 (points within cexpr_dynk),
                                            ! (2) = indicates function type
-                                           ! (3,4,5) = arguments (pointing within other arrays {i|f|c}expr_dynk)
+                                           ! (3,4,5) = arguments (often pointing within other arrays {i|f|c}expr_dynk)
       integer iexpr_dynk (maxdata_dynk)                  ! Data for DYNK FUNs
       double precision fexpr_dynk (maxdata_dynk)         ! Data for DYNK FUNs
       character(maxstrlen_dynk) cexpr_dynk(maxdata_dynk) ! Data for DYNK FUNs (\0 initialized in comdynk)
@@ -1390,7 +1332,7 @@ C     Store the SET statements
       character(maxstrlen_dynk) csets_unique_dynk (maxsets_dynk,2) !Similar to csets_dynk,
                                                                    ! but only one entry per elem/attr
       double precision fsets_origvalue_dynk(maxsets_dynk) ! Store original value from dynk
-      integer nsets_unique_dynk
+      integer nsets_unique_dynk ! Number of used positions in arrays
       
 !     fortran COMMON declaration follows padding requirements
       common /dynkComGen/ ldynk, ldynkdebug,
@@ -44676,7 +44618,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
-!     last modified: 14-10-2014
+!     last modified: 30-10-2014
 !     parse FUN lines in the fort.3 input file, 
 !     store it in COMMON block dynkComExpr.
 !-----------------------------------------------------------------------
@@ -45559,6 +45501,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       end subroutine
 
       function dynk_stringzerotrim(instring)
+!----------------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 30-10-2014
+!     Replace "\0" with ' ' in strings.
+!     Usefull before output, else "write (*,*)" will actually write all the \0s
+!----------------------------------------------------------------------------
       implicit none
 +ca comdynk
       character(maxstrlen_dynk) dynk_stringzerotrim, instring
@@ -45578,7 +45526,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       end function
       
       subroutine dynk_pretrack
-!
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
 !     last modified: 21-10-2014
@@ -45586,7 +45533,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     Save original values for GET functions and sanity check
 !     that elements/attributes for SET actually exist.
 !-----------------------------------------------------------------------
-!
       implicit none
 +ca comdynk
       !Functions
@@ -45631,23 +45577,23 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
 +dk dynktrack
       subroutine dynk_apply(turn)
-!
 !-----------------------------------------------------------------------
 !     A.Mereghetti, for the FLUKA Team
-!     last modified: 03-09-2014
+!     K.Sjobak & A. Santamaria, BE-ABP/HSS
+!     last modified: 30-10-2014
 !     actually apply dynamic kicks
 !     always in main code
 !
-!     the idea is to loop over all those SINGLE ELEMENTs flagged for
-!         dynamic kicks, and update the value of smiv: then, smiv is
-!         copied in all the concerned entries in the accelerator
-!         structure;
+!     For each element (group) flagged with SET(R), compute the new value
+!     using dynk_computeFUN() at the given (shifted) turn number
+!     using the specified FUN function. The values are stored 
+!     in the element using dynk_setvalue().
+!     
+!     Also resets the values at the beginning of each pass through the
+!     turn loop (for COLLIMATION).
 !
-!     NB: originally, the smiv variable is used only in case of non-linear
-!         SINGLE ELEMENTs: thus, dynamic kicks can be applied only to
-!         non-linear SINGLE ELEMENTs
+!     Also writes the file "dynksets.dat", only on the first turn.
 !-----------------------------------------------------------------------
-!
       implicit none
 
 +ca parpro
@@ -45804,7 +45750,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     K. Sjobak, BE-ABP/HSS
 !     last modified: 17-10-2014
 !     Compute the value of a given DYNK function (funNum) for the given turn
-!     If turn = 0 and funNum<0: reset to original value
+!     If turn = 0 and -nsets_unique_dynk<funNum<0: reset to original value
 !-----------------------------------------------------------------------
       implicit none
 +ca comdynk
