@@ -45112,7 +45112,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          if (nfields .ne. 4) then
             write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "LIN function expected 5 arguments, got",nfields
+            write (*,*) "LIN function expected 4 arguments, got",nfields
             write (*,*) "Expected syntax:"
             write (*,*) "FUN funname CONST val"
             call prror(51)
@@ -45145,6 +45145,43 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &        fields(2)(1:lfields(2))
          
          read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! value
+
+      else if ( fields(3)(1:lfields(3)) .eq. "TURN" ) then ! TURN / type 41
+         ! TURN: Just the current turn number
+         
+         if (nfields .ne. 3) then
+            write (*,*)"ERROR in DYNK block parsing (fort.3)"
+            write (*,*)"TURN function expected 3 arguments, got",nfields
+            write (*,*)"Expected syntax:"
+            write (*,*)"FUN funname TURN"
+            call prror(51)
+         endif
+         
+         ! Check for sufficient space
+         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
+     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "Max number of maxdata_dynk to be exceeded"
+            write (*,*) "niexpr_dynk:", niexpr_dynk
+            write (*,*) "nfexpr_dynk:", nfexpr_dynk
+            write (*,*) "ncexpr_dynk:", ncexpr_dynk
+            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
+            call prror(51)
+         endif
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 41          !TYPE (TURN)
+         funcs_dynk(nfuncs_dynk,3) = -1          !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
 
       else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! LIN / type 42
          ! LIN: Linear ramp y = dy/dt*T+b
@@ -45836,6 +45873,8 @@ C     STOP <integer> is therefore used instead.
          retval = sqrt(dynk_computeFUN(funcs_dynk(funNum,3),turn))
       elseif ( funcs_dynk(funNum,2) .eq. 40 ) then !CONST
          retval = fexpr_dynk(funcs_dynk(funNum,3))
+      elseif ( funcs_dynk(funNum,2) .eq. 41 ) then !TURN
+         retval = turn
       elseif ( funcs_dynk(funNum,2) .eq. 42 ) then !LIN
          retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
      &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
