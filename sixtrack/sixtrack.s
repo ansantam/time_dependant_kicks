@@ -44697,26 +44697,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if ( fields(3)(1:lfields(3)) .eq. "GET" ) then ! GET / type 0
          ! GET: Store the value of an element/value
 
-         if (nfields .ne. 5) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "GET function expected 5 arguments, got",nfields
-            write (*,*) "Expected syntax:"
-            write (*,*) "FUN funname GET elementName attribute"
-            call prror(51)
-         endif
-
-         ! Check for sufficient space
-         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+1 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+3 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
+         call dynk_checkargs(nfields,5,
+     &        "FUN funname GET elementName attribute" )
+         call dynk_checkspace(0,1,3)
+         
          ! Set pointers to start of funs data blocks
          nfuncs_dynk = nfuncs_dynk+1
          nfexpr_dynk = nfexpr_dynk+1
@@ -44754,26 +44738,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! first  column = turn number (all turns should be there, starting from 1)
          ! second column = value (as a double)
 
-         if (nfields .ne. 4) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "GET function expected 5 arguments, got",nfields
-            write (*,*) "Expected syntax:"
-            write (*,*) "FUN funname FILE filename"
-            call prror(51)
-         endif
-
-         ! Check for sufficient space
-         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+2 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
+         call dynk_checkargs(nfields,4,
+     &        "FUN funname FILE filename" )
+         call dynk_checkspace(0,0,2)
+         
          ! Set pointers to start of funs data blocks (nfexpr_dynk handled when reading data)
          nfuncs_dynk = nfuncs_dynk+1
          ncexpr_dynk = ncexpr_dynk+1
@@ -44834,26 +44802,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! first  column = turn number (as a double)
          ! second column = value (as a double)
 
-         if (nfields .ne. 4) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "GET function expected 5 arguments, got",nfields
-            write (*,*) "Expected syntax:"
-            write (*,*) "FUN funname FILE filename"
-            call prror(51)
-         endif
+         call dynk_checkargs(nfields,4,
+     &        "FUN funname FILELIN filename" )
+         call dynk_checkspace(0,0,2)
 
-         ! Check for sufficient space
-         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+2 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
          ! Set pointers to start of funs data blocks
          nfuncs_dynk = nfuncs_dynk+1
          ncexpr_dynk = ncexpr_dynk+1
@@ -44925,27 +44877,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       else if ( fields(3)(1:lfields(3)) .eq. "RANDG" ) then ! type 6 / RANDG
          ! RANDG: Gausian random number with mu, sigma, and optional cutoff
          
-         if (nfields .ne. 8) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "RANDG function expected 5 arguments, got",
-     &                   nfields
-            write (*,*) "Expected syntax:"
-            write (*,*) "FUN funname RANDG seed1 seed2 mu sigma cut"
-            call prror(51)
-         endif
+         call dynk_checkargs(nfields,8,
+     &        "FUN funname RANDG seed1 seed2 mu sigma cut" )
+         call dynk_checkspace(5,2,1)
          
-         ! Check for sufficient space
-         if ( (niexpr_dynk+5 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+2 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
          ! Set pointers to start of funs data blocks
          nfuncs_dynk = nfuncs_dynk+1
          niexpr_dynk = niexpr_dynk+1
@@ -44983,27 +44918,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &          fields(3)(1:lfields(3)) .eq. "DIV" .or.   ! DIV / type 23
      &          fields(3)(1:lfields(3)) .eq. "POW" ) then ! POW / type 24
          ! Two-argument operators  y = OP(f1, f2)
-         if (nfields .ne. 5) then
-            write (*,*)"ERROR in DYNK block parsing (fort.3)"
-            write (*,*)"ADD function expected 5 arguments, got",nfields
-            write (*,*)"Expected syntax:"
-            write (*,*)"FUN funname {ADD|SUB|MUL|DIV|POW} ",
-     &                 "funname1 funname2"
-            call prror(51)
-         endif
 
-         ! Check for sufficient space
-         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
+         call dynk_checkargs(nfields,5,
+     &        "FUN funname {ADD|SUB|MUL|DIV|POW} funname1 funname2")
+         call dynk_checkspace(0,0,1)
+         
          ! Set pointers to start of funs data blocks
          nfuncs_dynk = nfuncs_dynk+1
          ncexpr_dynk = ncexpr_dynk+1
@@ -45058,27 +44977,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &          fields(3)(1:lfields(3)) .eq. "EXP"        ! EXP    / type 36
      &        ) then                 
          ! One-argument operators  y = OP(f1)
-         if (nfields .ne. 4) then
-            write (*,*)"ERROR in DYNK block parsing (fort.3)"
-            write (*,*)"ADD function expected 5 arguments, got",nfields
-            write (*,*)"Expected syntax:"
-            write (*,*)"FUN funname {MINUS|SQRT|SIN|COS|LOG|LOG10|EXP}",
-     &                 " funname"
-            call prror(51)
-         endif
 
-         ! Check for sufficient space
-         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
+         call dynk_checkargs(nfields,4,
+     &        "FUN funname {MINUS|SQRT|SIN|COS|LOG|LOG10|EXP} funname")
+         call dynk_checkspace(0,0,1)
+         
          ! Set pointers to start of funs data blocks
          nfuncs_dynk = nfuncs_dynk+1
          ncexpr_dynk = ncexpr_dynk+1
@@ -45127,26 +45030,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       else if ( fields(3)(1:lfields(3)) .eq. "CONST" ) then ! CONST / type 40
          ! CONST: Just a constant value
          
-         if (nfields .ne. 4) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "LIN function expected 4 arguments, got",nfields
-            write (*,*) "Expected syntax:"
-            write (*,*) "FUN funname CONST val"
-            call prror(51)
-         endif
+         call dynk_checkargs(nfields,4,
+     &        "FUN funname CONST value" )
+         call dynk_checkspace(0,1,1)
          
-         ! Check for sufficient space
-         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+1 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
          ! Set pointers to start of funs data blocks
          nfuncs_dynk = nfuncs_dynk+1
          nfexpr_dynk = nfexpr_dynk+1
@@ -45166,26 +45053,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       else if ( fields(3)(1:lfields(3)) .eq. "TURN" ) then ! TURN / type 41
          ! TURN: Just the current turn number
          
-         if (nfields .ne. 3) then
-            write (*,*)"ERROR in DYNK block parsing (fort.3)"
-            write (*,*)"TURN function expected 3 arguments, got",nfields
-            write (*,*)"Expected syntax:"
-            write (*,*)"FUN funname TURN"
-            call prror(51)
-         endif
+         call dynk_checkargs(nfields,3,
+     &        "FUN funname TURN" )
+         call dynk_checkspace(0,0,1)
          
-         ! Check for sufficient space
-         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
          ! Set pointers to start of funs data blocks
          nfuncs_dynk = nfuncs_dynk+1
          nfexpr_dynk = nfexpr_dynk+1
@@ -45203,26 +45074,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! LIN / type 42
          ! LIN: Linear ramp y = dy/dt*T+b
          
-         if (nfields .ne. 5) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "LIN function expected 5 arguments, got",nfields
-            write (*,*) "Expected syntax:"
-            write (*,*) "FUN funname LIN dy/dt b"
-            call prror(51)
-         endif
-         
-         ! Check for sufficient space
-         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+2 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
+         call dynk_checkargs(nfields,5,
+     &        "FUN funname LIN dy/dt b" )
+         call dynk_checkspace(0,2,1)
+
          ! Set pointers to start of funs data blocks
          nfuncs_dynk = nfuncs_dynk+1
          nfexpr_dynk = nfexpr_dynk+1
@@ -45240,30 +45095,42 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! dy/dt
          read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) ! b
          nfexpr_dynk = nfexpr_dynk + 1
+
+      else if ( fields(3)(1:lfields(3)) .eq. "LINSEG" ) then ! LINSEG / type 43
+         ! LINSEG: Linear ramp between points (x1,y1) and (x2,y2)
+         
+         call dynk_checkargs(nfields,7,
+     &        "FUN funname LINSEG x1 x2 y1 y2" )
+         call dynk_checkspace(0,4,1)
+
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 43          !TYPE (LINSEG)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         
+         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! x1
+         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) ! x2
+         read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk+2) ! y1
+         read(fields(7)(1:lfields(7)),*) fexpr_dynk(nfexpr_dynk+3) ! y2
+         nfexpr_dynk = nfexpr_dynk + 3
       
       !!! Trancedental functions: #60-79 !!!
       else if (fields(3)(1:lfields(3)) .eq. "SINF" ) then ! SINF / type 60
          ! SINF: Sin functions y = A*sin(omega*T+phi)
-         if (nfields .ne. 6) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "SIN function expected 5 arguments, got",nfields
-            write (*,*) "Expected syntax:"
-            write (*,*) "FUN funname SINF amplitude omega phase"
-            call prror(51)
-         endif
          
-         ! Check for sufficient space
-         if ( (niexpr_dynk+0 .gt. maxdata_dynk) .or.
-     &        (nfexpr_dynk+2 .gt. maxdata_dynk) .or.
-     &        (ncexpr_dynk+1 .gt. maxdata_dynk) ) then
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "Max number of maxdata_dynk to be exceeded"
-            write (*,*) "niexpr_dynk:", niexpr_dynk
-            write (*,*) "nfexpr_dynk:", nfexpr_dynk
-            write (*,*) "ncexpr_dynk:", ncexpr_dynk
-            write (*,*) "FUN name = '", fields(3)(1:lfields(3)),"'"
-            call prror(51)
-         endif
+         call dynk_checkargs(nfields,6,
+     &        "FUN funname SINF amplitude omega phase" )
+         call dynk_checkspace(0,2,1)
+
          ! Set pointers to start of funs data blocks
          nfuncs_dynk = nfuncs_dynk+1
          nfexpr_dynk = nfexpr_dynk+1
@@ -45301,6 +45168,40 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
       end subroutine
 
+      subroutine dynk_checkargs(nfields,nfields_expected,funsyntax)
+      implicit none
+      integer nfields, nfields_expected
+      character(*) funsyntax
+      intent(in) nfields, nfields_expected, funsyntax
+      
+      if (nfields .ne. nfields_expected) then
+         write (*,*) "ERROR in DYNK block parsing (fort.3)"
+         write (*,*) "The function expected",nfields_expected,
+     &               "arguments, got",nfields
+         write (*,*) "Expected syntax:"
+         write (*,*) funsyntax(:)
+         call prror(51)
+      endif
+      end subroutine
+
+      subroutine dynk_checkspace(iblocks,fblocks,cblocks)
+      implicit none
+      integer iblocks,fblocks,cblocks
+      intent(in) iblocks,fblocks,cblocks
++ca comdynk      
+
+      if ( (niexpr_dynk+iblocks .gt. maxdata_dynk) .or.
+     &     (nfexpr_dynk+fblocks .gt. maxdata_dynk) .or.
+     &     (ncexpr_dynk+cblocks .gt. maxdata_dynk) ) then
+         write (*,*) "ERROR in DYNK block parsing (fort.3):"
+         write (*,*) "Max number of maxdata_dynk to be exceeded"
+         write (*,*) "niexpr_dynk:", niexpr_dynk
+         write (*,*) "nfexpr_dynk:", nfexpr_dynk
+         write (*,*) "ncexpr_dynk:", ncexpr_dynk
+         call prror(51)
+      endif
+      end subroutine
+      
       subroutine dynk_parseSET(fields,lfields,nfields)
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
@@ -45816,13 +45717,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
       !Functions to call
       double precision dynk_lininterp
-
-      !Temporaries for random generator functions
+      
+      ! Temporaries for FILELIN
+      integer filelin_start, filelin_xypoints
+      
+      ! Temporaries for random generator functions
       integer tmpseed1, tmpseed2
       double precision ranecu_rvec(1)
-      
-      !Temporaries for FILELIN
-      integer filelin_start, filelin_xypoints
 
 C     For some reason, write(*,*) statements here hangs the program.
 C     STOP <integer> is therefore used instead.
@@ -45905,6 +45806,14 @@ C     STOP <integer> is therefore used instead.
       elseif ( funcs_dynk(funNum,2) .eq. 42 ) then !LIN
          retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
      &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
+      elseif ( funcs_dynk(funNum,2) .eq. 43 ) then !LINSEG
+         filelin_start    = funcs_dynk(funNum,3)
+         filelin_xypoints = 2
+         !Pass the correct array views/sections to dynk_lininterp
+         retval = dynk_lininterp( dble(turn),
+     &       fexpr_dynk(filelin_start:filelin_start+1),
+     &       fexpr_dynk(filelin_start+2:filelin_xypoints+3),
+     &        filelin_xypoints )
       elseif ( funcs_dynk(funNum,2) .eq. 60 ) then !SIN
          retval = fexpr_dynk(funcs_dynk(funNum,3))
      &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
