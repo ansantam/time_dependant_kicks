@@ -1354,9 +1354,10 @@
 !     - never use tab chars in fort.3
 
 *     general-purpose variables
-      logical ldynk         ! dynamic kick requested, i.e. DYNK input bloc issued in the fort.3 file
-      logical ldynkdebug    ! print debug messages in main output
-      logical ldynkfileopen ! Is dynksets.dat already open?
+      logical ldynk            ! dynamic kick requested, i.e. DYNK input bloc issued in the fort.3 file
+      logical ldynkdebug       ! print debug messages in main output
+      logical ldynkfileopen    ! Is dynksets.dat already open?
+      logical ldynkfiledisable ! Disable writing dynksets.dat?
 
 C     Store the FUN statements
       integer maxfuncs_dynk, maxdata_dynk, maxstrlen_dynk
@@ -1392,7 +1393,8 @@ C     Store the SET statements
       integer nsets_unique_dynk
       
 !     fortran COMMON declaration follows padding requirements
-      common /dynkComGen/ ldynk, ldynkdebug, ldynkfileopen
+      common /dynkComGen/ ldynk, ldynkdebug,
+     &     ldynkfileopen, ldynkfiledisable
 
       common /dynkComExpr/ funcs_dynk,
      &     iexpr_dynk, fexpr_dynk, cexpr_dynk,
@@ -18401,11 +18403,17 @@ cc2008
       if(ch(1:1).eq.'/') goto 2200 ! skip comment line
 
       ! Which type of block? Look at start of string (no leading blanks allowed)
+
       if (ch(:4).eq."DEBU") then
          ldynkdebug = .true.
-         write (*,*) "DYNK block debugging is ON"
+         write (*,*) "DYNK> DYNK block debugging is ON"
          goto 2200 !loop DYNK
-
+         
+      else if (ch(:6).eq."NOFILE") then
+         ldynkfiledisable = .true.
+         write (*,*) "DYNK> Disabled writing dynksets.dat"
+         goto 2200 !loop DYNK
+         
       else if (ch(:3).eq."FUN") then
          call read_fields( ch, fields, lfields, nfields, lerr )
          if ( lerr ) call prror(51)
@@ -40675,6 +40683,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       ldynk = .false.
       ldynkdebug = .false.
       ldynkfileopen = .false.
+      ldynkfiledisable = .false.
       
       nfuncs_dynk = 0
       niexpr_dynk = 0
@@ -45628,10 +45637,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if (.not. ldynkfileopen) then
          open(unit=665, file="dynksets.dat",
      &        status="replace",action="write") 
-         write(665,*) "# turn element attribute SETidx funname ",
+         if (ldynkfiledisable) then
+            write (665,*) "### DYNK file output was disabled ",
+     &                    "with flag NOFILE in fort.3 ###"
+            ldynksetsEnable = .false.
+         else
+            write(665,*) "# turn element attribute SETidx funname ",
      &        "nvalues value1 value2 ..."
+            ldynksetsEnable = .true.
+         endif
          ldynkfileopen = .true.
-         ldynksetsEnable = .true.
       endif
       
       do ii=1,nsets_dynk
