@@ -44685,9 +44685,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
 +ca comdynk
 +ca comgetfields
+      ! Temp variables
       integer ii, stat, t
-      double precision x,y
-      integer dynk_findFUNindex ! define function return type
+      double precision x,y, x1,x2,y1,y2,deriv
+      ! define function return type
+      integer dynk_findFUNindex
       
       
       if (nfuncs_dynk+1 .gt. maxfuncs_dynk) then
@@ -45131,7 +45133,93 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk+2) ! y1
          read(fields(7)(1:lfields(7)),*) fexpr_dynk(nfexpr_dynk+3) ! y2
          nfexpr_dynk = nfexpr_dynk + 3
-      
+         
+         if (fexpr_dynk(nfexpr_dynk) .eq. fexpr_dynk(nfexpr_dynk+1))then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "LINSEG: x1 and x2 must be different."
+            call prror(51)
+         endif
+         
+      else if ( fields(3)(1:lfields(3)) .eq. "QUAD" ) then ! QUAD / type 44
+         ! QUAD: Quadratic ramp y = a*T^2 + b*T + c
+         
+         call dynk_checkargs(nfields,6,
+     &        "FUN funname QUAD a b c" )
+         call dynk_checkspace(0,3,1)
+
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 44          !TYPE (QUAD)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         
+         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! a
+         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) ! b
+         read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk+2) ! c
+         nfexpr_dynk = nfexpr_dynk + 2
+
+      else if ( fields(3)(1:lfields(3)) .eq. "QUADSEG" ) then ! QUAD / type 45
+         ! QUADSEG: Quadratic ramp y = a*T^2 + b*T + c,
+         ! input as start point (x1,y1), end point (x2,y2), derivative at at x1
+         
+         call dynk_checkargs(nfields,8,
+     &        "FUN funname QUADSEG x1 x2 y1 y2 deriv" )
+         call dynk_checkspace(0,8,1)
+
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 45          !TYPE (QUADSEG)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         
+         read(fields(4)(1:lfields(4)),*) x1
+         read(fields(5)(1:lfields(5)),*) x2
+         read(fields(6)(1:lfields(6)),*) y1
+         read(fields(7)(1:lfields(7)),*) y2
+         read(fields(8)(1:lfields(8)),*) deriv
+         
+         if (x1 .eq. x2) then
+            write (*,*) "ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "QUADSEG: x1 and x2 must be different."
+            call prror(51)
+         endif
+         
+         ! Compute a:
+         fexpr_dynk(nfexpr_dynk) = deriv/(x1-x2)
+     &        + (y2-y1)/((x1-x2)*(x1-x2))
+         ! Compute b:
+         fexpr_dynk(nfexpr_dynk+1) = (y2-y1)/(x2-x1)
+     &        - (x1+x2)*fexpr_dynk(nfexpr_dynk)
+         ! Compute c:
+         fexpr_dynk(nfexpr_dynk+2) = y1
+     &        - x1*x1*fexpr_dynk(nfexpr_dynk)
+     &        - x1*fexpr_dynk(nfexpr_dynk+1)
+         
+         ! Store input data:
+         fexpr_dynk(nfexpr_dynk+3) = x1
+         fexpr_dynk(nfexpr_dynk+4) = x2
+         fexpr_dynk(nfexpr_dynk+5) = y1
+         fexpr_dynk(nfexpr_dynk+6) = y2
+         fexpr_dynk(nfexpr_dynk+7) = deriv
+
+         nfexpr_dynk = nfexpr_dynk + 7
+         
       !!! Trancedental functions: #60-79 !!!
       else if (fields(3)(1:lfields(3)) .eq. "SINF" ) then ! SINF / type 60
          ! SINF: Sin functions y = A*sin(omega*T+phi)
@@ -45822,6 +45910,11 @@ C     STOP <integer> is therefore used instead.
      &       fexpr_dynk(filelin_start:filelin_start+1),
      &       fexpr_dynk(filelin_start+2:filelin_xypoints+3),
      &        filelin_xypoints )
+      elseif ( funcs_dynk(funNum,2) .eq. 44 .or.   !QUAD
+     &         funcs_dynk(funNum,2) .eq. 45 ) then !QUADSEG
+         retval = turn*turn*fexpr_dynk(funcs_dynk(funNum,3))   +
+     &                 turn*fexpr_dynk(funcs_dynk(funNum,3)+1) +
+     &                      fexpr_dynk(funcs_dynk(funNum,3)+2)
       elseif ( funcs_dynk(funNum,2) .eq. 60 ) then !SIN
          retval = fexpr_dynk(funcs_dynk(funNum,3))
      &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
