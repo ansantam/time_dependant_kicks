@@ -45049,14 +45049,21 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             call prror(51)
          end if
 
-      else if ( fields(3)(1:lfields(3)) .eq. "MINUS" .or.   ! MINUS / type 30
-     &          fields(3)(1:lfields(3)) .eq. "SQRT"  ) then ! SQRT  / type 31
+      else if ( fields(3)(1:lfields(3)) .eq. "MINUS" .or. ! MINUS  / type 30
+     &          fields(3)(1:lfields(3)) .eq. "SQRT"  .or. ! SQRT   / type 31
+     &          fields(3)(1:lfields(3)) .eq. "SIN"   .or. ! SIN    / type 32
+     &          fields(3)(1:lfields(3)) .eq. "COS"   .or. ! COS    / type 33
+     &          fields(3)(1:lfields(3)) .eq. "LOG"   .or. ! LOG    / type 34
+     &          fields(3)(1:lfields(3)) .eq. "LOG10" .or. ! LOG10  / type 35
+     &          fields(3)(1:lfields(3)) .eq. "EXP"        ! EXP    / type 36
+     &        ) then                 
          ! One-argument operators  y = OP(f1)
          if (nfields .ne. 4) then
             write (*,*)"ERROR in DYNK block parsing (fort.3)"
             write (*,*)"ADD function expected 5 arguments, got",nfields
             write (*,*)"Expected syntax:"
-            write (*,*)"FUN funname {MINUS|SQRT} funname"
+            write (*,*)"FUN funname {MINUS|SQRT|SIN|COS|LOG|LOG10|EXP}",
+     &                 " funname"
             call prror(51)
          endif
 
@@ -45081,6 +45088,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               funcs_dynk(nfuncs_dynk,2) = 30 !TYPE (MINUS)
          else if ( fields(3)(1:lfields(3)) .eq. "SQRT" ) then
               funcs_dynk(nfuncs_dynk,2) = 31 !TYPE (SQRT)
+         else if ( fields(3)(1:lfields(3)) .eq. "SIN" ) then
+              funcs_dynk(nfuncs_dynk,2) = 32 !TYPE (SIN)
+         else if ( fields(3)(1:lfields(3)) .eq. "COS" ) then
+              funcs_dynk(nfuncs_dynk,2) = 33 !TYPE (COS)
+         else if ( fields(3)(1:lfields(3)) .eq. "LOG" ) then
+              funcs_dynk(nfuncs_dynk,2) = 34 !TYPE (LOG)
+         else if ( fields(3)(1:lfields(3)) .eq. "LOG10" ) then
+              funcs_dynk(nfuncs_dynk,2) = 35 !TYPE (LOG10)
+         else if ( fields(3)(1:lfields(3)) .eq. "EXP" ) then
+              funcs_dynk(nfuncs_dynk,2) = 36 !TYPE (EXP)
          else
             write (*,*) "LOGIC ERROR"
             call prror(51)
@@ -45871,6 +45888,16 @@ C     STOP <integer> is therefore used instead.
          retval = (-1)*dynk_computeFUN(funcs_dynk(funNum,3),turn)
       elseif ( funcs_dynk(funNum,2) .eq. 31 ) then !SQRT
          retval = sqrt(dynk_computeFUN(funcs_dynk(funNum,3),turn))
+      elseif ( funcs_dynk(funNum,2) .eq. 32 ) then !SIN
+         retval = sin(dynk_computeFUN(funcs_dynk(funNum,3),turn))
+      elseif ( funcs_dynk(funNum,2) .eq. 33 ) then !COS
+         retval = cos(dynk_computeFUN(funcs_dynk(funNum,3),turn))
+      elseif ( funcs_dynk(funNum,2) .eq. 34 ) then !LOG
+         retval = log(dynk_computeFUN(funcs_dynk(funNum,3),turn))
+      elseif ( funcs_dynk(funNum,2) .eq. 35 ) then !LOG10
+         retval = log10(dynk_computeFUN(funcs_dynk(funNum,3),turn))
+      elseif ( funcs_dynk(funNum,2) .eq. 36 ) then !EXP
+         retval = exp(dynk_computeFUN(funcs_dynk(funNum,3),turn))
       elseif ( funcs_dynk(funNum,2) .eq. 40 ) then !CONST
          retval = fexpr_dynk(funcs_dynk(funNum,3))
       elseif ( funcs_dynk(funNum,2) .eq. 41 ) then !TURN
