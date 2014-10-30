@@ -45146,7 +45146,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! value
 
-      else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! LIN / type 41
+      else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! LIN / type 42
          ! LIN: Linear ramp y = dy/dt*T+b
          
          if (nfields .ne. 5) then
@@ -45175,7 +45175,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 41          !TYPE (LIN)
+         funcs_dynk(nfuncs_dynk,2) = 42          !TYPE (LIN)
          funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
@@ -45188,13 +45188,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          nfexpr_dynk = nfexpr_dynk + 1
       
       !!! Trancedental functions: #60-79 !!!
-      else if (fields(3)(1:lfields(3)) .eq. "SIN" ) then ! SIN / type 60
-         ! SIN: Sin functions y = A*sin(omega*T+phi)
+      else if (fields(3)(1:lfields(3)) .eq. "SINF" ) then ! SINF / type 60
+         ! SINF: Sin functions y = A*sin(omega*T+phi)
          if (nfields .ne. 6) then
             write (*,*) "ERROR in DYNK block parsing (fort.3)"
             write (*,*) "SIN function expected 5 arguments, got",nfields
             write (*,*) "Expected syntax:"
-            write (*,*) "FUN funname SIN amplitude omega phase"
+            write (*,*) "FUN funname SINF amplitude omega phase"
             call prror(51)
          endif
          
@@ -45216,7 +45216,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 60          !TYPE (SIN)
+         funcs_dynk(nfuncs_dynk,2) = 60          !TYPE (SINF)
          funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
@@ -45836,7 +45836,7 @@ C     STOP <integer> is therefore used instead.
          retval = sqrt(dynk_computeFUN(funcs_dynk(funNum,3),turn))
       elseif ( funcs_dynk(funNum,2) .eq. 40 ) then !CONST
          retval = fexpr_dynk(funcs_dynk(funNum,3))
-      elseif ( funcs_dynk(funNum,2) .eq. 41 ) then !LIN
+      elseif ( funcs_dynk(funNum,2) .eq. 42 ) then !LIN
          retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
      &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
       elseif ( funcs_dynk(funNum,2) .eq. 60 ) then !SIN
