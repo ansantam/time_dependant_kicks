@@ -13589,7 +13589,7 @@ cc2008
       if(abs(kz(i)).eq.15) then
         if(abs(ed(i)*el(i)).le.pieni.or.el(i).le.pieni                  &
      &.or.ek(i).le.pieni) then
-           kz(i)=0
+          kz(i)=0
 !hr05      ed(i)=0
            ed(i)=0d0                                                     !hr05
 !hr05      ek(i)=0
@@ -13604,68 +13604,24 @@ cc2008
       endif
 !--CRABCAVITY
       if(abs(kz(i)).eq.23) then
-        if(abs(ed(i)).le.pieni) then
-           kz(i)=0
-!hr05      ed(i)=0
-           ed(i)=0d0                                                     !hr05
-!hr05      ek(i)=0
-           ek(i)=0d0                                                     !hr05
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        else
-           crabph(i)=el(i)
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        endif
+         crabph(i)=el(i)
+         el(i)=0d0
       endif
 ! JBG RF CC Multipoles
 !--CC Mult kick order 2
       if(abs(kz(i)).eq.26) then
-        if(abs(ed(i)).le.pieni) then
-           kz(i)=0
-!hr05      ed(i)=0
-           ed(i)=0d0                                                     !hr05
-!hr05      ek(i)=0
-           ek(i)=0d0                                                     !hr05
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        else
-           crabph2(i)=el(i)
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        endif
+         crabph2(i)=el(i)
+         el(i)=0d0
       endif
 !--CC Mult kick order 3
       if(abs(kz(i)).eq.27) then
-        if(abs(ed(i)).le.pieni) then
-           kz(i)=0
-!hr05      ed(i)=0
-           ed(i)=0d0                                                     !hr05
-!hr05      ek(i)=0
-           ek(i)=0d0                                                     !hr05
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        else
-           crabph3(i)=el(i)
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        endif
+         crabph3(i)=el(i)
+         el(i)=0d0
       endif
 !--CC Mult kick order 4
       if(abs(kz(i)).eq.28) then
-        if(abs(ed(i)).le.pieni) then
-           kz(i)=0
-!hr05      ed(i)=0
-           ed(i)=0d0                                                     !hr05
-!hr05      ek(i)=0
-           ek(i)=0d0                                                     !hr05
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        else
-           crabph4(i)=el(i)
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        endif
+         crabph4(i)=el(i)
+         el(i)=0d0
       endif
 !--ACDIPOLE
       if(abs(kz(i)).eq.16) then
@@ -45717,6 +45673,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             enddo
          end if
       end do
+      
+      !Propagate SETS for tricky elements
+      
 
       !Write output file
       if (ldynksetsEnable) then
@@ -45874,8 +45833,8 @@ C     STOP <integer> is therefore used instead.
       subroutine dynk_setvalue(element_name, att_name, 
      &     funNum, turn, setR)
 !-----------------------------------------------------------------------
-!     A.Santamaria & K. Sjobak, BE-ABP/HSS
-!     last modified: 27-10-2014
+!     A.Santamaria & K.Sjobak, BE-ABP/HSS
+!     last modified: 31-10-2014
 !     Set the value of the element's attribute 
 !     to the value provided by dynk_computeFUN(funNum, turn)
 !
@@ -46053,11 +46012,11 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &        "does not exist"
               call prror(-1)
             endif
-          elseif ((abs(el_type).eq.23).or.    ! crab cavity
-     &            (abs(el_type).eq.26).or.    ! cc mult. kick order 2
-     &            (abs(el_type).eq.27).or.    ! cc mult. kick order 3
-     &            (abs(el_type).eq.28)) then  ! cc mult. kick order 4
-            if (att_name_stripped.eq."voltage") then ![MV]
+         elseif ((abs(el_type).eq.23).or.    ! crab cavity
+     &           (abs(el_type).eq.26).or.    ! cc mult. kick order 2
+     &           (abs(el_type).eq.27).or.    ! cc mult. kick order 3
+     &           (abs(el_type).eq.28)) then  ! cc mult. kick order 4
+            if (att_name_stripped.eq."voltage") then ![MV]   
               if (setR) then
                 ed(ii)=dynk_computeFUN(funNum,turn)
               else
@@ -46071,18 +46030,37 @@ C     Here comes the logic for setting the value of the attribute for all instan
               endif
             elseif (att_name_stripped.eq."phase") then ![rad]
               if (setR) then
-                el(ii)= dynk_computeFUN(funNum,turn)
+                if (abs(el_type).eq.23) then
+                  crabph(ii)=dynk_computeFUN(funNum,turn)
+                elseif (abs(el_type).eq.26) then
+                  crabph2(ii)=dynk_computeFUN(funNum,turn)
+                elseif (abs(el_type).eq.27) then
+                  crabph3(ii)=dynk_computeFUN(funNum,turn)
+                elseif (abs(el_type).eq.28) then
+                  crabph4(ii)=dynk_computeFUN(funNum,turn)
+                endif
+              elseif (abs(el_type).eq.23) then
+                crabph(ii)=fun_val
+              elseif (abs(el_type).eq.26) then
+                crabph2(ii)=fun_val
+              elseif (abs(el_type).eq.27) then
+                crabph3(ii)=fun_val
+              elseif (abs(el_type).eq.28) then
+                crabph4(ii)=fun_val
               else
-                el(ii)=fun_val
+                call prror(-1)
               endif
             else
-              WRITE (*,*) "ERROR in dynk_setvalue"
-              WRITE (*,*) "attribute '",att_name_stripped,"' ",
-     &        "does not exist"
-              call prror(-1)
+               WRITE (*,*) "ERROR in dynk_setvalue"
+               WRITE (*,*) "attribute '",att_name_stripped,"' ",
+     &              "does not exist"
+               call prror(-1)
             endif
-          endif
-        endif
+         else
+            write (*,*)"Unknown type"
+            call prror(-1)
+         endif
+      endif
       enddo
       
       end subroutine
@@ -46207,7 +46185,15 @@ C      dimension retdata(:)
                   retdata(nretdata) = ek(ii)                
                elseif (att_name_s.eq."phase") then ![rad]
                   nretdata = nretdata+1
-                  retdata(nretdata) = el(ii)        
+                  if (abs(el_type).eq.23) then
+                    retdata(nretdata)=crabph(ii)
+                  elseif (abs(el_type).eq.26) then
+                    retdata(nretdata)=crabph2(ii)
+                  elseif (abs(el_type).eq.27) then
+                    retdata(nretdata)=crabph3(ii)
+                  elseif (abs(el_type).eq.28) then
+                    retdata(nretdata)=crabph4(ii)
+                  endif     
                else
                   write(*,*) "Unknown attribute '", att_name_s, "'"
                   stop
