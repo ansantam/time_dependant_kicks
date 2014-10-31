@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 import numpy as np
-
 import matplotlib.pyplot as plt
 
 class DYNKdata:
@@ -62,6 +61,10 @@ for l in ifile:
     dynkData[EL_ATT].data.append(DATA)
     
 ifile.close()
+
+if len(dynkData) == 0:
+    print "No data"
+    exit(0)
 
 for (k,i) in zip(dynkData,xrange(len(dynkData))):
     dynkData[k].toNumarray()
