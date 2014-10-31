@@ -44629,10 +44629,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca comgetfields
       ! Temp variables
       integer ii, stat, t
-      double precision x,y, x1,x2,y1,y2,deriv
+      double precision x,y,               ! FILE, FILELIN
+     &                 x1,x2,y1,y2,deriv, ! LINSEG, QUADSEG,
+     &                 tinj,Iinj,Inom,A,D,R,te,                 !PELP (input)
+     &                 derivI_te,I_te,bexp,aexp, t1,I1, td,tnom !PELP (calc)
+      
+      logical lsane
+      
       ! define function return type
       integer dynk_findFUNindex
       
+      lsane = .true.
       
       if (nfuncs_dynk+1 .gt. maxfuncs_dynk) then
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
@@ -45168,7 +45175,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          call dynk_checkargs(nfields,6,
      &        "FUN funname SINF amplitude omega phase" )
-         call dynk_checkspace(0,2,1)
+         call dynk_checkspace(0,3,1)
 
          ! Set pointers to start of funs data blocks
          nfuncs_dynk = nfuncs_dynk+1
@@ -45189,6 +45196,105 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk+2) !phi
          nfexpr_dynk = nfexpr_dynk + 2         
 
+      else if (fields(3)(1:lfields(3)) .eq. "PELP" ) then ! PELP / type 80
+         ! PELP: Parabolic/exponential/linear/parabolic
+         ! From "Field Computation for Accelerator Magnets:
+         ! Analytical and Numerical Methods for Electromagnetic Design and Optimization"
+         ! By Dr.-Ing. Stephan Russenschuck
+         ! Appendix C: "Ramping the LHC Dipoles"
+         
+         call dynk_checkargs(nfields,10,
+     &        "FUN funname PELP tinj Iinj Inom A D R te" )
+         call dynk_checkspace(0,13,1) !!...
+
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 80          !TYPE (PELP)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
+     &        fields(2)(1:lfields(2))
+         
+         !Read and calculate parameters
+         read(fields(4) (1:lfields( 4)),*) tinj
+         read(fields(5) (1:lfields( 5)),*) Iinj
+         read(fields(6) (1:lfields( 6)),*) Inom
+         read(fields(7) (1:lfields( 7)),*) A
+         read(fields(8) (1:lfields( 8)),*) D
+         read(fields(9) (1:lfields( 9)),*) R
+         read(fields(10)(1:lfields(10)),*) te
+                  
+         derivI_te = A*(te-tinj)                    ! nostore
+         I_te      = A/2*(te-tinj)*(te-tinj) + Iinj ! nostore
+         bexp      = derivI_te/I_te
+         aexp      = exp(-bexp*te)*I_te
+         t1        = log(R/(aexp*bexp))/bexp
+         I1        = aexp*exp(bexp*t1)
+         td        = (Inom-I1)/R+t1-R/(2*D)
+         tnom      = td+R/D
+         
+         !Sanity checks
+         if (.not. (tinj .lt. te .and.
+     &                te .lt. t1 .and.
+     &                t1 .lt. td .and.
+     &                td .lt. tnom ) ) then
+            lsane = .false.
+            WRITE(*,*) "DYNK> ********************************"
+            WRITE(*,*) "DYNK> ERROR***************************"
+            write(*,*) "DYNK> PELP: Order of times not correct"
+            WRITE(*,*) "DYNK> ********************************"
+         endif
+         
+         if (.true.)then!.not. lsane) then
+            write (*,*) "tinj =", tinj
+            write (*,*) "Iinj =", Iinj
+            write (*,*) "Inom =", Inom
+            write (*,*) "A    =", A
+            write (*,*) "D    =", D
+            write (*,*) "R    =", R
+            write (*,*) "te   =", te
+            write (*,*)
+            write (*,*) "derivI_te =", derivI_te
+            write (*,*) "I_te      =", I_te
+            write (*,*) "bexp      =", bexp
+            write (*,*) "aexp      =", aexp
+            write (*,*) "t1        =", t1
+            write (*,*) "I1        =", I1
+            write (*,*) "td        =", td
+            write (*,*) "tnom      =", tnom
+            !call prror(51)
+         endif
+         if (.not. lsane) then
+            call prror(51)
+         endif
+
+         !Store: Times
+         fexpr_dynk(nfexpr_dynk)    = tinj
+         fexpr_dynk(nfexpr_dynk+ 1) = te
+         fexpr_dynk(nfexpr_dynk+ 2) = t1
+         fexpr_dynk(nfexpr_dynk+ 3) = td
+         fexpr_dynk(nfexpr_dynk+ 4) = tnom
+         !Store: Parameters / section1 (parabola)
+         fexpr_dynk(nfexpr_dynk+ 5) = Iinj
+         fexpr_dynk(nfexpr_dynk+ 6) = A
+         !Store: Parameters / section2 (exponential)
+         fexpr_dynk(nfexpr_dynk+ 7) = aexp
+         fexpr_dynk(nfexpr_dynk+ 8) = bexp
+         !Store: Parameters / section3 (linear)
+         fexpr_dynk(nfexpr_dynk+ 9) = I1
+         fexpr_dynk(nfexpr_dynk+10) = R
+         !Store: Parameters / section4 (parabola)
+         fexpr_dynk(nfexpr_dynk+11) = D
+         fexpr_dynk(nfexpr_dynk+12) = Inom
+         
+         nfexpr_dynk = nfexpr_dynk + 12
+         
       else
          ! UNKNOWN function
          write (*,*) "*************************************"
@@ -45766,7 +45872,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       ! Temporaries for random generator functions
       integer tmpseed1, tmpseed2
       double precision ranecu_rvec(1)
-
+      
+      ! General temporaries
+      integer foff !base offset into fexpr array
+      
 C     For some reason, write(*,*) statements here hangs the program.
 C     STOP <integer> is therefore used instead.
       
@@ -45865,6 +45974,36 @@ C     STOP <integer> is therefore used instead.
          retval = fexpr_dynk(funcs_dynk(funNum,3))
      &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
      &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
+      elseif ( funcs_dynk(funNum,2) .eq. 80 ) then !PELP
+         foff = funcs_dynk(funNum,3)
+         if (turn .le. fexpr_dynk(foff)) then ! <= tinj
+            ! Constant Iinj
+            retval = fexpr_dynk(foff+5)
+         elseif (turn .le. fexpr_dynk(foff+1)) then ! <= te
+            ! Parabola (accelerate)
+            retval = fexpr_dynk(foff+6)        *
+     &                 (turn-fexpr_dynk(foff)) *
+     &                 (turn-fexpr_dynk(foff)) / 2.0
+     &             + fexpr_dynk(foff+5)
+         elseif (turn .le. fexpr_dynk(foff+2)) then ! <= t1
+            ! Exponential
+            retval = fexpr_dynk(foff+7) *
+     &          exp( fexpr_dynk(foff+8)*turn )
+         elseif (turn .le. fexpr_dynk(foff+3)) then ! <= td
+            ! Linear (max ramp rate)
+            retval = fexpr_dynk(foff+10) *
+     &               (turn-fexpr_dynk(foff+2))
+     &             + fexpr_dynk(foff+9)
+         elseif (turn .le. fexpr_dynk(foff+4)) then ! <= tnom
+            ! Parabola (decelerate)
+            retval =   -fexpr_dynk(foff+11)      *
+     &                 (fexpr_dynk(foff+4)-turn) *
+     &                 (fexpr_dynk(foff+4)-turn) / 2.0
+     &             + fexpr_dynk(foff+12)
+         else ! > tnom
+            ! Constant Inom
+            retval = fexpr_dynk(foff+12)
+         endif
       else ! UNKNOWN
          stop 2
       end if
