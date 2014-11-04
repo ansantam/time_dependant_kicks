@@ -59,3 +59,13 @@ test_case/*
 !test_case/fort.3
 !test_case/CollDB.alltclp-tcld.b1.new
 !test_case/CollPositions.alltclp-tcld.b1.dat
+
+#Extra input/output files
+test_case_crabs/*
+!test_case_crabs/input
+!test_case_crabs/output
+!test_case_crabs/SixTrack_4518_cernlib_coll_gfortran_O4
+!test_case_crabs/fort.2
+!test_case_crabs/fort.3
+!test_case_crabs/CollDB.alltclp-tcld.b1.new
+!test_case_crabs/CollPositions.alltclp-tcld.b1.dat

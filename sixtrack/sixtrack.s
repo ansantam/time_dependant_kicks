@@ -13602,27 +13602,10 @@ cc2008
            el(i)=0d0                                                     !hr05
         endif
       endif
-!--CRABCAVITY
-      if(abs(kz(i)).eq.23) then
-         crabph(i)=el(i)
-         el(i)=0d0
-      endif
-! JBG RF CC Multipoles
-!--CC Mult kick order 2
-      if(abs(kz(i)).eq.26) then
-         crabph2(i)=el(i)
-         el(i)=0d0
-      endif
-!--CC Mult kick order 3
-      if(abs(kz(i)).eq.27) then
-         crabph3(i)=el(i)
-         el(i)=0d0
-      endif
-!--CC Mult kick order 4
-      if(abs(kz(i)).eq.28) then
-         crabph4(i)=el(i)
-         el(i)=0d0
-      endif
+!--CRABCAVITY / CC multipoles order 2/3/4
+!  (eventually move everything here)
+      call initialize_element(i)
+
 !--ACDIPOLE
       if(abs(kz(i)).eq.16) then
         if(abs(ed(i)).le.pieni) then
@@ -19164,6 +19147,45 @@ cc2008
  1982 return
 
       end subroutine
+      
+      subroutine initialize_element(elIdx)
+!
+!-----------------------------------------------------------------------
+!     K.Sjobak & A. Santamaria, BE-ABP/HSS
+!     last modified: 04-11-2014
+!     Initialize a lattice element with index elIdx,
+!     such as done when reading fort.2 (GEOM) and in DYNK.
+!     
+!     Never delete an element from the lattice, even if it is not making a kick.
+!     If the element is not recognized, do nothing (for now).
+!-----------------------------------------------------------------------
+!
+      implicit none
+      integer, intent(in) :: elIdx
++ca parpro !needed for common
++ca common
+      
+!--CRABCAVITY
+      if(abs(kz(elIdx)).eq.23) then
+         crabph(elIdx)=el(elIdx)
+         el(elIdx)=0d0
+! JBG RF CC Multipoles
+!--CC Mult kick order 2
+      else if(abs(kz(elIdx)).eq.26) then
+         crabph2(elIdx)=el(elIdx)
+         el(elIdx)=0d0
+!--CC Mult kick order 3
+      else if(abs(kz(elIdx)).eq.27) then
+         crabph3(elIdx)=el(elIdx)
+         el(elIdx)=0d0
+!--CC Mult kick order 4
+      else if(abs(kz(elIdx)).eq.28) then
+         crabph4(elIdx)=el(elIdx)
+         el(elIdx)=0d0
+      endif
+      
+      end subroutine
+      
 +if crlibm
       subroutine splitfld(errno,nunit,lineno,nfields,nf,chars,fields)
       implicit none
@@ -28689,11 +28711,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           endif
 
 +ei
-!---------count:43
-          goto(10,630,740,630,630,630,630,630,630,630,30,50,70,90,110,  &
-     &130,150,170,190,210,420,440,460,480,500,520,540,560,580,600,      &
-     &620,390,230,250,270,290,310,330,350,370,680,700,720,630,748,      &
-     &630,630,630,630,630,745,746,751,752,753,754),ktrack(i)
+          goto(10,  630,  740, 630, 630, 630, 630, 630, 630, 630, !10
+     &         30,  50,   70,   90, 110, 130, 150, 170, 190, 210, !20
+     &         420, 440, 460,  480, 500, 520, 540, 560, 580, 600, !30
+     &         620, 390, 230,  250, 270, 290, 310, 330, 350, 370, !40
+     &         680, 700, 720,  630, 748, 630, 630, 630, 630, 630, !50
+     &         745, 746, 751,  752, 753, 754),ktrack(i)
           goto 630
    10     stracki=strack(i)
           if(iexact.eq.0) then
@@ -29947,10 +29970,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &760),ktrack(i)
 +ei
 +if collimat
-          goto(10,30,740,650,650,650,650,650,650,650,50,70,90,110,130,  &
-     &150,170,190,210,230,440,460,480,500,520,540,560,580,600,620,      &
-     &640,410,250,270,290,310,330,350,370,390,680,700,720,730,748,      &
-     &650,650,650,650,650,745,746),myktrack
+          goto(10,  30, 740, 650, 650, 650, 650, 650, 650, 650, !10
+     &         50,  70,  90, 110, 130, 150, 170, 190, 210, 230, !20
+     &        440, 460, 480, 500, 520, 540, 560, 580, 600, 620, !30
+     &        640, 410, 250, 270, 290, 310, 330, 350, 370, 390, !40
+     &        680, 700, 720, 730, 748, 650, 650, 650, 650, 650, !50
+     &        745, 746, 751, 752),myktrack !Missing crabs
 +ei
           goto 650
    10     stracki=strack(i)
@@ -46025,6 +46050,8 @@ C     Here comes the logic for setting the value of the attribute for all instan
       ! Get type
       if (.not.setR) then
         fun_val= dynk_computeFUN(funNum,turn)
+      else
+        fun_val = 0.0
       endif
       do ii=1,il
         if (element_name_stripped.eq.bez(ii)) then  ! name found
@@ -46169,25 +46196,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
               endif
             elseif (att_name_stripped.eq."phase") then ![rad]
               if (setR) then
-                if (abs(el_type).eq.23) then
-                  crabph(ii)=dynk_computeFUN(funNum,turn)
-                elseif (abs(el_type).eq.26) then
-                  crabph2(ii)=dynk_computeFUN(funNum,turn)
-                elseif (abs(el_type).eq.27) then
-                  crabph3(ii)=dynk_computeFUN(funNum,turn)
-                elseif (abs(el_type).eq.28) then
-                  crabph4(ii)=dynk_computeFUN(funNum,turn)
-                endif
-              elseif (abs(el_type).eq.23) then
-                crabph(ii)=fun_val
-              elseif (abs(el_type).eq.26) then
-                crabph2(ii)=fun_val
-              elseif (abs(el_type).eq.27) then
-                crabph3(ii)=fun_val
-              elseif (abs(el_type).eq.28) then
-                crabph4(ii)=fun_val
+                el(ii)=dynk_computeFUN(funNum,turn)
               else
-                call prror(-1)
+                el(ii)=fun_val
               endif
             else
                WRITE (*,*) "ERROR in dynk_setvalue"
@@ -46195,6 +46206,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &              "does not exist"
                call prror(-1)
             endif
+            call initialize_element(ii)
          else
             write (*,*)"Unknown type"
             call prror(-1)
