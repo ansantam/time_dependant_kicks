@@ -13451,6 +13451,7 @@ cc2008
 !-----------------------------------------------------------------------
 !  DATENBLOCK SINGLE ELEMENTS
 !  ELLEMENTLISTE
+!  imod = 1 if geometry in fort.3 (FREE), imod = 3 if in fort.2 (GEOM)
 !-----------------------------------------------------------------------
   120 i=1
   130 if(imod.eq.1) then
@@ -13582,8 +13583,7 @@ cc2008
           itionc(i)=kz(i)/abs(kz(i))
           kp(i)=6
         endif
-        phasc(i)=el(i)
-        el(i)=zero
+        ! More in initialize_element()
       endif
 !--WIRE
       if(abs(kz(i)).eq.15) then
@@ -13602,9 +13602,10 @@ cc2008
            el(i)=0d0                                                     !hr05
         endif
       endif
-!--CRABCAVITY / CC multipoles order 2/3/4
-!  (eventually move everything here)
-      call initialize_element(i)
+
+!--CAVITIES (12/-12) (set phasc)
+!--CRABCAVITY (23/-23) / CC multipoles order 2/3/4 (+/- 23/26/27/28)
+      call initialize_element(i,.true.)
 
 !--ACDIPOLE
       if(abs(kz(i)).eq.16) then
@@ -13729,6 +13730,7 @@ cc2008
       goto 170
 !-----------------------------------------------------------------------
 !  BLOCK DEFINITIONS
+!  imod = 1 if geometry in fort.3 (FREE), imod = 3 if in fort.2 (GEOM)
 !-----------------------------------------------------------------------
   190 if(imod.eq.1) then
   200   read(3,10020,end=1530,iostat=ierro) ch
@@ -13803,6 +13805,7 @@ cc2008
       goto 220
 !-----------------------------------------------------------------------
 !  STRUCTURE INPUT
+!  imod = 1 if geometry in fort.3 (FREE), imod = 3 if in fort.2 (GEOM)
 !-----------------------------------------------------------------------
   320 i=0
   330 do 340 k=1,40
@@ -13823,6 +13826,7 @@ cc2008
       endif
       if(ch(:4).eq.next) goto 110
       i2=1
+      ! Look for repetition with syntax N( ... )
       do 420 ii=1,80
         if(ch(ii:ii).eq.kl) then
           if(ii.gt.1) then
@@ -19148,7 +19152,7 @@ cc2008
 
       end subroutine
       
-      subroutine initialize_element(elIdx)
+      subroutine initialize_element(elIdx,lfirst)
 !
 !-----------------------------------------------------------------------
 !     K.Sjobak & A. Santamaria, BE-ABP/HSS
@@ -19161,12 +19165,36 @@ cc2008
 !-----------------------------------------------------------------------
 !
       implicit none
+      
       integer, intent(in) :: elIdx
+      logical, intent(in) :: lfirst
 +ca parpro !needed for common
++ca parnum !zero
 +ca common
       
+      !Set the element to true when initialized - some elements need to be present in fort.2 and then later changed
+      logical, save :: lisinit(nele) = .false.
+
+!--CAVITIES
+      if(abs(kz(elIdx)).eq.12) then
+         !Some 1st time initialization in daten()
+         if (lfirst) then
+            lisinit(elIdx)=.true.
+         else if ( .not. lisinit(elIdx) ) then !not lfirst and not lisinit
+            write (*,*) "ERROR in initialize_element/cavity (kz=",
+     &           kz(elIdx),")"
+            write (*,*) "Can't change settings of a cavity which is off"
+            call prror(-1)
+         else !not lfirst
+            write(*,*) "DYNK> Cavities: Not sure that ",
+     &           "initialize_elements now accounts for everything"
+            write(*,*) "DYNK> For now, DYNK disabled for cavities"
+            call prror(-1)
+         endif
+         phasc(elIdx)=el(elIdx)
+         el(elIdx)=zero
 !--CRABCAVITY
-      if(abs(kz(elIdx)).eq.23) then
+      else if(abs(kz(elIdx)).eq.23) then
          crabph(elIdx)=el(elIdx)
          el(elIdx)=0d0
 ! JBG RF CC Multipoles
@@ -29970,13 +29998,21 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &760),ktrack(i)
 +ei
 +if collimat
+!          if (myktrack .eq. 1) then !BLOCK of linear elements
+!             write (*,*) "Kick for element", i,ix, "[BLOCK]"
+!          else
+!             write(*,*) "Kick for element", i,ix,bez(ix),myktrack,kp(ix)
+!          endif
           goto(10,  30, 740, 650, 650, 650, 650, 650, 650, 650, !10
      &         50,  70,  90, 110, 130, 150, 170, 190, 210, 230, !20
      &        440, 460, 480, 500, 520, 540, 560, 580, 600, 620, !30
      &        640, 410, 250, 270, 290, 310, 330, 350, 370, 390, !40
      &        680, 700, 720, 730, 748, 650, 650, 650, 650, 650, !50
-     &        745, 746, 751, 752),myktrack !Missing crabs
+     &        745, 746, 751, 752),myktrack
 +ei
+          write (*,*) "WARNING: Non-handled element in thin6d()!",
+     &                " i=", i, "ix=", ix, "myktrack=",  myktrack,
+     &                " bez(ix)='", bez(ix),"' SKIPPED"
           goto 650
    10     stracki=strack(i)
 +if collimat
@@ -32626,16 +32662,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRD
 
 +ca lostpart
-	
-+if collimat
-          kpz=abs(kp(ix))
-          if(kpz.eq.0) goto 650
-          if(kpz.eq.1) goto 650
-+ei
-
 
   645     continue
-
 +ca dumplines
 
 +ca statlines
@@ -46128,6 +46156,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &            "does not exist"
                 call prror(-1)
             endif
+            call initialize_element(ii, .false.)
           elseif (abs(el_type).eq.16) then ! AC dipole 
             if (att_name_stripped.eq."amplitude") then ! [T.m]
               if (setR) then
@@ -46206,7 +46235,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &              "does not exist"
                call prror(-1)
             endif
-            call initialize_element(ii)
+            call initialize_element(ii, .false.)
          else
             write (*,*)"Unknown type"
             call prror(-1)
