@@ -84,7 +84,7 @@ for (k,i) in zip(dynkData,xrange(len(dynkData))):
              label="%s:%s"%(k[0],k[1]) )
     plt.xlabel("Turn")
     plt.ylabel("Setting")
-    plt.xticks(np.arange(dynkData[k].turn[0], dynkData[k].turn[-1], 1.0))
+    #plt.xticks(np.arange(dynkData[k].turn[0], dynkData[k].turn[-1], 1.0))
 
 #Final touches
 plt.figure(1)
