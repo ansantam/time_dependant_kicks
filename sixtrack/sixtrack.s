@@ -18163,9 +18163,11 @@ cc2008
         write(*,*) ''
         write(*,*) '          The last column states the format'
         write(*,*) '               of the output file (see Twiki page):'
-        write(*,*) '          ==0 -> regular output;'
-        write(*,*) '          !=0 -> special one, for post-processing'
-        write(*,*) '                 with LHC Coll Team tools;'
+        write(*,*) '          ==0 -> regular output (default)'
+        write(*,*) '          ==1 -> special one, for post-processing'
+        write(*,*) '                 with LHC Coll Team tools'
+        write(*,*) '          ==2 -> as 1, but add z as column 6'
+
         do ii=1,il
           if(ldump(ii)) then
             write(*,10470) bez(ii), ndumpt(ii), dumpunit(ii),dumpfmt(ii)
@@ -26316,8 +26318,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           inquire( unit=dumpunit(i), opened=lopen )
           if ( .not.lopen ) then
              open(dumpunit(i),form='formatted')
-             if ( dumpfmt(i).ne.0 )    write(dumpunit(i),*) 
-     &                         '# ID  turn  s  x  y  xp  yp  dE/E  type'
+             if ( dumpfmt(i).eq.1 )    write(dumpunit(i),*)
+     &                       '# ID  turn  s  x  y  xp  yp  dE/E  type'
+             if ( dumpfmt(i).eq.2 )    write(dumpunit(i),*)
+     &                       '# ID  turn  s  x  y  z xp  yp dE/E  type'
           endif
         endif
       enddo
@@ -34955,8 +34959,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     temporary variables
       integer j
 
-!     General format	
-      if ( fmt .eq. 0 ) then
+      if ( fmt .eq. 0 ) then ! General format
          if ( lhighprec ) then
             do j=1,napx
                write(unit,1981) nturn, i, ix, bez(ix), dcum(i),         &
@@ -34978,8 +34981,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          endif
          write(unit,*) ''
          write(unit,*) ''
-      else
-!       Format for aperture check	
+
+      else if (fmt .eq. 1) then ! Format for aperture check
+
         if ( lhighprec ) then
             do j=1,napx
 +if .not.fluka
@@ -35001,21 +35005,49 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
             enddo
          endif
-
+      else if (fmt .eq. 2) then ! Same as fmt=1 but also include z (for crab cavities etc)
+         if ( lhighprec ) then
+            do j=1,napx
++if .not.fluka
+               write(unit,1985) nlostp(j), nturn, dcum(i), xv(1,j),     &
++ei
++if fluka
+               write(unit,1985) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
++ei
+     &              yv(1,j), sigmv(j), xv(2,j), yv(2,j),
+     &              (ejv(j)-e0)/e0, ktrack(i)
+            enddo
+         else
+            do j=1,napx
++if .not.fluka
+               write(unit,1986) nlostp(j), nturn, dcum(i), xv(1,j),
++ei
++if fluka
+               write(unit,1986) fluka_uid(j), nturn, dcum(i), xv(1,j),
++ei
+     &              yv(1,j), sigmv(j), xv(2,j), yv(2,j),
+     &              (ejv(j)-e0)/e0, ktrack(i)
+            enddo
+         endif
+      else
+         write (*,*) "DUMP> Format",fmt, "not understood for unit", unit
+         call prror(-1)
       endif
       return
-
+      
 +if fluka
- 1981 format (3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE25.18))
- 1982 format (3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE16.9))
+ 1981 format (3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE25.18)) !fmt 0 / hiprec
+ 1982 format (3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE16.9))  !fmt 0 / not hiprec
 +ei
 +if .not.fluka
- 1981 format (3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE25.18))
- 1982 format (3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE16.9))
+ 1981 format (3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE25.18)) !fmt 0 / hiprec
+ 1982 format (3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE16.9))  !fmt 0 / not hiprec
 +ei
- 1983 format (2(1x,I8),1X,F12.5,5(1X,1PE25.18),1X,I8)
- 1984 format (2(1x,I8),1X,F12.5,5(1X,1PE16.9),1X,I8)
-	
+ 1983 format (2(1x,I8),1X,F12.5,5(1X,1PE25.18),1X,I8)  !fmt 1 / hiprec
+ 1984 format (2(1x,I8),1X,F12.5,5(1X,1PE16.9),1X,I8)   !fmt 1 / not hiprec
+
+ 1985 format (2(1x,I8),1X,F12.5,6(1X,1PE25.18),1X,I8)  !fmt 2 / hiprec
+ 1986 format (2(1x,I8),1X,F12.5,6(1X,1PE16.9),1X,I8) !fmt 2 / not hiprec
       end subroutine
 !
       subroutine dump_statistics( nturn, ientry, ix, unit, lhighprec )
