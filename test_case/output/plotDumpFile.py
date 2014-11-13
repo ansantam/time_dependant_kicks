@@ -3,6 +3,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from mpl_toolkits.mplot3d import Axes3D
+
 fileDType = np.dtype([('ID', np.int), ('turn', np.int),
                       ('s', np.float),('x', np.float),('y', np.float),('z', np.float),
                       ('xp', np.float),('yp', np.float),('dEE', np.float),
@@ -69,18 +71,49 @@ def get_turndata(fdata, turn):
 (fdata,turnIdxs) = readdumpfile("../fort.660") #IP1
 #(fdata,turnIdxs) = readdumpfile("../fort.661") #CRAB5
 
-
 plot_particleNum(fdata,turnIdxs)
 
+
 for t in xrange(1,61):
+    print "TURN=",t
     tdata = np.asarray(get_turndata(fdata,t),dtype=fileDType)
+
+    plt.figure(5)
     
-    plt.figure()
+    #zx
+    #plt.figure()
+    plt.clf()
     plt.title("TURN =" + str(t))
     plt.plot(tdata['z'], tdata['x'],'+')
     plt.xlabel("z")
     plt.ylabel("x")
-    
+    plt.xlim(-200,200)
+    plt.ylim(-0.05,0.05)
+
     plt.savefig("pngs/zx_%05i.png" % (t))
+
+    #plt.figure()
+    plt.clf()
+    plt.title("TURN =" + str(t))
+    plt.plot(tdata['x'], tdata['y'],'+')
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.xlim(-0.05,0.05)
+    plt.ylim(-0.25,0.25)
+    
+    plt.savefig("pngs/xy_%05i.png" % (t))
+
+    fig = plt.figure(10)
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(tdata['x'], tdata['y'], tdata['z'])
+    ax.set_xlim(-0.05,0.05)
+    ax.set_ylim(-0.25,0.25)
+    ax.set_zlim(-200,200)
+    ax.set_title("TURN =" + str(t))
+    plt.xlabel("x")
+    plt.ylabel("y")
+    ax.set_zlabel("z [mm]")
+    
+    plt.savefig("pngs/xyz_%05i.png" % (t))
     
 plt.show()
