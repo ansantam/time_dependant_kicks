@@ -2,8 +2,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-
 from mpl_toolkits.mplot3d import Axes3D
+
+import os
 
 fileDType = np.dtype([('ID', np.int), ('turn', np.int),
                       ('s', np.float),('x', np.float),('y', np.float),('z', np.float),
@@ -73,11 +74,15 @@ def get_turndata(fdata, turn):
 
 plot_particleNum(fdata,turnIdxs)
 
+corr = []
 
 for t in xrange(1,61):
     print "TURN=",t
     tdata = np.asarray(get_turndata(fdata,t),dtype=fileDType)
 
+    corr.append(np.corrcoef(tdata['z'], tdata['x'])[0,1])    
+
+    
     plt.figure(5)
     
     #zx
@@ -85,8 +90,8 @@ for t in xrange(1,61):
     plt.clf()
     plt.title("TURN =" + str(t))
     plt.plot(tdata['z'], tdata['x'],'+')
-    plt.xlabel("z")
-    plt.ylabel("x")
+    plt.xlabel("z [mm]")
+    plt.ylabel("x [mm]")
     plt.xlim(-200,200)
     plt.ylim(-0.05,0.05)
 
@@ -96,12 +101,14 @@ for t in xrange(1,61):
     plt.clf()
     plt.title("TURN =" + str(t))
     plt.plot(tdata['x'], tdata['y'],'+')
-    plt.xlabel("x")
-    plt.ylabel("y")
+    plt.xlabel("x [mm]")
+    plt.ylabel("y [mm]")
     plt.xlim(-0.05,0.05)
     plt.ylim(-0.25,0.25)
     
     plt.savefig("pngs/xy_%05i.png" % (t))
+
+    continue
 
     fig = plt.figure(10)
     ax = fig.add_subplot(111, projection='3d')
@@ -110,10 +117,45 @@ for t in xrange(1,61):
     ax.set_ylim(-0.25,0.25)
     ax.set_zlim(-200,200)
     ax.set_title("TURN =" + str(t))
-    plt.xlabel("x")
-    plt.ylabel("y")
+    plt.xlabel("x [mm]")
+    plt.ylabel("y [mm]")
     ax.set_zlabel("z [mm]")
     
     plt.savefig("pngs/xyz_%05i.png" % (t))
-    
+
+fps = 10
+
+movieFileName = "pngs/xy.mp4"
+print "Assembling movie '" + movieFileName + "' at", fps, "fps:"
+os.system("rm " + movieFileName)
+command = "ffmpeg -sameq -r "+str(fps)+" -i " + "pngs/xy_%05d.png " + movieFileName
+print "Command = '" + command + "'"
+os.system(command)
+
+print "Converting to .gif:"
+movieFileName = "pngs/xy.gif"
+command = "convert " + "pngs/xy_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
+print "Command = '" + command + "'"
+os.system(command)
+
+
+movieFileName = "pngs/zx.mp4"
+print "Assembling movie '" + movieFileName + "' at", fps, "fps:"
+os.system("rm " + movieFileName)
+command = "ffmpeg -sameq -r "+str(fps)+" -i " + "pngs/zx_%05d.png " + movieFileName
+print "Command = '" + command + "'"
+os.system(command)
+
+print "Converting to .gif:"
+movieFileName = "pngs/zx.gif"
+command = "convert " + "pngs/zx_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
+print "Command = '" + command + "'"
+os.system(command)
+
+plt.figure(5)
+plt.clf()
+plt.plot(corr)
+plt.xlabel("Turn")
+plt.ylabel("Corr")
+
 plt.show()
