@@ -30012,7 +30012,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &        440, 460, 480, 500, 520, 540, 560, 580, 600, 620, !30
      &        640, 410, 250, 270, 290, 310, 330, 350, 370, 390, !40
      &        680, 700, 720, 730, 748, 650, 650, 650, 650, 650, !50
-     &        745, 746, 751, 752),myktrack
+     &        745, 746, 751, 752, 753, 754, 755, 758, 756, 759, !60
+     &        757, 760 ),myktrack
 +ei
           write (*,*) "WARNING: Non-handled element in thin6d()!",
      &                " i=", i, "ix=", ix, "myktrack=",  myktrack,
