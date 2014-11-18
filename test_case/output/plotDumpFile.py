@@ -12,10 +12,13 @@ fileDType = np.dtype([('ID', np.int), ('turn', np.int),
                       ('pType', np.int)])
 
 def readdumpfile(fname):
+    print "Loading file '" + fname + "'",
     fdata = np.loadtxt(fname, dtype=fileDType)
     
-    turnIdxs = [[fdata['turn'][0]]] #1st idx: Pass (initially 64 particles)
-                                    #2nd idx: Turn number (last element = end)
+    print "creating turnIdxs array"
+    turnIdxs = [[0]] # 1st idx: Tracking pass (64 particles/pass)
+                     # 2nd idx: Turn number (last element = end)
+                     #    data: The index into fdata
     
     tPrev   = fdata['turn'][0]
     passIdx = 0
@@ -77,7 +80,7 @@ plot_particleNum(fdata,turnIdxs)
 corr = []
 
 for t in xrange(1,61):
-    print "TURN=",t
+    print "TURN =",t
     tdata = np.asarray(get_turndata(fdata,t),dtype=fileDType)
 
     corr.append(np.corrcoef(tdata['z'], tdata['x'])[0,1])    
