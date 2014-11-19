@@ -18183,7 +18183,7 @@ cc2008
             end do
             if (kk .eq. 0) then
                write (*,10472) " !! Warning: No structure elements "
-     &              // "found for dumping '" // bez(ii) // "'!"
+     &              // "found for '" // bez(ii) // "'!"
                write (*,10472) " !! This element is probably only found"
      &              // " in a BLOC, or it is not used at all."
                write (*,10472) " !! Please fix your DUMP block"
@@ -18223,7 +18223,7 @@ cc2008
          j=0
          goto 2001
       endif
-!     failing research:
+!     search failed:
       write(*,*) ''
       write(*,*) " Un-identified SINGLE ELEMENT '", idat, "'"
       write(*,*) '   in block ',dump, '(fort.3)'
@@ -18257,6 +18257,25 @@ cc2008
         do ii=1,il
           if(lstat(ii)) then
             write(*,10470) bez(ii), nstatt(ii), statunit(ii)
+!           At which structure indices is this single element found? (Sanity check)
+            kk = 0
+            do jj=1,mbloz      ! Loop over all structure elements
+              if ( ic(jj)-nblo .eq. ii ) then
+                write (ch1,*) jj ! internal write for left-adjusting
+                write (*,10472) " -> Found as structure element no. " 
+     &               // trim(adjustl(ch1))
+                kk = kk + 1
+              end if
+            end do
+            if (kk .eq. 0) then
+               write (*,10472) " !! Warning: No structure elements "
+     &              // "found for '" // bez(ii) // "'!"
+               write (*,10472) " !! This element is probably only found"
+     &              // " in a BLOC, or it is not used at all."
+               write (*,10472) " !! Please fix your STAT block"
+     &              // " in fort.3"
+               call prror(-1)
+            endif
           endif
         enddo
         if ( lstathighprec ) then
@@ -18280,10 +18299,10 @@ cc2008
       do j=1,il
          if(bez(j).eq.idat) goto 2101
       enddo
-!     failing research:
+!     search failed:
       write(*,*) ''
-      write(*,*) ' Un-identified SINGLE ELEMENT ', idat
-      write(*,*) '   in block ',stat
+      write(*,*) " Un-identified SINGLE ELEMENT '", idat, "'"
+      write(*,*) '   in block ',stat, "(fort.3)"
       write(*,*) '   parsed line:'
       write(*,*) ch(:80)
       write(*,*) ''
@@ -18394,6 +18413,26 @@ cc2008
         do ii=1,il
           if(lbmat(ii)) then
             write(*,10470) bez(ii), nbmatt(ii), bmatunit(ii)
+!           At which structure indices is this single element found? (Sanity check)
+            kk = 0
+            do jj=1,mbloz      ! Loop over all structure elements
+              if ( ic(jj)-nblo .eq. ii ) then
+                write (ch1,*) jj ! internal write for left-adjusting
+                write (*,10472) " -> Found as structure element no. " 
+     &               // trim(adjustl(ch1))
+                kk = kk + 1
+              end if
+            end do
+            if (kk .eq. 0) then
+               write (*,10472) " !! Warning: No structure elements "
+     &              // "found for '" // bez(ii) // "'!"
+               write (*,10472) " !! This element is probably only found"
+     &              // " in a BLOC, or it is not used at all."
+               write (*,10472) " !! Please fix your BMAT block"
+     &              // " in fort.3"
+               call prror(-1)
+            endif
+
           endif
         enddo
         if ( lbmathighprec ) then
@@ -18419,8 +18458,8 @@ cc2008
       enddo
 !     failing research:
       write(*,*) ''
-      write(*,*) ' Un-identified SINGLE ELEMENT ', idat
-      write(*,*) '   in block ',bmat
+      write(*,*) " Un-identified SINGLE ELEMENT '", idat, "'"
+      write(*,*) '   in block ',bmat, "(fort.3)"
       write(*,*) '   parsed line:'
       write(*,*) ch(:80)
       write(*,*) ''
