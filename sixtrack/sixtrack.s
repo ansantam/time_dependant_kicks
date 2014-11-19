@@ -18171,6 +18171,25 @@ cc2008
         do ii=1,il
           if(ldump(ii)) then
             write(*,10470) bez(ii), ndumpt(ii), dumpunit(ii),dumpfmt(ii)
+!           At which structure indices is this single element found? (Sanity check)
+            kk = 0
+            do jj=1,mbloz      ! Loop over all structure elements
+              if ( ic(jj)-nblo .eq. ii ) then
+                write (ch1,*) jj ! internal write for left-adjusting
+                write (*,10472) " -> Found as structure element no. " 
+     &               // trim(adjustl(ch1))
+                kk = kk + 1
+              end if
+            end do
+            if (kk .eq. 0) then
+               write (*,10472) " !! Warning: No structure elements "
+     &              // "found for dumping '" // bez(ii) // "'!"
+               write (*,10472) " !! This element is probably only found"
+     &              // " in a BLOC, or it is not used at all."
+               write (*,10472) " !! Please fix your DUMP block"
+     &              // " in fort.3"
+               call prror(-1)
+            endif
           endif
         enddo
         if ( ldumphighprec ) then
@@ -18206,8 +18225,8 @@ cc2008
       endif
 !     failing research:
       write(*,*) ''
-      write(*,*) ' Un-identified SINGLE ELEMENT ', idat
-      write(*,*) '   in block ',dump
+      write(*,*) " Un-identified SINGLE ELEMENT '", idat, "'"
+      write(*,*) '   in block ',dump, '(fort.3)'
       write(*,*) '   parsed line:'
       write(*,*) ch(:80)
       write(*,*) ''
@@ -18889,6 +18908,7 @@ cc2008
 10400 format(5x,'| ELEMENTS |                              |          ' &
      &,'     |               |    ',a16,'   |    ',a16,'   |')
 10470 format(t10,a16,4x,i13,2x,i12,2x,i12)
+10472 format(t10,a)
 10490 format(t10,a16,4x,a40,2x,1pe16.9)
 10510 format(t10,a16,4x,i8,12x,i8,4x,1pe16.9)
 10700 format(t10,'DATA BLOCK TROMBONE ELEMENT'/                         &
