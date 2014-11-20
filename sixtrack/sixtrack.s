@@ -18343,9 +18343,10 @@ cc2008
          call read_fields( ch, fields, lfields, nfields, lerr )
          if ( lerr ) call prror(51)
          if (ldynkdebug) then
-            write (*,*) "Got a FUN block, len=", len(ch), ": '", ch, "'"
+            write (*,*) "DYNKDEBUG> Got a FUN block, len=", 
+     &           len(ch), ": '", ch, "'"
             do ii=1,nfields
-               write (*,*) "Field(",ii,") ='",
+               write (*,*) "DYNKDEBUG> Field(",ii,") ='",
      &              fields(ii)(1:lfields(ii)),"'"
             enddo
          endif
@@ -18353,12 +18354,13 @@ cc2008
          goto 2200 !loop DYNK
 
       else if (ch(:3).eq."SET") then
-         write (*,*) "Got a SET(R) block, len=", len(ch), ": '", ch, "'"
          call read_fields( ch, fields, lfields, nfields, lerr )
          if ( lerr ) call prror(51)
          if (ldynkdebug) then
+            write (*,*) "DYNKDEBUG> Got a SET(R) block, len=", 
+     &           len(ch), ": '", ch, "'"
             do ii=1,nfields
-               write (*,*) "Field(",ii,") ='",
+               write (*,*) "DYNKDEBUG> Field(",ii,") ='",
      &              fields(ii)(1:lfields(ii)),"'"
             enddo
          endif
@@ -18367,6 +18369,7 @@ cc2008
 
       else if (ch(:4).eq.next) then
          if (ldynkdebug) then
+            write (*,*) "DYNKDEBUG> Finished parsing DYNK block"
             call dynk_dumpdata
          endif
          if (ldynk) then
@@ -45617,7 +45620,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          jj = dynk_findFUNindex(cexpr_dynk(funcs_dynk(ii,1)),ii+1)
          if ( jj.ne. -1) then
             sane = .false.
-            write (*,*) "Insane: function ", ii, "has same name as", jj
+            write (*,*) "DYNK> Insane: function ", 
+     &           ii, "has the same name as", jj
          end if
       end do
       
@@ -45631,14 +45635,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             if ( sets_dynk(jj,2) .le. sets_dynk(ii,2) .and.
      &           sets_dynk(jj,3) .ge. sets_dynk(ii,2) ) then
                sane = .false.
-               write (*,*) "Insane: Lower edge of SET #", jj,
+               write (*,*) "DYNK> Insane: Lower edge of SET #", jj,
      &         "=", sets_dynk(jj,2)," <= lower edge of SET #",ii,
      &         "=", sets_dynk(ii,2),"; and also higer edge of SET #",jj,
      &         "=", sets_dynk(jj,3)," >= lower edge of SET #", ii
             else if (sets_dynk(jj,3) .ge. sets_dynk(ii,3) .and.
      &               sets_dynk(jj,2) .le. sets_dynk(ii,3) ) then
                sane = .false.
-               write (*,*) "Insane: Upper edge of SET #", jj,
+               write (*,*) "DYNK> Insane: Upper edge of SET #", jj,
      &         "=", sets_dynk(jj,3)," >= upper edge of SET #",ii,
      &         "=", sets_dynk(ii,3),"; and also lower edge of SET #",jj,
      &         "=", sets_dynk(jj,2)," <= upper edge of SET #", ii
@@ -45650,9 +45654,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          write (*,*) "*******DYNK input was insane************"
          write (*,*) "****************************************"
          call dynk_dumpdata
-         stop
+         call prror(-11)
       else if (sane .and. ldynkdebug) then
-         write (*,*) "DYNK input was sane"
+         write (*,*) "DYNK> DYNK input was sane"
       end if
       end subroutine
 
@@ -45667,9 +45671,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca comdynk
 
       integer ii
+      
+      write (*,*) "**************** DYNK parser knows: ****************"      
 
-      write (*,*) "DYNK parser knows:"
-
+      write (*,*) "OPTIONS:"
+      write (*,*) " ldynk            =", ldynk
+      write (*,*) " ldynkdebug       =", ldynkdebug
+      write (*,*) " ldynkfiledisable =", ldynkfiledisable
+      write (*,*) " ldynkfileopen    =", ldynkfileopen
+      
       write (*,*) "FUN:"
       write (*,*) "ifuncs: (",nfuncs_dynk,")"
       do ii=1,nfuncs_dynk
@@ -45704,6 +45714,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &                             fsets_origvalue_dynk(ii)
       end do
 
+      write (*,*) "****************************************************"
       
       end subroutine
 
@@ -45748,7 +45759,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       !Temp variables
       integer ii
 
-      write(*,*) "In dynk_pretrack()"
+      if (ldynkdebug) write(*,*) "DYNKDEBUG> In dynk_pretrack()"
       
       ! Find which elem/attr combos are affected by SET
       nsets_unique_dynk = 0 !Assuming this is only run once
@@ -45760,8 +45771,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
             csets_unique_dynk(nsets_unique_dynk,1) = csets_dynk(ii,1)
             csets_unique_dynk(nsets_unique_dynk,2) = csets_dynk(ii,2)
-            write(*,*) csets_unique_dynk(nsets_unique_dynk,1)
-            write(*,*) csets_unique_dynk(nsets_unique_dynk,2)
 
             ! Store original value of data point
             fsets_origvalue_dynk(nsets_unique_dynk) = 42.0
@@ -45778,6 +45787,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &                                 cexpr_dynk(funcs_dynk(ii,1)+2) )
          endif
       enddo
+
       if (ldynkdebug) call dynk_dumpdata
       
       end subroutine
@@ -45831,10 +45841,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
       save ldynksetsEnable
 
-      if ( ldynkdebug ) then
-         write(*,*) ''
-         write(*,*) ' CALL TO dynk_apply AT TURN ', turn
-      endif
+      if ( ldynkdebug ) 
+     &     write(*,*) 'DYNKDEBUG> In dynk_apply(), turn = ', turn
       
       !Initialize variables
       do jj=1, nsets_unique_dynk
@@ -45848,8 +45856,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! Reset RNGs
          do ii=1, nfuncs_dynk
             if (funcs_dynk(ii,2) .eq. 6) then !RANDG
-               write (*,*) "Resetting RNG for FUN named '",
+               if (ldynkdebug) write (*,*) 
+     &              "DYNKDEBUG> Resetting RNG for FUN named '",
      &              cexpr_dynk(funcs_dynk(ii,1)), "'"
+
                iexpr_dynk(funcs_dynk(ii,3)+3) =
      &         iexpr_dynk(funcs_dynk(ii,3) )
                iexpr_dynk(funcs_dynk(ii,3)+4) =
@@ -45866,8 +45876,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          ! Reset values
          do ii=1, nsets_unique_dynk
-            write (*,*) "resetting: '",csets_unique_dynk(ii,1), "'",
-     &           csets_unique_dynk(ii,2),"'", -ii, 0, .false.
+            if (ldynkdebug)
+     &           write (*,*) "DYNKDEBUG> resetting: '",
+     &           csets_unique_dynk(ii,1),"':'",csets_unique_dynk(ii,2),
+     &           "'", -ii, 0, .false.
             call dynk_setvalue(csets_unique_dynk(ii,1),
      &                         csets_unique_dynk(ii,2),
      &                         -ii, 0, .false. )
@@ -45900,13 +45912,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             shiftedTurn = turn + sets_dynk(ii,4)
             
             !Set the value
-            if (ldynkdebug) then
-               write(*,*) "DYNK> Set", ii, "on",
-     &              csets_dynk(ii,1), csets_dynk(ii,2),
-     &              "shiftedTurn=",shiftedTurn
-            endif
+            if (ldynkdebug)
+     &           write(*,*) "DYNKDEBUG> Applying set #", ii, "on '",
+     &           trim(dynk_stringzerotrim(csets_dynk(ii,1))),
+     &           "':'", trim(dynk_stringzerotrim(csets_dynk(ii,2))),
+     &           "', shiftedTurn=",shiftedTurn
+
             call dynk_setvalue(csets_dynk(ii,1), csets_dynk(ii,2),
      &           sets_dynk(ii,1), shiftedTurn, lsets_dynk(ii) )
+            
             if (ldynkdebug) then
                ngetvaldata = getvaldata_len
                call dynk_getvalue( csets_dynk(ii,1), csets_dynk(ii,2),
@@ -45925,9 +45939,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          end if
       end do
       
-      !Propagate SETS for tricky elements
-      
-
       !Write output file
       if (ldynksetsEnable) then
          do jj=1,nsets_unique_dynk
@@ -46354,7 +46365,6 @@ C     Here comes the logic for setting the value of the attribute for all instan
       character(maxstrlen_dynk) element_name, att_name
       intent(in) element_name, att_name
       double precision retdata(*)
-C      dimension retdata(:)
       integer nretdata
       intent(out) retdata
       intent(inout) nretdata
@@ -46389,8 +46399,9 @@ C      dimension retdata(:)
                   nretdata = nretdata+1
                   retdata(nretdata) = ek(ii)
                else
-                  write(*,*) "Unknown attribute '", att_name_s, "'"
-                  stop
+                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
+     &                 " for type",el_type," name '", bez(ii), "'"
+                  call prror(-1)
                endif
             elseif (abs(el_type).eq.11) then ! multipoles 
                if (att_name_s.eq."bending_str") then ! [rad]
@@ -46400,8 +46411,9 @@ C      dimension retdata(:)
                   nretdata = nretdata+1
                   retdata(nretdata) = ek(ii) 
                else
-                  write(*,*) "Unknown attribute '", att_name_s, "'"
-                  stop
+                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
+     &                 " for multipole '", bez(ii), "'"
+                  call prror(-1)
                endif
             elseif (abs(el_type).eq.12) then ! cavities 
                if (att_name_s.eq."voltage") then ! MV
@@ -46414,8 +46426,9 @@ C      dimension retdata(:)
                   nretdata = nretdata+1
                   retdata(nretdata) = el(ii)       
                else
-                  write(*,*) "Unknown attribute '", att_name_s, "'"
-                  stop
+                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
+     &                 " for cavity '", bez(ii), "'"
+                  call prror(-1)
                endif
             elseif (abs(el_type).eq.16) then ! AC dipole 
                if (att_name_s.eq."amplitude") then ! [T.m]
@@ -46428,8 +46441,9 @@ C      dimension retdata(:)
                   nretdata = nretdata+1
                   retdata(nretdata) = el(ii)      
                else
-                  write(*,*) "Unknown attribute '", att_name_s, "'"
-                  stop
+                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
+     &                 " for AC dipole '", bez(ii), "'"
+                  call prror(-1)
                endif
             elseif (abs(el_type).eq.20) then ! beam-beam separation
                if (att_name_s.eq."horizontal") then ! [mm]
@@ -46442,8 +46456,9 @@ C      dimension retdata(:)
                   nretdata = nretdata+1
                   retdata(nretdata) = el(ii)       
                else
-                  write(*,*) "Unknown attribute '", att_name_s, "'"
-                  stop
+                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
+     &                 " for beam-beam '", bez(ii), "'"
+                  call prror(-1)
                endif
             elseif ((abs(el_type).eq.23).or.    ! crab cavity
      &              (abs(el_type).eq.26).or.    ! cc mult. kick order 2
@@ -46467,20 +46482,18 @@ C      dimension retdata(:)
                     retdata(nretdata)=crabph4(ii)
                   endif     
                else
-                  write(*,*) "Unknown attribute '", att_name_s, "'"
-                  stop
+                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
+     &                 " for crab cavity '", bez(ii), "'"
+                  call prror(-1)
                endif
             endif
          endif
          if (nretdata .gt. nretdata_max) then
-            write (*,*) "dynk_getvalue: Returning too many values"
-            stop
+            write (*,*) "DYNK> dynk_getvalue(): ",
+     &           "Returning too many values"
+            call prror(-1)
          endif
       enddo
-      
-!     Testing:
-!      nretdata = nretdata+1
-!      retdata(2) = retdata(1)
       
       end subroutine
       
@@ -46507,18 +46520,19 @@ C      dimension retdata(:)
      &                    getvaldata, ngetvaldata )
       
       if (ngetvaldata .eq. 0) then
-         write (*,*) "Error in dynk_getvaldata_single: got no data!"
-         write (*,*) "Incorrect element/attribute name?"
-         write (*,*) "'",element_name,"', '",att_name,"'"
-         stop
+        write (*,*)"DYNK> Error in dynk_getvaldata_single: got no data!"
+        write (*,*)"DYNK> Incorrect element/attribute name?"
+        write (*,*)"'",element_name,"', '",att_name,"'"
+        call prror(-1)
       endif
       
       foo = getvaldata(1)
       
       do ii=2,ngetvaldata
          if (foo .ne. getvaldata(2)) then !They should be copies
-            write (*,*) "Error in dynk_getvaldata_single: Varied data!"
-            stop
+            write (*,*) "DYNK> Error in dynk_getvaldata_single:",
+     &           " Varied data!"
+            call prror(-1)
          endif
       enddo
       
