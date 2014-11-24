@@ -46004,15 +46004,16 @@ C     STOP <integer> is therefore used instead.
          !Error
          stop 1
       endif
-      
-      if     ( funcs_dynk(funNum,2) .eq.  0 ) then !GET
+
+      select case ( funcs_dynk(funNum,2) ) ! WHICH FUNCTION TYPE?
+      case (0)                  !GET
          retval = fexpr_dynk(funcs_dynk(funNum,3))
-      elseif ( funcs_dynk(funNum,2) .eq.  1 ) then !FILE
+      case(1)                   !FILE
          if (turn .gt. funcs_dynk(funNum,5) ) then
             stop 3
          endif
          retval = fexpr_dynk(funcs_dynk(funNum,4)+turn-1)
-      elseif ( funcs_dynk(funNum,2) .eq.  2 ) then !FILELIN
+      case(2)                   !FILELIN
          filelin_start    = funcs_dynk(funNum,4)
          filelin_xypoints = funcs_dynk(funNum,5)
          !Pass the correct array views/sections to dynk_lininterp
@@ -46021,7 +46022,8 @@ C     STOP <integer> is therefore used instead.
      &       fexpr_dynk(filelin_start +  filelin_xypoints:
      &                  filelin_start +2*filelin_xypoints-1),
      &        filelin_xypoints )
-      elseif ( funcs_dynk(funNum,2) .eq.  6 ) then !RANDG
+            
+      case(6)                   !RANDG
          ! Save old seeds and loud our current seeds
          call recuut(tmpseed1,tmpseed2)
          call recuin(iexpr_dynk(funcs_dynk(funNum,3)+3),
@@ -46036,43 +46038,46 @@ C     STOP <integer> is therefore used instead.
          ! Change to mu, sigma
          retval = fexpr_dynk(funcs_dynk(funNum,4))
      &          + fexpr_dynk(funcs_dynk(funNum,4)+1)*ranecu_rvec(1)
-      elseif ( funcs_dynk(funNum,2) .eq. 20 ) then !ADD
+            
+      case(20)                  !ADD
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 21 ) then !SUB
+      case(21)                  !SUB
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          - dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 22 ) then !MUL
+      case(22)                  !MUL
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          * dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 23 ) then !DIV
+      case(23)                  !DIV
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          / dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 24 ) then !POW
+      case(24)                  !POW
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &         ** dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 30 ) then !MINUS
+         
+      case(30)                  !MINUS
          retval = (-1)*dynk_computeFUN(funcs_dynk(funNum,3),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 31 ) then !SQRT
+      case(31)                  !SQRT
          retval = sqrt(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 32 ) then !SIN
+      case(32)                  !SIN
          retval = sin(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 33 ) then !COS
+      case(33)                  !COS
          retval = cos(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 34 ) then !LOG
+      case(34)                  !LOG
          retval = log(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 35 ) then !LOG10
+      case(35)                  !LOG10
          retval = log10(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 36 ) then !EXP
+      case(36)                  !EXP
          retval = exp(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 40 ) then !CONST
+         
+      case(40)                  !CONST
          retval = fexpr_dynk(funcs_dynk(funNum,3))
-      elseif ( funcs_dynk(funNum,2) .eq. 41 ) then !TURN
+      case(41)                  !TURN
          retval = turn
-      elseif ( funcs_dynk(funNum,2) .eq. 42 ) then !LIN
+      case(42)                  !LIN
          retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
      &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
-      elseif ( funcs_dynk(funNum,2) .eq. 43 ) then !LINSEG
+      case(43)                  !LINSEG
          filelin_start    = funcs_dynk(funNum,3)
          filelin_xypoints = 2
          !Pass the correct array views/sections to dynk_lininterp
@@ -46080,16 +46085,21 @@ C     STOP <integer> is therefore used instead.
      &       fexpr_dynk(filelin_start:filelin_start+1),
      &       fexpr_dynk(filelin_start+2:filelin_xypoints+3),
      &        filelin_xypoints )
-      elseif ( funcs_dynk(funNum,2) .eq. 44 .or.   !QUAD
-     &         funcs_dynk(funNum,2) .eq. 45 ) then !QUADSEG
+      case(44)                  !QUAD
          retval = turn*turn*fexpr_dynk(funcs_dynk(funNum,3))   +
      &                 turn*fexpr_dynk(funcs_dynk(funNum,3)+1) +
      &                      fexpr_dynk(funcs_dynk(funNum,3)+2)
-      elseif ( funcs_dynk(funNum,2) .eq. 60 ) then !SIN
+      case(45)                  !QUADSEG (same as QUAD)
+         retval = turn*turn*fexpr_dynk(funcs_dynk(funNum,3))   +
+     &                 turn*fexpr_dynk(funcs_dynk(funNum,3)+1) +
+     &                      fexpr_dynk(funcs_dynk(funNum,3)+2)
+         
+      case (60)                 !SIN
          retval = fexpr_dynk(funcs_dynk(funNum,3))
      &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
      &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
-      elseif ( funcs_dynk(funNum,2) .eq. 80 ) then !PELP
+
+      case(80)                  !PELP
          foff = funcs_dynk(funNum,3)
          if (turn .le. fexpr_dynk(foff)) then ! <= tinj
             ! Constant Iinj
@@ -46118,10 +46128,10 @@ C     STOP <integer> is therefore used instead.
          else ! > tnom
             ! Constant Inom
             retval = fexpr_dynk(foff+12)
-         endif
-      else ! UNKNOWN
+         end if
+      case default              ! UNKNOWN FUNCTION TYPE
          stop 2
-      end if
+      end select
 
       end function
       
