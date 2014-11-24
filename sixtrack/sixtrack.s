@@ -19221,9 +19221,12 @@ cc2008
 +ca parpro !needed for common
 +ca parnum !zero
 +ca common
++ca commonmn
++ca commontr
       
       !Set the element to true when initialized - some elements need to be present in fort.2 and then later changed
       logical, save :: lisinit(nele) = .false.
+      integer i
 
 !--Cavities
       if(abs(kz(elIdx)).eq.12) then
@@ -19244,9 +19247,98 @@ cc2008
          phasc(elIdx)=el(elIdx)
          el(elIdx)=zero
 !--Nonlinear Elements
-      elseif((kz(elIdx).eq.4.or.kz(elIdx).eq.5).and.
+      elseif(kz(elIdx).eq.1) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra01
+               endif
+            enddo
+         endif 
+
+      elseif(kz(elIdx).eq.2) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra02
+               endif
+            enddo
+         endif 
+      elseif(kz(elIdx).eq.3) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra03
+               endif
+            enddo
+         endif 
+
+      elseif((kz(elIdx).eq.4).and.
      &   abs(el(elIdx)).gt.pieni) then
-         ed(elIdx)=-1d0*ed(elIdx)  
+         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra04
+               endif
+            enddo
+         endif 
+
+      elseif((kz(elIdx).eq.5).and.
+     &   abs(el(elIdx)).gt.pieni) then
+         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra05
+               endif
+            enddo
+         endif   
+
+      elseif(kz(elIdx).eq.6) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra06
+               endif
+            enddo
+         endif  
+
+      elseif(kz(elIdx).eq.7) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra07
+               endif
+            enddo
+         endif         
+
+      elseif(kz(elIdx).eq.8) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra08
+               endif
+            enddo
+         endif 
+
+      elseif(kz(elIdx).eq.9) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra09
+               endif
+            enddo
+         endif 
+
+      elseif(kz(elIdx).eq.10) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra10
+               endif
+            enddo
+         endif 
 !--Multipoles
       elseif(kz(elIdx).eq.11.and.abs(el(elIdx)+one).le.pieni) then
          dki(elIdx,1) = ed(elIdx)
