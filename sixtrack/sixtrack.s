@@ -46185,7 +46185,7 @@ C     STOP <integer> is therefore used instead.
       write (*,*) "Turn =", turn, "setR =", setR
       write (*,*) "Element = '", element_name, 
      &     "', attribute = '", att_name, "'"
-      write (*,*) "Function value =", dynk_computeFUN(funNum,turn)
+C      write (*,*) "Function value =", dynk_computeFUN(funNum,turn)
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
       ! Get type
