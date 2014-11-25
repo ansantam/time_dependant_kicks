@@ -13558,24 +13558,6 @@ cc2008
         ed(i)=ed(i)/two
         ek(i)=ek(i)/two
       endif
-!--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
-      if((kz(i).eq.4.or.kz(i).eq.5).and.abs(el(i)).gt.pieni)            &
-     &ed(i)=-1d0*ed(i)                                                   !hr05
-!hr05&ed(i)=-ed(i)
-!--THIN LENS
-      if(kz(i).eq.11.and.abs(el(i)+one).le.pieni) then
-        dki(i,1) = ed(i)
-        dki(i,3) = ek(i)
-        ed(i) = one
-        ek(i) = one
-        el(i) = zero
-      else if(kz(i).eq.11.and.abs(el(i)+two).le.pieni) then
-        dki(i,2) = ed(i)
-        dki(i,3) = ek(i)
-        ed(i) = one
-        ek(i) = one
-        el(i) = zero
-      endif
 !--CAVITIES
       if(abs(kz(i)).eq.12) then
         if(abs(ed(i)).gt.pieni.and.abs(ek(i)).gt.pieni) then
@@ -13602,7 +13584,11 @@ cc2008
            el(i)=0d0                                                     !hr05
         endif
       endif
-
+!----------------------------------------
+! Handled by initialize_element subroutine
+!-----------------------------------------
+!--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
+!--THIN LENS
 !--CAVITIES (12/-12) (set phasc)
 !--CRABCAVITY (23/-23) / CC multipoles order 2/3/4 (+/- 23/26/27/28)
       call initialize_element(i,.true.)
@@ -19235,16 +19221,19 @@ cc2008
 +ca parpro !needed for common
 +ca parnum !zero
 +ca common
++ca commonmn
++ca commontr
       
       !Set the element to true when initialized - some elements need to be present in fort.2 and then later changed
       logical, save :: lisinit(nele) = .false.
+      integer i
 
-!--CAVITIES
+!--Cavities
       if(abs(kz(elIdx)).eq.12) then
          !Some 1st time initialization in daten()
          if (lfirst) then
             lisinit(elIdx)=.true.
-         else if ( .not. lisinit(elIdx) ) then !not lfirst and not lisinit
+         elseif ( .not. lisinit(elIdx) ) then !not lfirst and not lisinit
             write (*,*) "ERROR in initialize_element/cavity (kz=",
      &           kz(elIdx),")"
             write (*,*) "Can't change settings of a cavity which is off"
@@ -19257,17 +19246,122 @@ cc2008
          endif
          phasc(elIdx)=el(elIdx)
          el(elIdx)=zero
-!--CRABCAVITY
-      else if(abs(kz(elIdx)).eq.23) then
+!--Nonlinear Elements
+      elseif(kz(elIdx).eq.1) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra01
+               endif
+            enddo
+         endif 
+
+      elseif(kz(elIdx).eq.2) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra02
+               endif
+            enddo
+         endif 
+      elseif(kz(elIdx).eq.3) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra03
+               endif
+            enddo
+         endif 
+
+      elseif((kz(elIdx).eq.4).and.
+     &   abs(el(elIdx)).gt.pieni) then
+         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra04
+               endif
+            enddo
+         endif 
+
+      elseif((kz(elIdx).eq.5).and.
+     &   abs(el(elIdx)).gt.pieni) then
+         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra05
+               endif
+            enddo
+         endif   
+
+      elseif(kz(elIdx).eq.6) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra06
+               endif
+            enddo
+         endif  
+
+      elseif(kz(elIdx).eq.7) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra07
+               endif
+            enddo
+         endif         
+
+      elseif(kz(elIdx).eq.8) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra08
+               endif
+            enddo
+         endif 
+
+      elseif(kz(elIdx).eq.9) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra09
+               endif
+            enddo
+         endif 
+
+      elseif(kz(elIdx).eq.10) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( i .eq. elIdx ) then
++ca stra10
+               endif
+            enddo
+         endif 
+!--Multipoles
+      elseif(kz(elIdx).eq.11.and.abs(el(elIdx)+one).le.pieni) then
+         dki(elIdx,1) = ed(elIdx)
+         dki(elIdx,3) = ek(elIdx)
+         ed(elIdx) = one
+         ek(elIdx) = one
+         el(elIdx) = zero
+      elseif(kz(elIdx).eq.11.and.abs(el(elIdx)+two).le.pieni) then
+         dki(elIdx,2) = ed(elIdx)
+         dki(elIdx,3) = ek(elIdx)
+         ed(elIdx) = one
+         ek(elIdx) = one
+         el(elIdx) = zero
+!--Crab Cavities
+      elseif(abs(kz(elIdx)).eq.23) then
          crabph(elIdx)=el(elIdx)
          el(elIdx)=0d0
-! JBG RF CC Multipoles
 !--CC Mult kick order 2
-      else if(abs(kz(elIdx)).eq.26) then
+      elseif(abs(kz(elIdx)).eq.26) then
          crabph2(elIdx)=el(elIdx)
          el(elIdx)=0d0
 !--CC Mult kick order 3
-      else if(abs(kz(elIdx)).eq.27) then
+      elseif(abs(kz(elIdx)).eq.27) then
          crabph3(elIdx)=el(elIdx)
          el(elIdx)=0d0
 !--CC Mult kick order 4
