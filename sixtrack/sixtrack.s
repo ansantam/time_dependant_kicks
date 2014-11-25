@@ -44890,27 +44890,37 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          open(unit=664,file=cexpr_dynk(ncexpr_dynk),action='read',
      &        iostat=stat)
          if (stat .ne. 0) then
-            write(*,*) "Error opening file '",cexpr_dynk(ncexpr_dynk),
-     &           "'"
+            write(*,*) "DYNK> dynk_parseFUN():FILELIN"
+            write(*,*) "DYNK> Error opening file '",
+     &           cexpr_dynk(ncexpr_dynk), "'"
             call prror(51)
          endif
          ! Find the size of the file
          ii = 0 !Number of data lines read
          do
             read(664,*, iostat=stat) x,y
-            if (stat .ne. 0) then !EOF
-               exit
+            if (stat .ne. 0) exit !EOF
+            
+            if (ii.gt.0 .and. x.le. x2) then !Insane: Decreasing x
+               write (*,*) "DYNK> dynk_parseFUN():FILELIN"
+               write (*,*) "DYNK> Error while reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write (*,*) "DYNK> x values must be in increasing order"
+               call prror(-1)
             endif
+            x2 = x
+                  
             ii = ii+1
          enddo
          t = ii
          rewind(664)
          
          if (nfexpr_dynk+2*t .gt. maxdata_dynk) then
-            write (*,*) "Error reading file '",
+            write (*,*) "DYNK> dynk_parseFUN():FILELIN"
+            write (*,*) "DYNK> Error reading file '",
      &           cexpr_dynk(ncexpr_dynk),"'"
-            write (*,*) "Not enough space in fexpr_dynk, need", 2*t
-            write (*,*) "Please increase maxdata_dynk"
+            write (*,*) "DYNK> Not enough space in fexpr_dynk, need",2*t
+            write (*,*) "DYNK> Please increase maxdata_dynk"
             call prror(51)
          endif
 
@@ -44920,9 +44930,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             read(664,*, iostat=stat) x,y
             if (stat .ne. 0) then !EOF
                if (ii .ne. t) then
-                  write (*,*) "Unexpected when reading file '",
+                  write (*,*) "DYNK> dynk_parseFUN():FILELIN"
+                  write (*,*) "DYNK> Unexpected when reading file '",
      &                 cexpr_dynk(ncexpr_dynk),"'"
-                  write (*,*) "ii=",ii,"t=",t
+                  write (*,*) "DYNK> ii=",ii,"t=",t
                   stop
                endif
                exit
@@ -44971,8 +44982,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          nfexpr_dynk = nfexpr_dynk+1
          if (iexpr_dynk(niexpr_dynk) .lt. 0) then
             !mcut < 0
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "mcut must be >= 0"
+            write (*,*) "DYNK> dynk_parseFUN():RANDG"
+            write (*,*) "DYNK> ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "DYNK> mcut must be >= 0"
             call prror(51)
          endif
       !!! Operators: #20-39 !!!
@@ -45991,9 +46003,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       ! General temporaries
       integer foff !base offset into fexpr array
       
-C     For some reason, write(*,*) statements here hangs the program.
-C     STOP <integer> is therefore used instead.
-      
       if (  funNum .lt. 0 .and. 
      &     -funNum .le. nsets_unique_dynk .and. 
      &        turn .eq. 0 ) then
@@ -46001,8 +46010,11 @@ C     STOP <integer> is therefore used instead.
          retval = fsets_origvalue_dynk(-funNum)
          return
       elseif (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
-         !Error
-         stop 1
+         write(*,*) "DYNK> **** ERROR in dynk_computeFUN() ****"
+         write(*,*) "DYNK> funNum =", funNum, "turn=", turn
+         write(*,*) "DYNK> Invalid funNum & turn combination"
+         call dynk_dumpdata
+         call prror(-1)
       endif
 
       select case ( funcs_dynk(funNum,2) ) ! WHICH FUNCTION TYPE?
@@ -46010,7 +46022,12 @@ C     STOP <integer> is therefore used instead.
          retval = fexpr_dynk(funcs_dynk(funNum,3))
       case(1)                   !FILE
          if (turn .gt. funcs_dynk(funNum,5) ) then
-            stop 3
+            write(*,*) "DYNK> **** ERROR in dynk_computeFUN():FILE ****"
+            write(*,*) "DYNK> funNum =", funNum, "turn=", turn
+            write(*,*) "DYNK> Turn > length of file = ", 
+     &           funcs_dynk(funNum,5)
+            call dynk_dumpdata
+            call prror(-1)
          endif
          retval = fexpr_dynk(funcs_dynk(funNum,4)+turn-1)
       case(2)                   !FILELIN
@@ -46130,7 +46147,11 @@ C     STOP <integer> is therefore used instead.
             retval = fexpr_dynk(foff+12)
          end if
       case default              ! UNKNOWN FUNCTION TYPE
-         stop 2
+         write(*,*) "DYNK> **** ERROR in dynk_computeFUN(): ****"
+         write(*,*) "DYNK> funNum =", funNum, "turn=", turn
+         write(*,*) "DYNK> Unknown function type ", funcs_dynk(funNum,2)
+         call dynk_dumpdata
+         call prror(-1)
       end select
 
       end function
@@ -46573,19 +46594,16 @@ C     Here comes the logic for setting the value of the attribute for all instan
       integer ii
       double precision dydx, y0
 
-C     For some reason, write(*,*) statements when called from dynk_computeFUN
-C     hangs the program. STOP <integer> is therefore used instead.
-            
-
       !Sanity checks
       if (datalen .le. 0) then
-C         write(*,*) "ERROR in dynk_lininterp: datalen=0"
-         stop 10
+         write(*,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(*,*) "DYNK> datalen was 0!"
+         call prror(-1)
       endif
       if ( x .lt. xvals(1) .or. x .gt. xvals(datalen) ) then
-C         write(*,*) "ERROR in dynk_lininterp: x =", x,
-C     &              "outside range", xvals(1),xvals(datalen)
-         stop 11
+         write(*,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(*,*) "x =",x, "outside range", xvals(1),xvals(datalen)
+         call prror(-1)
       endif
 
       !Find the right indexes i1 and i2
@@ -46597,10 +46615,10 @@ C     &              "outside range", xvals(1),xvals(datalen)
       
       do ii=1, datalen-1
          if (xvals(ii).ge. xvals(ii+1)) then
-C            write (*,*) "ERROR in dynk_lininterp"
-C            write (*,*) "xvals should be in increasing order"
-C            write (*,*) "xvals =", xvals(:datalen)
-            stop 12
+            write (*,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+            write (*,*) "DYNK> xvals should be in increasing order"
+            write (*,*) "DYNK> xvals =", xvals(:datalen)
+            call prror(-1)
          endif
          
          if (x .le. xvals(ii+1)) then
@@ -46613,9 +46631,11 @@ C            write (*,*) "xvals =", xvals(:datalen)
       enddo
       
       !We didn't return yet: Something wrong
-C      write (*,*) "ERROR in dynk_lininterp: Reached end of function"
-C      write (*,*) "This should not happen - please contact developers"
-      stop 13
+      write (*,*) "DYNK> ****ERROR in dynk_lininterp() ****"
+      write (*,*) "DYNK> Reached the end of the function"
+      write (*,*) "DYNK> This should not happen, "//
+     &            "please contact developers"
+      call prror(-1)
 
       end function
       
