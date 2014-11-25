@@ -45775,6 +45775,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       implicit none
       
 +ca comdynk
+      character(maxstrlen_dynk) dynk_stringzerotrim
 
       integer ii
       
@@ -45801,7 +45802,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       end do
       write (*,*) "cexpr_dynk: (",ncexpr_dynk,")"
       do ii=1,ncexpr_dynk
-         write (*,*) ii, ":", "'"//cexpr_dynk(ii)//"'"
+         write (*,*) ii, ":", "'"//
+     & trim(dynk_stringzerotrim(cexpr_dynk(ii)))//"'"
       end do
 
       write (*,*) "SET:"      
@@ -45809,15 +45811,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &     nsets_dynk,")"
       do ii=1,nsets_dynk
          write (*,*) ii, ":", sets_dynk(ii,:), 
-     &        "'"//csets_dynk(ii,1)//"' ", "'"//csets_dynk(ii,2)//"'",
+     &        "'"//trim(dynk_stringzerotrim(csets_dynk(ii,1)))//
+     &  "' ", "'"//trim(dynk_stringzerotrim(csets_dynk(ii,2)))//"'",
      &        lsets_dynk(ii)
       end do
       
       write (*,*) "csets_unique_dynk: (",nsets_unique_dynk,")"
       do ii=1,nsets_unique_dynk
-         write (*,*) ii, ":", "'"//csets_unique_dynk(ii,1)//"' ",
-     &                        "'"//csets_unique_dynk(ii,2)//"' = ",
-     &                             fsets_origvalue_dynk(ii)
+         write (*,*) ii, ":", "'"//
+     &trim(dynk_stringzerotrim(csets_unique_dynk(ii,1)))//"' '"//
+     &trim(dynk_stringzerotrim(csets_unique_dynk(ii,2)))//"' = ",
+     &        fsets_origvalue_dynk(ii)
       end do
 
       write (*,*) "****************************************************"
@@ -45830,6 +45834,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     last modified: 30-10-2014
 !     Replace "\0" with ' ' in strings.
 !     Usefull before output, else "write (*,*)" will actually write all the \0s
+!     
+!     Warning: Do not add any write(*,*) inside this function:
+!     if this function is called by a write(*,*) and then does a write,
+!     the program may deadlock!
 !----------------------------------------------------------------------------
       implicit none
 +ca comdynk
@@ -45984,8 +45992,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          do ii=1, nsets_unique_dynk
             if (ldynkdebug)
      &           write (*,*) "DYNKDEBUG> resetting: '",
-     &           csets_unique_dynk(ii,1),"':'",csets_unique_dynk(ii,2),
-     &           "'", -ii, 0, .false.
+     &         trim(dynk_stringzerotrim(csets_unique_dynk(ii,1))),
+     &         "':'",trim(dynk_stringzerotrim(csets_unique_dynk(ii,2))),
+     &         "', funNum=", -ii, "turn=", 0, "setR=", .false.
             call dynk_setvalue(csets_unique_dynk(ii,1),
      &                         csets_unique_dynk(ii,2),
      &                         -ii, 0, .false. )
@@ -46031,7 +46040,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                ngetvaldata = getvaldata_len
                call dynk_getvalue( csets_dynk(ii,1), csets_dynk(ii,2),
      &                             getvaldata, ngetvaldata )
-               write (*,*) "DYNK>", getvaldata(:ngetvaldata)
+               write (*,*) "DYNKDEBUG> Read back value = ",
+     &              getvaldata(:ngetvaldata)
             endif
             
             !For the output file: Which function was used?
@@ -46287,20 +46297,22 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       element_name_stripped = trim(dynk_stringzerotrim(element_name))
       att_name_stripped = trim(dynk_stringzerotrim(att_name))
       
-      write (*,*)
-      write (*,*) "In dynk_setvalue()"
-      if (funNUM .gt. 0) then
-         write (*,*) "Using function number =", funNUM,
-     &        "named '", cexpr_dynk(funcs_dynk(funNum,1)), "'"
-      elseif (funNUM .lt. 0) then
-         write (*,*) "Using function number =", funNUM,
-     &    "reffering to origvalue of '",csets_unique_dynk(-funNUM,1),
-     &    "':'", csets_unique_dynk(-funNUM,2),"'"
-      end if
-      write (*,*) "Turn =", turn, "setR =", setR
-      write (*,*) "Element = '", element_name, 
-     &     "', attribute = '", att_name, "'"
-C      write (*,*) "Function value =", dynk_computeFUN(funNum,turn)
+      if ( ldynkdebug ) then
+         write (*,*) "DYNKDEBUG> In dynk_setvalue(), element_name = '",
+     &        element_name_stripped, "', att_name = '",
+     &        att_name_stripped, "', funNum =", funNum, ", setR = ",setR
+         if (funNUM .gt. 0) then
+            write (*,*) "DYNKDEBUG> Using function number =", funNUM,
+     &           "named '", 
+     &           trim(dynk_stringzerotrim(cexpr_dynk(
+     &                                      funcs_dynk(funNum,1)))), "'"
+         elseif (funNUM .lt. 0) then
+            write (*,*) "Using function number =", funNUM,
+     &           "reffering to origvalue of '",
+     &       trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,1))),
+     & "':'",trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,2))),"'"
+         end if
+      endif
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
       ! Get type
