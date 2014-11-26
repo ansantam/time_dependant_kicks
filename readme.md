@@ -68,7 +68,7 @@ For more information about the syntax and how to use it visit the [SixTrack Twik
 
 * THCK6DUA
 	* dynk_apply
-			* dynk_setvalue
+		* dynk_setvalue
 			* initialize_element(ii,.false.)
 			* dynk_computeFUN
 				* dynk_lininterp
