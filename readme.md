@@ -12,3 +12,63 @@ The `DYNK` block allows the user to modify the original attributes of the elemen
 Multiple `FUN` functions can be defined. They may also depend on the functions defined above them in the `DYNK` block. Similarly, multiple `SET` may be defined for multiple element/attribute combinations, and for the same element/attribute given that they are not active on the same turns.
 
 For more information about the syntax and how to use it visit the [SixTrack Twiki](https://twiki.cern.ch/twiki/bin/view/LHCAtHome/SixTrackDoc#Dynamic_Kicks_DYNK_input_block).
+
+
+### Dependance of subroutines and some functions
+* DATEN
+	* initialize_element(i,.true.)
+* TRAUTHIN
+	* dynk_pretrack
+		* dynk_get_value_single
+			* dynk_getvalue
+* TRAUTHCK
+	* dynk_pretrack
+		* dynk_get_value_single
+			* dynk_getvalue
+* THIN4D
+	* dynk_apply
+		* dynk_setvalue
+			* initialize_element(ii,.false.)
+			* dynk_computeFUN
+				* dynk_lininterp
+		* dynk_getvalue
+
+* THIN6D
+	* dynk_apply
+		* dynk_setvalue
+			* initialize_element(ii,.false.)
+			* dynk_computeFUN
+				* dynk_lininterp
+		* dynk_getvalue
+
+* THIN6DUA
+	* dynk_apply
+	* 		* dynk_setvalue
+			* initialize_element(ii,.false.)
+			* dynk_computeFUN
+				* dynk_lininterp
+		* dynk_getvalue
+
+* THCK4D
+	* dynk_apply
+	* 		* dynk_setvalue
+			* initialize_element(ii,.false.)
+			* dynk_computeFUN
+				* dynk_lininterp
+		* dynk_getvalue
+
+* THCK6D
+	* dynk_apply
+	* 		* dynk_setvalue
+			* initialize_element(ii,.false.)
+			* dynk_computeFUN
+				* dynk_lininterp
+		* dynk_getvalue
+
+* THCK6DUA
+	* dynk_apply
+	* 		* dynk_setvalue
+			* initialize_element(ii,.false.)
+			* dynk_computeFUN
+				* dynk_lininterp
+		* dynk_getvalue
