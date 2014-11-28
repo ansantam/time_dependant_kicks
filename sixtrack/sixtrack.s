@@ -19269,7 +19269,9 @@ cc2008
 C                 ktrack(i)=12
                  sm(elIdx)=ed(elIdx)
                  write(*,*) "In initialize_element, HIT at i", i,
-     &                "ic(i) =", ic(i)
+     &                "ic(i) =", ic(i), ic(i)-nblo, ktrack(i)
+                 write(*,*) "In initialize_element, smiv was",smiv(1,i),
+     &                "smizf(i) = ", smizf(i)
                  smiv(1,i)=sm(elIdx)+smizf(i)
                  smi(i)=smiv(1,i)
                  write(*,*) "In initialize_element, smiv is", smiv(1,i),
@@ -30185,10 +30187,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &        680, 700, 720, 730, 748, 650, 650, 650, 650, 650, !50
      &        745, 746, 751, 752, 753, 754, 755, 758, 756, 759, !60
      &        757, 760 ),myktrack
-+ei
           write (*,*) "WARNING: Non-handled element in thin6d()!",
      &                " i=", i, "ix=", ix, "myktrack=",  myktrack,
      &                " bez(ix)='", bez(ix),"' SKIPPED"
++ei
           goto 650
    10     stracki=strack(i)
 +if collimat
@@ -46284,7 +46286,7 @@ C     STOP <integer> is therefore used instead.
       write (*,*) "Turn =", turn, "setR =", setR
       write (*,*) "Element = '", element_name, 
      &     "', attribute = '", att_name, "'"
-      write (*,*) "Function value =", dynk_computeFUN(funNum,turn)
+C      write (*,*) "Function value =", dynk_computeFUN(funNum,turn)
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
       ! Get type
