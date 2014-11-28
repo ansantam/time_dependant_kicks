@@ -19272,6 +19272,9 @@ C                 ktrack(i)=12
      &                "ic(i) =", ic(i)
                  smiv(1,i)=sm(elIdx)+smizf(i)
                  smi(i)=smiv(1,i)
+                 write(*,*) "In initialize_element, smiv is", smiv(1,i),
+     &                "smizf(i) = ", smizf(i)
+
 +ca stra02
                endif
             enddo
