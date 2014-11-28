@@ -1237,19 +1237,19 @@
 !     always in main code
 
 *     parameters for the parser
-      integer n_max_fields, l_max_string 
-      parameter ( n_max_fields = 10  ) ! max number of returned fields
-      parameter ( l_max_string = 132 ) ! max len of parsed line and its fields
-*     line to be split
-      character tmpline*( l_max_string )
+      integer getfields_n_max_fields, getfields_l_max_string
+      parameter ( getfields_n_max_fields = 10  ) ! max number of returned fields
+      parameter ( getfields_l_max_string = 132 ) ! max len of parsed line and its fields
+
 *     array of fields
-      character fields( n_max_fields )*( l_max_string )
+      character getfields_fields
+     &     ( getfields_n_max_fields )*( getfields_l_max_string )
 *     number of identified fields
-      integer nfields
+      integer getfields_nfields
 *     length of each what:
-      integer lfields( n_max_fields )
+      integer getfields_lfields( getfields_n_max_fields )
 *     an error flag
-      logical lerr
+      logical getfields_lerr
 
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
@@ -18326,31 +18326,35 @@ cc2008
          goto 2200 !loop DYNK
          
       else if (ch(:3).eq."FUN") then
-         call read_fields( ch, fields, lfields, nfields, lerr )
-         if ( lerr ) call prror(51)
+         call getfields_split( ch, getfields_fields, getfields_lfields,
+     &        getfields_nfields, getfields_lerr )
+         if ( getfields_lerr ) call prror(51)
          if (ldynkdebug) then
             write (*,*) "DYNKDEBUG> Got a FUN block, len=", 
      &           len(ch), ": '", ch, "'"
-            do ii=1,nfields
+            do ii=1,getfields_nfields
                write (*,*) "DYNKDEBUG> Field(",ii,") ='",
-     &              fields(ii)(1:lfields(ii)),"'"
+     &              getfields_fields(ii)(1:getfields_lfields(ii)),"'"
             enddo
          endif
-         call dynk_parseFUN(fields,lfields,nfields)
+         call dynk_parseFUN(getfields_fields,
+     &        getfields_lfields, getfields_nfields)
          goto 2200 !loop DYNK
 
       else if (ch(:3).eq."SET") then
-         call read_fields( ch, fields, lfields, nfields, lerr )
-         if ( lerr ) call prror(51)
+         call getfields_split( ch, getfields_fields, getfields_lfields,
+     &        getfields_nfields, getfields_lerr )
+         if ( getfields_lerr ) call prror(51)
          if (ldynkdebug) then
             write (*,*) "DYNKDEBUG> Got a SET(R) block, len=", 
      &           len(ch), ": '", ch, "'"
-            do ii=1,nfields
+            do ii=1,getfields_nfields
                write (*,*) "DYNKDEBUG> Field(",ii,") ='",
-     &              fields(ii)(1:lfields(ii)),"'"
+     &              getfields_fields(ii)(1:getfields_lfields(ii)),"'"
             enddo
          endif
-         call dynk_parseSET(fields,lfields,nfields)
+         call dynk_parseSET(getfields_fields,
+     &        getfields_lfields, getfields_nfields)
          goto 2200 !loop DYNK
 
       else if (ch(:4).eq.next) then
@@ -19138,7 +19142,8 @@ cc2008
       return
       end
 
-      subroutine read_fields( tmpline, fields, lfields, nfields, lerr )
+      subroutine getfields_split( tmpline, getfields_fields,
+     &         getfields_lfields, getfields_nfields, getfields_lerr)
 !
 !-----------------------------------------------------------------------
 !     A.Mereghetti, for the FLUKA Team
@@ -19150,44 +19155,52 @@ cc2008
 !
       implicit none
 +ca   comgetfields
+      
+      character tmpline*( getfields_l_max_string )
 
+      intent(in) tmpline
+      intent(out) getfields_fields, getfields_lfields,
+     &     getfields_nfields, getfields_lerr
+      
 *     runtime variables
       integer ii, jj
       logical lchar
       integer lenstr, istart
 
 *     initialise output variables
-      lerr = .false.
-      nfields=0
-      do ii=1,n_max_fields
-         do jj=1,l_max_string
-            fields(ii)(jj:jj) = char(0) ! ZERO terminate/pad
+      getfields_lerr = .false.
+      getfields_nfields=0
+      do ii=1,getfields_n_max_fields
+         do jj=1,getfields_l_max_string
+            getfields_fields(ii)(jj:jj) = char(0) ! ZERO terminate/pad
          enddo
-         lfields(ii)=0
+         getfields_lfields(ii)=0
       enddo
 
 *     parse the line
       lchar = .false.
-      do ii=1, l_max_string
+      do ii=1, getfields_l_max_string
          if ( tmpline(ii:ii) .eq. ' ' ) then
 *           blank char
             if ( lchar ) then
 *              end of a string: record it
-               lfields(nfields)=lenstr
-               fields(nfields)(1:lfields(nfields))=
-     &               tmpline(istart:istart+lfields(nfields))
+               getfields_lfields(getfields_nfields)          = lenstr
+               getfields_fields (getfields_nfields)
+     &              (1:getfields_lfields(getfields_nfields)) =
+     &              tmpline(istart:
+     &               istart+getfields_lfields(getfields_nfields))
                lchar = .false.
             endif
          else
 *           non-blank char
             if ( .not. lchar ) then
 *              a new what starts
-               nfields = nfields +1
-               if ( nfields.gt.n_max_fields ) then
+               getfields_nfields = getfields_nfields +1
+               if ( getfields_nfields.gt.getfields_n_max_fields ) then
                   write (*,*) ' error! too many fields in line:'
                   write (*,*) tmpline
-                  write (*,*) ' please increase n_max_fields'
-                  lerr = .true.
+                  write (*,*) ' please increase getfields_n_max_fields'
+                  getfields_lerr = .true.
                   goto 1982
                endif
                istart = ii
@@ -44829,7 +44842,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
 +dk dynkancil
 
-      subroutine dynk_parseFUN(fields,lfields,nfields)
+      subroutine dynk_parseFUN( getfields_fields,
+     &                          getfields_lfields,getfields_nfields )
 !
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
@@ -44842,6 +44856,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
 +ca comdynk
 +ca comgetfields
+      
+      intent(in) getfields_fields, getfields_lfields, getfields_nfields
+      
       ! Temp variables
       integer ii, stat, t
       double precision x,y,               ! FILE, FILELIN
@@ -44869,10 +44886,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       ! ! ! ! ! ! ! ! ! ! ! ! ! !
 
       !!! System functions: #0-19 !!!
-      if ( fields(3)(1:lfields(3)) .eq. "GET" ) then ! GET / type 0
+      if ( getfields_fields(3)(1:getfields_lfields(3)) .eq. "GET" ) then ! GET / type 0
          ! GET: Store the value of an element/value
 
-         call dynk_checkargs(nfields,5,
+         call dynk_checkargs(getfields_nfields,5,
      &        "FUN funname GET elementName attribute" )
          call dynk_checkspace(0,1,3)
          
@@ -44887,33 +44904,35 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk  )(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
-         cexpr_dynk(ncexpr_dynk+1)(1:lfields(4)) = !ELEMENT_NAME
-     &        fields(4)(1:lfields(4))
-         cexpr_dynk(ncexpr_dynk+2)(1:lfields(5)) = !ATTRIBUTE_NAME
-     &        fields(5)(1:lfields(5))
+         cexpr_dynk(ncexpr_dynk  )(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         cexpr_dynk(ncexpr_dynk+1)(1:getfields_lfields(4)) = !ELEMENT_NAME
+     &        getfields_fields(4)(1:getfields_lfields(4))
+         cexpr_dynk(ncexpr_dynk+2)(1:getfields_lfields(5)) = !ATTRIBUTE_NAME
+     &        getfields_fields(5)(1:getfields_lfields(5))
          ncexpr_dynk = ncexpr_dynk+2
          
          fexpr_dynk(nfexpr_dynk) = -1.0 !Initialize a place in the array to store the value
          
-         if (lfields(2) .gt. 16) then ! length of BEZ elements
+         if (getfields_lfields(2) .gt. 16) then ! length of BEZ elements
             write (*,*) "*************************************"
             write (*,*) "ERROR in DYNK block parsing (fort.3):"
             write (*,*) "SET FUN got an element name with     "
-            write (*,*) "length =", lfields(4), "> 16."
-            write (*,*) "The name was: '",fields(4)(1:lfields(4)),"'"
+            write (*,*) "length =", getfields_lfields(4), "> 16."
+            write (*,*) "The name was: '",getfields_fields(4)
+     &                                    (1:getfields_lfields(4)),"'"
             write (*,*) "*************************************"
             call prror(51)
          end if
 
-      else if ( fields(3)(1:lfields(3)) .eq. "FILE" ) then ! FILE / type 1
+      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                     "FILE" ) then     ! FILE / type 1
          ! FILE: Load the contents from a file
          ! File format: two ASCII columns of numbers,
          ! first  column = turn number (all turns should be there, starting from 1)
          ! second column = value (as a double)
 
-         call dynk_checkargs(nfields,4,
+         call dynk_checkargs(getfields_nfields,4,
      &        "FUN funname FILE filename" )
          call dynk_checkspace(0,0,2)
          
@@ -44927,10 +44946,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk+1 !Data     (in fexpr_dynk)
          funcs_dynk(nfuncs_dynk,5) = -1            !Below: Length of file
          ! Store data
-         cexpr_dynk(ncexpr_dynk  )(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
-         cexpr_dynk(ncexpr_dynk+1)(1:lfields(4)) = !FILE NAME
-     &        fields(4)(1:lfields(4))
+         cexpr_dynk(ncexpr_dynk  )(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         cexpr_dynk(ncexpr_dynk+1)(1:getfields_lfields(4)) = !FILE NAME
+     &        getfields_fields(4)(1:getfields_lfields(4))
          ncexpr_dynk = ncexpr_dynk+1
          
          !Open the file
@@ -44971,13 +44990,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          close(664)
 
-      else if ( fields(3)(1:lfields(3)) .eq. "FILELIN" ) then ! FILELIN / type 1
+      else if ( getfields_fields(3)(1:getfields_lfields(3))
+     &                                             .eq. "FILELIN" ) then  ! FILELIN / type 1
          ! FILELIN: Load the contents from a file, linearly interpolate
          ! File format: two ASCII columns of numbers,
          ! first  column = turn number (as a double)
          ! second column = value (as a double)
 
-         call dynk_checkargs(nfields,4,
+         call dynk_checkargs(getfields_nfields,4,
      &        "FUN funname FILELIN filename" )
          call dynk_checkspace(0,0,2)
 
@@ -44991,10 +45011,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk+1 !Data     (in fexpr_dynk)
          funcs_dynk(nfuncs_dynk,5) = -1            !Below: Length of file (number of x,y sets)
          ! Store data
-         cexpr_dynk(ncexpr_dynk  )(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
-         cexpr_dynk(ncexpr_dynk+1)(1:lfields(4)) = !FILE NAME
-     &        fields(4)(1:lfields(4))
+         cexpr_dynk(ncexpr_dynk  )(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         cexpr_dynk(ncexpr_dynk+1)(1:getfields_lfields(4)) = !FILE NAME
+     &        getfields_fields(4)(1:getfields_lfields(4))
          ncexpr_dynk = ncexpr_dynk+1
          
          !Open the file
@@ -45049,10 +45069,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,5) = t
          close(664)
       
-      else if ( fields(3)(1:lfields(3)) .eq. "RANDG" ) then ! type 6 / RANDG
+      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                    "RANDG" ) then         ! type 6 / RANDG
          ! RANDG: Gausian random number with mu, sigma, and optional cutoff
          
-         call dynk_checkargs(nfields,8,
+         call dynk_checkargs(getfields_nfields,8,
      &        "FUN funname RANDG seed1 seed2 mu sigma cut" )
          call dynk_checkspace(5,2,1)
          
@@ -45068,14 +45089,19 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk !mu, sigma (in fexpr_dynk)
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
          
-         read(fields(4)(1:lfields(4)),*) iexpr_dynk(niexpr_dynk)   ! seed1 (initial)
-         read(fields(5)(1:lfields(5)),*) iexpr_dynk(niexpr_dynk+1) ! seed2 (initial)
-         read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk)   ! mu
-         read(fields(7)(1:lfields(7)),*) fexpr_dynk(nfexpr_dynk+1) ! sigma
-         read(fields(8)(1:lfields(8)),*) iexpr_dynk(niexpr_dynk+2) ! mcut
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        iexpr_dynk(niexpr_dynk) ! seed1 (initial)
+         read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &        iexpr_dynk(niexpr_dynk+1) ! seed2 (initial)
+         read(getfields_fields(6)(1:getfields_lfields(6)),*)
+     &        fexpr_dynk(nfexpr_dynk) ! mu
+         read(getfields_fields(7)(1:getfields_lfields(7)),*)
+     &        fexpr_dynk(nfexpr_dynk+1) ! sigma
+         read(getfields_fields(8)(1:getfields_lfields(8)),*)
+     &        iexpr_dynk(niexpr_dynk+2) ! mcut
          iexpr_dynk(niexpr_dynk+3) = 0 ! seed1 (current)
          iexpr_dynk(niexpr_dynk+4) = 0 ! seed2 (current)
          niexpr_dynk = niexpr_dynk+4
@@ -45087,14 +45113,19 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             call prror(51)
          endif
       !!! Operators: #20-39 !!!
-      else if ( fields(3)(1:lfields(3)) .eq. "ADD" .or.   ! ADD / type 20
-     &          fields(3)(1:lfields(3)) .eq. "SUB" .or.   ! SUB / type 21
-     &          fields(3)(1:lfields(3)) .eq. "MUL" .or.   ! MUL / type 22
-     &          fields(3)(1:lfields(3)) .eq. "DIV" .or.   ! DIV / type 23
-     &          fields(3)(1:lfields(3)) .eq. "POW" ) then ! POW / type 24
+      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                        "ADD" .or.             ! ADD / type 20
+     &          getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                        "SUB" .or.             ! SUB / type 21
+     &          getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                        "MUL" .or.             ! MUL / type 22
+     &          getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                        "DIV" .or.             ! DIV / type 23
+     &          getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "POW" ) then             ! POW / type 24
          ! Two-argument operators  y = OP(f1, f2)
 
-         call dynk_checkargs(nfields,5,
+         call dynk_checkargs(getfields_nfields,5,
      &        "FUN funname {ADD|SUB|MUL|DIV|POW} funname1 funname2")
          call dynk_checkspace(0,0,1)
          
@@ -45103,28 +45134,35 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         if      ( fields(3)(1:lfields(3)) .eq. "ADD" ) then
+         if      ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "ADD" ) then
               funcs_dynk(nfuncs_dynk,2) = 20 !TYPE (ADD)
-         else if ( fields(3)(1:lfields(3)) .eq. "SUB" ) then
+           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "SUB" ) then
               funcs_dynk(nfuncs_dynk,2) = 21 !TYPE (SUB)
-         else if ( fields(3)(1:lfields(3)) .eq. "MUL" ) then
+           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "MUL" ) then
               funcs_dynk(nfuncs_dynk,2) = 22 !TYPE (MUL)
-         else if ( fields(3)(1:lfields(3)) .eq. "DIV" ) then
+           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "DIV" ) then
               funcs_dynk(nfuncs_dynk,2) = 23 !TYPE (DIV)
-         else if ( fields(3)(1:lfields(3)) .eq. "POW" ) then
+           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "POW" ) then
               funcs_dynk(nfuncs_dynk,2) = 24 !TYPE (POW)
          else
             write (*,*) "LOGIC ERROR"
             call prror(51)
          endif
          funcs_dynk(nfuncs_dynk,3) = 
-     &        dynk_findFUNindex(fields(4)(1:lfields(4)), 1) !Index to f1
+     &        dynk_findFUNindex( getfields_fields(4)
+     &                           (1:getfields_lfields(4)), 1) !Index to f1
          funcs_dynk(nfuncs_dynk,4) = 
-     &        dynk_findFUNindex(fields(5)(1:lfields(5)), 1) !Index to f2
+     &        dynk_findFUNindex( getfields_fields(5)
+     &                           (1:getfields_lfields(5)), 1) !Index to f2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
          ! Sanity check
          if (funcs_dynk(nfuncs_dynk,3) .eq. -1 .or. 
      &       funcs_dynk(nfuncs_dynk,4) .eq. -1) then
@@ -45132,8 +45170,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             write (*,*) "*************************************"
             write (*,*) "ERROR in DYNK block parsing (fort.3):"
             write (*,*) "TWO ARG OPERATOR wanting functions '", 
-     &           fields(4)(1:lfields(4)), "' and '", 
-     &           fields(5)(1:lfields(5)), "'"
+     &           getfields_fields(4)(1:getfields_lfields(4)), "' and '", 
+     &           getfields_fields(5)(1:getfields_lfields(5)), "'"
             write (*,*) "Calculated indices:", 
      &           funcs_dynk(nfuncs_dynk,3), funcs_dynk(nfuncs_dynk,4)
             write (*,*) "One or both of these are not known (-1)."
@@ -45143,17 +45181,24 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             call prror(51)
          end if
 
-      else if ( fields(3)(1:lfields(3)) .eq. "MINUS" .or. ! MINUS  / type 30
-     &          fields(3)(1:lfields(3)) .eq. "SQRT"  .or. ! SQRT   / type 31
-     &          fields(3)(1:lfields(3)) .eq. "SIN"   .or. ! SIN    / type 32
-     &          fields(3)(1:lfields(3)) .eq. "COS"   .or. ! COS    / type 33
-     &          fields(3)(1:lfields(3)) .eq. "LOG"   .or. ! LOG    / type 34
-     &          fields(3)(1:lfields(3)) .eq. "LOG10" .or. ! LOG10  / type 35
-     &          fields(3)(1:lfields(3)) .eq. "EXP"        ! EXP    / type 36
-     &        ) then                 
+      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "MINUS" .or.           ! MINUS  / type 30
+     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "SQRT"  .or.           ! SQRT   / type 31
+     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "SIN"   .or.           ! SIN    / type 32
+     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "COS"   .or.           ! COS    / type 33
+     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "LOG"   .or.           ! LOG    / type 34
+     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "LOG10" .or.           ! LOG10  / type 35
+     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "EXP"                  ! EXP    / type 36
+     &        ) then
          ! One-argument operators  y = OP(f1)
 
-         call dynk_checkargs(nfields,4,
+         call dynk_checkargs(getfields_nfields,4,
      &        "FUN funname {MINUS|SQRT|SIN|COS|LOG|LOG10|EXP} funname")
          call dynk_checkspace(0,0,1)
          
@@ -45162,36 +45207,44 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         if      ( fields(3)(1:lfields(3)) .eq. "MINUS" ) then
+         if      ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                    "MINUS" ) then
               funcs_dynk(nfuncs_dynk,2) = 30 !TYPE (MINUS)
-         else if ( fields(3)(1:lfields(3)) .eq. "SQRT" ) then
+           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                     "SQRT" ) then
               funcs_dynk(nfuncs_dynk,2) = 31 !TYPE (SQRT)
-         else if ( fields(3)(1:lfields(3)) .eq. "SIN" ) then
+           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "SIN" ) then
               funcs_dynk(nfuncs_dynk,2) = 32 !TYPE (SIN)
-         else if ( fields(3)(1:lfields(3)) .eq. "COS" ) then
+           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "COS" ) then
               funcs_dynk(nfuncs_dynk,2) = 33 !TYPE (COS)
-         else if ( fields(3)(1:lfields(3)) .eq. "LOG" ) then
+           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "LOG" ) then
               funcs_dynk(nfuncs_dynk,2) = 34 !TYPE (LOG)
-         else if ( fields(3)(1:lfields(3)) .eq. "LOG10" ) then
+           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                    "LOG10" ) then
               funcs_dynk(nfuncs_dynk,2) = 35 !TYPE (LOG10)
-         else if ( fields(3)(1:lfields(3)) .eq. "EXP" ) then
+           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "EXP" ) then
               funcs_dynk(nfuncs_dynk,2) = 36 !TYPE (EXP)
          else
             write (*,*) "LOGIC ERROR"
             call prror(51)
          endif
          funcs_dynk(nfuncs_dynk,3) = 
-     &        dynk_findFUNindex(fields(4)(1:lfields(4)), 1) !Index to f1
+     &        dynk_findFUNindex(getfields_fields(4)
+     &        (1:getfields_lfields(4)), 1) !Index to f1
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
          ! Sanity check
          if (funcs_dynk(nfuncs_dynk,3) .eq. -1) then
             write (*,*) "*************************************"
             write (*,*) "ERROR in DYNK block parsing (fort.3):"
             write (*,*) "SINGLE OPERATOR FUNC wanting function '", 
-     &           fields(4)(1:lfields(4)), "'"
+     &           getfields_fields(4)(1:getfields_lfields(4)), "'"
             write (*,*) "Calculated index:", 
      &           funcs_dynk(nfuncs_dynk,3)
             write (*,*) "One or both of these are not known (-1)."
@@ -45202,10 +45255,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          end if
 
       !!! Polynomial & Elliptical functions: # 40-59 !!!
-      else if ( fields(3)(1:lfields(3)) .eq. "CONST" ) then ! CONST / type 40
+      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                    "CONST" ) then    ! CONST / type 40
          ! CONST: Just a constant value
          
-         call dynk_checkargs(nfields,4,
+         call dynk_checkargs(getfields_nfields,4,
      &        "FUN funname CONST value" )
          call dynk_checkspace(0,1,1)
          
@@ -45220,15 +45274,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
          
-         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! value
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        fexpr_dynk(nfexpr_dynk) ! value
 
-      else if ( fields(3)(1:lfields(3)) .eq. "TURN" ) then ! TURN / type 41
+      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                     "TURN" ) then     ! TURN / type 41
          ! TURN: Just the current turn number
          
-         call dynk_checkargs(nfields,3,
+         call dynk_checkargs(getfields_nfields,3,
      &        "FUN funname TURN" )
          call dynk_checkspace(0,0,1)
          
@@ -45243,13 +45299,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
 
-      else if ( fields(3)(1:lfields(3)) .eq. "LIN" ) then ! LIN / type 42
+      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                      "LIN" ) then           ! LIN / type 42
          ! LIN: Linear ramp y = dy/dt*T+b
          
-         call dynk_checkargs(nfields,5,
+         call dynk_checkargs(getfields_nfields,5,
      &        "FUN funname LIN dy/dt b" )
          call dynk_checkspace(0,2,1)
 
@@ -45264,17 +45321,20 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
          
-         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! dy/dt
-         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) ! b
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        fexpr_dynk(nfexpr_dynk) ! dy/dt
+         read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &        fexpr_dynk(nfexpr_dynk+1) ! b
          nfexpr_dynk = nfexpr_dynk + 1
 
-      else if ( fields(3)(1:lfields(3)) .eq. "LINSEG" ) then ! LINSEG / type 43
+      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                   "LINSEG" ) then        ! LINSEG / type 43
          ! LINSEG: Linear ramp between points (x1,y1) and (x2,y2)
          
-         call dynk_checkargs(nfields,7,
+         call dynk_checkargs(getfields_nfields,7,
      &        "FUN funname LINSEG x1 x2 y1 y2" )
          call dynk_checkspace(0,4,1)
 
@@ -45289,13 +45349,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
          
-         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! x1
-         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) ! x2
-         read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk+2) ! y1
-         read(fields(7)(1:lfields(7)),*) fexpr_dynk(nfexpr_dynk+3) ! y2
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        fexpr_dynk(nfexpr_dynk)   ! x1
+         read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &        fexpr_dynk(nfexpr_dynk+1) ! x2
+         read(getfields_fields(6)(1:getfields_lfields(6)),*)
+     &        fexpr_dynk(nfexpr_dynk+2) ! y1
+         read(getfields_fields(7)(1:getfields_lfields(7)),*)
+     &        fexpr_dynk(nfexpr_dynk+3) ! y2
          nfexpr_dynk = nfexpr_dynk + 3
          
          if (fexpr_dynk(nfexpr_dynk) .eq. fexpr_dynk(nfexpr_dynk+1))then
@@ -45304,10 +45368,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             call prror(51)
          endif
          
-      else if ( fields(3)(1:lfields(3)) .eq. "QUAD" ) then ! QUAD / type 44
+      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                     "QUAD" ) then          ! QUAD / type 44
          ! QUAD: Quadratic ramp y = a*T^2 + b*T + c
          
-         call dynk_checkargs(nfields,6,
+         call dynk_checkargs(getfields_nfields,6,
      &        "FUN funname QUAD a b c" )
          call dynk_checkspace(0,3,1)
 
@@ -45322,19 +45387,23 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
          
-         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   ! a
-         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) ! b
-         read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk+2) ! c
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        fexpr_dynk(nfexpr_dynk) ! a
+         read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &        fexpr_dynk(nfexpr_dynk+1) ! b
+         read(getfields_fields(6)(1:getfields_lfields(6)),*)
+     &        fexpr_dynk(nfexpr_dynk+2) ! c
          nfexpr_dynk = nfexpr_dynk + 2
 
-      else if ( fields(3)(1:lfields(3)) .eq. "QUADSEG" ) then ! QUAD / type 45
+      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                  "QUADSEG" ) then       ! QUAD / type 45
          ! QUADSEG: Quadratic ramp y = a*T^2 + b*T + c,
          ! input as start point (x1,y1), end point (x2,y2), derivative at at x1
          
-         call dynk_checkargs(nfields,8,
+         call dynk_checkargs(getfields_nfields,8,
      &        "FUN funname QUADSEG x1 x2 y1 y2 deriv" )
          call dynk_checkspace(0,8,1)
 
@@ -45349,14 +45418,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
          
-         read(fields(4)(1:lfields(4)),*) x1
-         read(fields(5)(1:lfields(5)),*) x2
-         read(fields(6)(1:lfields(6)),*) y1
-         read(fields(7)(1:lfields(7)),*) y2
-         read(fields(8)(1:lfields(8)),*) deriv
+         read(getfields_fields(4)(1:getfields_lfields(4)),*) x1
+         read(getfields_fields(5)(1:getfields_lfields(5)),*) x2
+         read(getfields_fields(6)(1:getfields_lfields(6)),*) y1
+         read(getfields_fields(7)(1:getfields_lfields(7)),*) y2
+         read(getfields_fields(8)(1:getfields_lfields(8)),*) deriv
          
          if (x1 .eq. x2) then
             write (*,*) "ERROR in DYNK block parsing (fort.3)"
@@ -45385,10 +45454,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          nfexpr_dynk = nfexpr_dynk + 7
          
       !!! Trancedental functions: #60-79 !!!
-      else if (fields(3)(1:lfields(3)) .eq. "SINF" ) then ! SINF / type 60
+      else if (getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                     "SINF" ) then          ! SINF / type 60
          ! SINF: Sin functions y = A*sin(omega*T+phi)
          
-         call dynk_checkargs(nfields,6,
+         call dynk_checkargs(getfields_nfields,6,
      &        "FUN funname SINF amplitude omega phase" )
          call dynk_checkspace(0,3,1)
 
@@ -45403,22 +45473,26 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
          
-         read(fields(4)(1:lfields(4)),*) fexpr_dynk(nfexpr_dynk)   !A
-         read(fields(5)(1:lfields(5)),*) fexpr_dynk(nfexpr_dynk+1) !omega
-         read(fields(6)(1:lfields(6)),*) fexpr_dynk(nfexpr_dynk+2) !phi
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        fexpr_dynk(nfexpr_dynk) !A
+         read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &        fexpr_dynk(nfexpr_dynk+1) !omega
+         read(getfields_fields(6)(1:getfields_lfields(6)),*)
+     &        fexpr_dynk(nfexpr_dynk+2) !phi
          nfexpr_dynk = nfexpr_dynk + 2         
 
-      else if (fields(3)(1:lfields(3)) .eq. "PELP" ) then ! PELP / type 80
+      else if (getfields_fields(3)(1:getfields_lfields(3)) .eq.
+     &                                                     "PELP" ) then          ! PELP / type 80
          ! PELP: Parabolic/exponential/linear/parabolic
          ! From "Field Computation for Accelerator Magnets:
          ! Analytical and Numerical Methods for Electromagnetic Design and Optimization"
          ! By Dr.-Ing. Stephan Russenschuck
          ! Appendix C: "Ramping the LHC Dipoles"
          
-         call dynk_checkargs(nfields,10,
+         call dynk_checkargs(getfields_nfields,10,
      &        "FUN funname PELP tinj Iinj Inom A D R te" )
          call dynk_checkspace(0,13,1) !!...
 
@@ -45433,17 +45507,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
          ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:lfields(2)) = !NAME
-     &        fields(2)(1:lfields(2))
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
          
          !Read and calculate parameters
-         read(fields(4) (1:lfields( 4)),*) tinj
-         read(fields(5) (1:lfields( 5)),*) Iinj
-         read(fields(6) (1:lfields( 6)),*) Inom
-         read(fields(7) (1:lfields( 7)),*) A
-         read(fields(8) (1:lfields( 8)),*) D
-         read(fields(9) (1:lfields( 9)),*) R
-         read(fields(10)(1:lfields(10)),*) te
+         read(getfields_fields(4) (1:getfields_lfields( 4)),*) tinj
+         read(getfields_fields(5) (1:getfields_lfields( 5)),*) Iinj
+         read(getfields_fields(6) (1:getfields_lfields( 6)),*) Inom
+         read(getfields_fields(7) (1:getfields_lfields( 7)),*) A
+         read(getfields_fields(8) (1:getfields_lfields( 8)),*) D
+         read(getfields_fields(9) (1:getfields_lfields( 9)),*) R
+         read(getfields_fields(10)(1:getfields_lfields(10)),*) te
                   
          derivI_te = A*(te-tinj)                    ! nostore
          I_te      = A/2*(te-tinj)*(te-tinj) + Iinj ! nostore
@@ -45516,9 +45590,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
          write (*,*) "Unkown function to dynk_parseFUN()   "
          write (*,*) "Got fields:"
-         do ii=1,nfields
+         do ii=1,getfields_nfields
             write (*,*) "Field(",ii,") ='",
-     &           fields(ii)(1:lfields(ii)),"'"
+     &           getfields_fields(ii)(1:getfields_lfields(ii)),"'"
          enddo
          write (*,*) "*************************************"
          
@@ -45562,7 +45636,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       endif
       end subroutine
       
-      subroutine dynk_parseSET(fields,lfields,nfields)
+      subroutine dynk_parseSET(getfields_fields,
+     &     getfields_lfields,getfields_nfields)
 !-----------------------------------------------------------------------
 !     K. Sjobak, BE-ABP/HSS
 !     last modified: 15-10-2014
@@ -45584,16 +45659,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          call prror(51)
       endif
 
-      if (nfields .ne. 7) then
+      if (getfields_nfields .ne. 7) then
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
          write (*,*) "Expected 6 fields on line while parsing SET."
          write (*,*) "Correct syntax:"
          write (*,*) "SET element_name attribute_name function_name",
      &               " startTurn endTurn turnShift"
          write (*,*) "got field:"
-         do ii=1,nfields
+         do ii=1,getfields_nfields
             write (*,*) "Field(",ii,") ='",
-     &           fields(ii)(1:lfields(ii)),"'"
+     &           getfields_fields(ii)(1:getfields_lfields(ii)),"'"
          enddo
          call prror(51)
       endif
@@ -45601,21 +45676,28 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       nsets_dynk = nsets_dynk + 1
 
       sets_dynk(nsets_dynk,1) =
-     &     dynk_findFUNindex( fields(4)(1:lfields(4)), 1 )
+     &     dynk_findFUNindex( getfields_fields(4)
+     &     (1:getfields_lfields(4)), 1 )
       if ( sets_dynk(nsets_dynk,1) .eq. -1 ) then
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
          write (*,*) "specified function ",
-     &        "'",fields(4)(1:lfields(4)),"' not found."
+     &        "'",getfields_fields(4)
+     &        (1:getfields_lfields(4)),"' not found."
          call prror(51)
       endif
-      read(fields(5)(1:lfields(5)),*) sets_dynk(nsets_dynk,2)
-      read(fields(6)(1:lfields(6)),*) sets_dynk(nsets_dynk,3)
-      read(fields(7)(1:lfields(7)),*) sets_dynk(nsets_dynk,4)
+      read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &     sets_dynk(nsets_dynk,2)
+      read(getfields_fields(6)(1:getfields_lfields(6)),*)
+     &     sets_dynk(nsets_dynk,3)
+      read(getfields_fields(7)(1:getfields_lfields(7)),*)
+     &     sets_dynk(nsets_dynk,4)
 
-      csets_dynk(nsets_dynk,1)(1:lfields(2)) = fields(2)(1:lfields(2))
-      csets_dynk(nsets_dynk,2)(1:lfields(3)) = fields(3)(1:lfields(3))
+      csets_dynk(nsets_dynk,1)(1:getfields_lfields(2)) =
+     &     getfields_fields(2)(1:getfields_lfields(2))
+      csets_dynk(nsets_dynk,2)(1:getfields_lfields(3)) =
+     &     getfields_fields(3)(1:getfields_lfields(3))
 
-      if (fields(1)(1:lfields(1)).eq."SETR") then
+      if (getfields_fields(1)(1:getfields_lfields(1)).eq."SETR") then
          lsets_dynk(nsets_dynk) = .true.
       else
          lsets_dynk(nsets_dynk) = .false.
@@ -45626,18 +45708,19 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          write (*,*) "*************************************"
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
          write (*,*) "SET wanting function '",
-     &        fields(4)(1:lfields(4)), "'"
+     &        getfields_fields(4)(1:getfields_lfields(4)), "'"
          write (*,*) "Calculated index:", sets_dynk(nsets_dynk,1)
          write (*,*) "This function is not known."
          write (*,*) "*************************************"
          call prror(51)
       endif
-      if (lfields(2) .gt. 16) then ! length of BEZ elements is 16
+      if (getfields_lfields(2) .gt. 16) then ! length of BEZ elements is 16
          write (*,*) "*************************************"
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
-         write (*,*) "SET got an element name with length =",lfields(2),
-     &        "> 16."
-         write (*,*) "The name was: '",fields(2)(1:lfields(2)),"'"
+         write (*,*) "SET got an element name with length =",
+     &        getfields_lfields(2), "> 16."
+         write (*,*) "The name was: '",
+     &        getfields_fields(2)(1:getfields_lfields(2)),"'"
          write (*,*) "*************************************"
          call prror(51)
       end if
