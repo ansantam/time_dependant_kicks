@@ -44886,7 +44886,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       ! ! ! ! ! ! ! ! ! ! ! ! ! !
 
       !!! System functions: #0-19 !!!
-      if ( getfields_fields(3)(1:getfields_lfields(3)) .eq. "GET" ) then ! GET / type 0
+      select case ( getfields_fields(3)(1:getfields_lfields(3)) )
+      case ("GET")
          ! GET: Store the value of an element/value
 
          call dynk_checkargs(getfields_nfields,5,
@@ -44925,8 +44926,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             call prror(51)
          end if
 
-      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                     "FILE" ) then     ! FILE / type 1
+      case ("FILE")
          ! FILE: Load the contents from a file
          ! File format: two ASCII columns of numbers,
          ! first  column = turn number (all turns should be there, starting from 1)
@@ -44993,8 +44993,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          close(664)
 
-      else if ( getfields_fields(3)(1:getfields_lfields(3))
-     &                                             .eq. "FILELIN" ) then  ! FILELIN / type 2
+      case ("FILELIN")
          ! FILELIN: Load the contents from a file, linearly interpolate
          ! File format: two ASCII columns of numbers,
          ! first  column = turn number (as a double)
@@ -45082,9 +45081,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          nfexpr_dynk = nfexpr_dynk+2*t
          funcs_dynk(nfuncs_dynk,5) = t
          close(664)
-      
-      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                    "RANDG" ) then         ! type 6 / RANDG
+
+      case ("RANDG")
          ! RANDG: Gausian random number with mu, sigma, and optional cutoff
          
          call dynk_checkargs(getfields_nfields,8,
@@ -45127,17 +45125,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             write (*,*) "DYNK> mcut must be >= 0"
             call prror(51)
          endif
+
       !!! Operators: #20-39 !!!
-      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                        "ADD" .or.             ! ADD / type 20
-     &          getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                        "SUB" .or.             ! SUB / type 21
-     &          getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                        "MUL" .or.             ! MUL / type 22
-     &          getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                        "DIV" .or.             ! DIV / type 23
-     &          getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "POW" ) then             ! POW / type 24
+      case("ADD","SUB","MUL","DIV","POW")
          ! Two-argument operators  y = OP(f1, f2)
 
          call dynk_checkargs(getfields_nfields,5,
@@ -45149,25 +45139,22 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         if      ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "ADD" ) then
-              funcs_dynk(nfuncs_dynk,2) = 20 !TYPE (ADD)
-           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "SUB" ) then
-              funcs_dynk(nfuncs_dynk,2) = 21 !TYPE (SUB)
-           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "MUL" ) then
-              funcs_dynk(nfuncs_dynk,2) = 22 !TYPE (MUL)
-           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "DIV" ) then
-              funcs_dynk(nfuncs_dynk,2) = 23 !TYPE (DIV)
-           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "POW" ) then
-              funcs_dynk(nfuncs_dynk,2) = 24 !TYPE (POW)
-         else
-            write (*,*) "LOGIC ERROR"
+         select case (getfields_fields(3)(1:getfields_lfields(3)))
+         case ("ADD")
+            funcs_dynk(nfuncs_dynk,2) = 20 !TYPE (ADD)
+         case ("SUB")
+            funcs_dynk(nfuncs_dynk,2) = 21 !TYPE (SUB)
+         case ("MUL")
+            funcs_dynk(nfuncs_dynk,2) = 22 !TYPE (MUL)
+         case ("DIV")
+            funcs_dynk(nfuncs_dynk,2) = 23 !TYPE (DIV)
+         case ("POW")
+            funcs_dynk(nfuncs_dynk,2) = 24 !TYPE (POW)
+         case default
+            write (*,*) "DYNK> dynk_parseFUN() : 2-arg function"
+            write (*,*) "DYNK> non-recognized type in inner switch?!?"
             call prror(51)
-         endif
+         end select
          funcs_dynk(nfuncs_dynk,3) = 
      &        dynk_findFUNindex( getfields_fields(4)
      &                           (1:getfields_lfields(4)), 1) !Index to f1
@@ -45196,21 +45183,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             call prror(51)
          end if
 
-      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "MINUS" .or.           ! MINUS  / type 30
-     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "SQRT"  .or.           ! SQRT   / type 31
-     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "SIN"   .or.           ! SIN    / type 32
-     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "COS"   .or.           ! COS    / type 33
-     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "LOG"   .or.           ! LOG    / type 34
-     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "LOG10" .or.           ! LOG10  / type 35
-     &        getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "EXP"                  ! EXP    / type 36
-     &        ) then
+      case ("MINUS","SQRT","SIN","COS","LOG","LOG10","EXP")
          ! One-argument operators  y = OP(f1)
 
          call dynk_checkargs(getfields_nfields,4,
@@ -45222,31 +45195,26 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         if      ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                    "MINUS" ) then
-              funcs_dynk(nfuncs_dynk,2) = 30 !TYPE (MINUS)
-           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                     "SQRT" ) then
-              funcs_dynk(nfuncs_dynk,2) = 31 !TYPE (SQRT)
-           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "SIN" ) then
-              funcs_dynk(nfuncs_dynk,2) = 32 !TYPE (SIN)
-           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "COS" ) then
-              funcs_dynk(nfuncs_dynk,2) = 33 !TYPE (COS)
-           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "LOG" ) then
-              funcs_dynk(nfuncs_dynk,2) = 34 !TYPE (LOG)
-           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                    "LOG10" ) then
-              funcs_dynk(nfuncs_dynk,2) = 35 !TYPE (LOG10)
-           else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "EXP" ) then
-              funcs_dynk(nfuncs_dynk,2) = 36 !TYPE (EXP)
-         else
-            write (*,*) "LOGIC ERROR"
+         select case ( getfields_fields(3)(1:getfields_lfields(3)) )
+         case ("MINUS")
+            funcs_dynk(nfuncs_dynk,2) = 30 !TYPE (MINUS)
+         case ("SQRT")
+            funcs_dynk(nfuncs_dynk,2) = 31 !TYPE (SQRT)
+         case ("SIN")
+            funcs_dynk(nfuncs_dynk,2) = 32 !TYPE (SIN)
+         case ("COS")
+            funcs_dynk(nfuncs_dynk,2) = 33 !TYPE (COS)
+         case ("LOG")
+            funcs_dynk(nfuncs_dynk,2) = 34 !TYPE (LOG)
+         case ("LOG10")
+            funcs_dynk(nfuncs_dynk,2) = 35 !TYPE (LOG10)
+         case ("EXP")
+            funcs_dynk(nfuncs_dynk,2) = 36 !TYPE (EXP)
+         case default
+            write (*,*) "DYNK> dynk_parseFUN() : 1-arg function"
+            write (*,*) "DYNK> non-recognized type in inner switch?!?"
             call prror(51)
-         endif
+         end select
          funcs_dynk(nfuncs_dynk,3) = 
      &        dynk_findFUNindex(getfields_fields(4)
      &        (1:getfields_lfields(4)), 1) !Index to f1
@@ -45270,8 +45238,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          end if
 
       !!! Polynomial & Elliptical functions: # 40-59 !!!
-      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                    "CONST" ) then    ! CONST / type 40
+      case("CONST")   
          ! CONST: Just a constant value
          
          call dynk_checkargs(getfields_nfields,4,
@@ -45295,8 +45262,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          read(getfields_fields(4)(1:getfields_lfields(4)),*)
      &        fexpr_dynk(nfexpr_dynk) ! value
 
-      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                     "TURN" ) then     ! TURN / type 41
+      case ("TURN")
          ! TURN: Just the current turn number
          
          call dynk_checkargs(getfields_nfields,3,
@@ -45317,8 +45283,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
      &        getfields_fields(2)(1:getfields_lfields(2))
 
-      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                      "LIN" ) then           ! LIN / type 42
+      case ("LIN")
          ! LIN: Linear ramp y = dy/dt*T+b
          
          call dynk_checkargs(getfields_nfields,5,
@@ -45345,8 +45310,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &        fexpr_dynk(nfexpr_dynk+1) ! b
          nfexpr_dynk = nfexpr_dynk + 1
 
-      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                   "LINSEG" ) then        ! LINSEG / type 43
+      case ("LINSEG")
          ! LINSEG: Linear ramp between points (x1,y1) and (x2,y2)
          
          call dynk_checkargs(getfields_nfields,7,
@@ -45383,8 +45347,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             call prror(51)
          endif
          
-      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                     "QUAD" ) then          ! QUAD / type 44
+      case ("QUAD")
          ! QUAD: Quadratic ramp y = a*T^2 + b*T + c
          
          call dynk_checkargs(getfields_nfields,6,
@@ -45413,8 +45376,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &        fexpr_dynk(nfexpr_dynk+2) ! c
          nfexpr_dynk = nfexpr_dynk + 2
 
-      else if ( getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                  "QUADSEG" ) then       ! QUAD / type 45
+      case ("QUADSEG")
          ! QUADSEG: Quadratic ramp y = a*T^2 + b*T + c,
          ! input as start point (x1,y1), end point (x2,y2), derivative at at x1
          
@@ -45469,8 +45431,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          nfexpr_dynk = nfexpr_dynk + 7
          
       !!! Trancedental functions: #60-79 !!!
-      else if (getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                     "SINF" ) then          ! SINF / type 60
+      case ("SINF")
          ! SINF: Sin functions y = A*sin(omega*T+phi)
          
          call dynk_checkargs(getfields_nfields,6,
@@ -45499,8 +45460,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &        fexpr_dynk(nfexpr_dynk+2) !phi
          nfexpr_dynk = nfexpr_dynk + 2         
 
-      else if (getfields_fields(3)(1:getfields_lfields(3)) .eq.
-     &                                                     "PELP" ) then          ! PELP / type 80
+      case ("PELP")
          ! PELP: Parabolic/exponential/linear/parabolic
          ! From "Field Computation for Accelerator Magnets:
          ! Analytical and Numerical Methods for Electromagnetic Design and Optimization"
@@ -45599,7 +45559,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          nfexpr_dynk = nfexpr_dynk + 12
          
-      else
+      case default
          ! UNKNOWN function
          write (*,*) "*************************************"
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
@@ -45613,7 +45573,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          call dynk_dumpdata
          call prror(51)
-      end if
+      end select
 
       end subroutine
 
