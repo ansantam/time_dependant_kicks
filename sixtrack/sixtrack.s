@@ -46313,9 +46313,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
                 ed(ii)=fun_val
               endif
             else
-              WRITE (*,*) "ERROR in dynk_setvalue"
-              WRITE (*,*) "attribute '",att_name_stripped,"' ",
-     &        "does not exist"
+              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+     &        "does not exist for type =", el_type, "(2-20th pole)"
               call prror(-1)
             endif
             call initialize_element(ii, .false.)
@@ -46333,9 +46333,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
                 ek(ii)=fun_val
               endif
             else
-              WRITE (*,*) "ERROR in dynk_setvalue"
-              WRITE (*,*) "attribute '",att_name_stripped,"' ",
-     &            "does not exist"
+              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+     &             "does not exist for type =", el_type, "(multipole)"
               call prror(-1)
             endif
           elseif (abs(el_type).eq.12) then ! cavities 
@@ -46358,9 +46358,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
                 el(ii)=fun_val
               endif
             else
-              WRITE (*,*) "ERROR in dynk_setvalue"
-              WRITE (*,*) "attribute '",att_name_stripped,"' ",
-     &            "does not exist"
+              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+     &            "does not exist for type =", el_type, "(cavity)"
                 call prror(-1)
             endif
             call initialize_element(ii, .false.)
@@ -46384,9 +46384,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
                 el(ii)=fun_val
               endif
             else
-              WRITE (*,*) "ERROR in dynk_setvalue"
-              WRITE (*,*) "attribute '",att_name_stripped,"' ",
-     &        "does not exist"
+              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+     &        "does not exist for type =", el_type,"AC dipole"
                call prror(-1)
             endif
           elseif (abs(el_type).eq.20) then ! beam-beam separation
@@ -46409,9 +46409,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
                 el(ii)=fun_val
               endif
             else
-              WRITE (*,*) "ERROR in dynk_setvalue"
-              WRITE (*,*) "attribute '",att_name_stripped,"' ",
-     &        "does not exist"
+              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+     &        "does not exist for type =", el_type, "(beam-beam)"
               call prror(-1)
             endif
          elseif ((abs(el_type).eq.23).or.    ! crab cavity
@@ -46437,9 +46437,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
                 el(ii)=fun_val
               endif
             else
-               WRITE (*,*) "ERROR in dynk_setvalue"
-               WRITE (*,*) "attribute '",att_name_stripped,"' ",
-     &              "does not exist"
+               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+               WRITE (*,*) "DYNK> attribute '",att_name_stripped,"' ",
+     &              "does not exist for type =", el_type, "(crab)"
                call prror(-1)
             endif
             call initialize_element(ii, .false.)
@@ -46477,6 +46477,8 @@ C     Here comes the logic for setting the value of the attribute for all instan
       character(maxstrlen_dynk) dynk_stringzerotrim
       character(maxstrlen_dynk) element_name_s, att_name_s
       
+      if (ldynkdebug) write(*,*) "DYNKDEBUG> in dynk_getvalue()"
+      
       nretdata_max = nretdata
       nretdata = 0
       
@@ -46500,8 +46502,10 @@ C     Here comes the logic for setting the value of the attribute for all instan
                   nretdata = nretdata+1
                   retdata(nretdata) = ed(ii)
                else
-                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
-     &                 " for type",el_type," name '", bez(ii), "'"
+                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*) "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for type",el_type," name '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
             elseif (abs(el_type).eq.11) then ! multipoles 
@@ -46512,8 +46516,10 @@ C     Here comes the logic for setting the value of the attribute for all instan
                   nretdata = nretdata+1
                   retdata(nretdata) = ek(ii) 
                else
-                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
-     &                 " for multipole '", bez(ii), "'"
+                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*) "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for multipole '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
             elseif (abs(el_type).eq.12) then ! cavities 
@@ -46527,8 +46533,10 @@ C     Here comes the logic for setting the value of the attribute for all instan
                   nretdata = nretdata+1
                   retdata(nretdata) = el(ii)       
                else
-                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
-     &                 " for cavity '", bez(ii), "'"
+                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*) "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for cavity '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
             elseif (abs(el_type).eq.16) then ! AC dipole 
@@ -46542,8 +46550,10 @@ C     Here comes the logic for setting the value of the attribute for all instan
                   nretdata = nretdata+1
                   retdata(nretdata) = el(ii)      
                else
-                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
-     &                 " for AC dipole '", bez(ii), "'"
+                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*) "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for AC dipole '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
             elseif (abs(el_type).eq.20) then ! beam-beam separation
@@ -46557,8 +46567,10 @@ C     Here comes the logic for setting the value of the attribute for all instan
                   nretdata = nretdata+1
                   retdata(nretdata) = el(ii)       
                else
-                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
-     &                 " for beam-beam '", bez(ii), "'"
+                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*) "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for beam-beam '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
             elseif ((abs(el_type).eq.23).or.    ! crab cavity
@@ -46583,15 +46595,18 @@ C     Here comes the logic for setting the value of the attribute for all instan
                     retdata(nretdata)=crabph4(ii)
                   endif     
                else
-                  write(*,*) "DYNK> Unknown attribute '",att_name_s,"'",
-     &                 " for crab cavity '", bez(ii), "'"
+                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*) "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for crab cavity '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
             endif
          endif
          if (nretdata .gt. nretdata_max) then
-            write (*,*) "DYNK> dynk_getvalue(): ",
-     &           "Returning too many values"
+            write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+            write(*,*) "Returning too many values:",
+     &           nretdata, ">", nretdata_max
             call prror(-1)
          endif
       enddo
@@ -46612,7 +46627,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
 +ca comdynk      
       character(maxstrlen_dynk) element_name, att_name
       intent(in) element_name, att_name
-      
+
+      character(maxstrlen_dynk) dynk_stringzerotrim
+
       double precision getvaldata(20), foo
       integer ngetvaldata,ii
       
@@ -46621,9 +46638,11 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &                    getvaldata, ngetvaldata )
       
       if (ngetvaldata .eq. 0) then
-        write (*,*)"DYNK> Error in dynk_getvaldata_single: got no data!"
-        write (*,*)"DYNK> Incorrect element/attribute name?"
-        write (*,*)"'",element_name,"', '",att_name,"'"
+        write (*,*) "DYNK> *** ERROR in dynk_getvalue_single() ***"
+        write (*,*) "DYNK> Got no data!"
+        write (*,*) "DYNK> Incorrect element/attribute name?"
+        write (*,*) "'",trim(dynk_stringzerotrim(element_name)),"', '",
+     &                  trim(dynk_stringzerotrim(att_name)),"'"
         call prror(-1)
       endif
       
@@ -46631,8 +46650,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
       
       do ii=2,ngetvaldata
          if (foo .ne. getvaldata(2)) then !They should be copies
-            write (*,*) "DYNK> Error in dynk_getvaldata_single:",
-     &           " Varied data!"
+            write (*,*) "DYNK> *** ERROR in dynk_getvalue_single() ***"
+            write (*,*) "DYNK> If multiple data found, ",
+     &           "they should be identical copies!"
             call prror(-1)
          endif
       enddo
