@@ -44956,30 +44956,33 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          open(unit=664,file=cexpr_dynk(ncexpr_dynk),action='read',
      &        iostat=stat)
          if (stat .ne. 0) then
-            write(*,*) "Error opening file '",cexpr_dynk(ncexpr_dynk),
-     &           "'"
+            write(*,*) "DYNK> dynk_parseFUN():FILE"
+            write(*,*) "DYNK> Error opening file '",
+     &           cexpr_dynk(ncexpr_dynk), "'"
             call prror(51)
          endif
 
          ii = 0 !Number of data lines read
          do
             read(664,*, iostat=stat) t,y
-            if (stat .ne. 0) then !EOF
-               exit
-            endif
+            if (stat .ne. 0) exit !EOF
+
             ii = ii+1
             if (t .ne. ii) then
-               write (*,*) "Error reading file '",
+               write(*,*) "DYNK> dynk_parseFUN():FILE"
+               write(*,*) "DYNK> Error reading file '",
      &              cexpr_dynk(ncexpr_dynk),"'"
-               write (*,*) "Missing turn number", ii,
+               write(*,*) "DYNK> Missing turn number", ii,
      &              ", got turn", t
                call prror(51)
             endif
             if (nfexpr_dynk+1 .gt. maxdata_dynk) then
-               write (*,*) "Error reading file '",
+               write(*,*) "DYNK> dynk_parseFUN():FILE"
+               write(*,*) "DYNK> Error reading file '",
      &              cexpr_dynk(ncexpr_dynk),"'"
-               write (*,*) "Ran out of memory in fexpr_dynk in turn", t
-               write (*,*) "Please increase maxdata_dynk"
+               write(*,*) "DYNK> Ran out of memory in fexpr_dynk ",
+     &              "in turn", t
+               write(*,*) "DYNK> Please increase maxdata_dynk."
                call prror(51)
             endif
             
@@ -44991,7 +44994,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          close(664)
 
       else if ( getfields_fields(3)(1:getfields_lfields(3))
-     &                                             .eq. "FILELIN" ) then  ! FILELIN / type 1
+     &                                             .eq. "FILELIN" ) then  ! FILELIN / type 2
          ! FILELIN: Load the contents from a file, linearly interpolate
          ! File format: two ASCII columns of numbers,
          ! first  column = turn number (as a double)
@@ -45006,7 +45009,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk   !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 2             !TYPE (FILE)
+         funcs_dynk(nfuncs_dynk,2) = 2             !TYPE (FILELIN)
          funcs_dynk(nfuncs_dynk,3) = ncexpr_dynk+1 !Filename (in cexpr_dynk)
          funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk+1 !Data     (in fexpr_dynk)
          funcs_dynk(nfuncs_dynk,5) = -1            !Below: Length of file (number of x,y sets)
@@ -45021,27 +45024,37 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          open(unit=664,file=cexpr_dynk(ncexpr_dynk),action='read',
      &        iostat=stat)
          if (stat .ne. 0) then
-            write(*,*) "Error opening file '",cexpr_dynk(ncexpr_dynk),
-     &           "'"
+            write(*,*) "DYNK> dynk_parseFUN():FILELIN"
+            write(*,*) "DYNK> Error opening file '",
+     &           cexpr_dynk(ncexpr_dynk), "'"
             call prror(51)
          endif
          ! Find the size of the file
          ii = 0 !Number of data lines read
          do
             read(664,*, iostat=stat) x,y
-            if (stat .ne. 0) then !EOF
-               exit
+            if (stat .ne. 0) exit !EOF
+            
+            if (ii.gt.0 .and. x.le. x2) then !Insane: Decreasing x
+               write (*,*) "DYNK> dynk_parseFUN():FILELIN"
+               write (*,*) "DYNK> Error while reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write (*,*) "DYNK> x values must be in increasing order"
+               call prror(-1)
             endif
+            x2 = x
+            
             ii = ii+1
          enddo
          t = ii
          rewind(664)
          
          if (nfexpr_dynk+2*t .gt. maxdata_dynk) then
-            write (*,*) "Error reading file '",
+            write (*,*) "DYNK> dynk_parseFUN():FILELIN"
+            write (*,*) "DYNK> Error reading file '",
      &           cexpr_dynk(ncexpr_dynk),"'"
-            write (*,*) "Not enough space in fexpr_dynk, need", 2*t
-            write (*,*) "Please increase maxdata_dynk"
+            write (*,*) "DYNK> Not enough space in fexpr_dynk, need",2*t
+            write (*,*) "DYNK> Please increase maxdata_dynk"
             call prror(51)
          endif
 
@@ -45051,10 +45064,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             read(664,*, iostat=stat) x,y
             if (stat .ne. 0) then !EOF
                if (ii .ne. t) then
-                  write (*,*) "Unexpected when reading file '",
+                  write (*,*) "DYNK> dynk_parseFUN():FILELIN"
+                  write (*,*) "DYNK> Unexpected when reading file '",
      &                 cexpr_dynk(ncexpr_dynk),"'"
-                  write (*,*) "ii=",ii,"t=",t
-                  stop
+                  write (*,*) "DYNK> ii=",ii,"t=",t
+                  call prror(51)
                endif
                exit
             endif
@@ -45108,8 +45122,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          nfexpr_dynk = nfexpr_dynk+1
          if (iexpr_dynk(niexpr_dynk) .lt. 0) then
             !mcut < 0
-            write (*,*) "ERROR in DYNK block parsing (fort.3)"
-            write (*,*) "mcut must be >= 0"
+            write (*,*) "DYNK> dynk_parseFUN():RANDG"
+            write (*,*) "DYNK> ERROR in DYNK block parsing (fort.3)"
+            write (*,*) "DYNK> mcut must be >= 0"
             call prror(51)
          endif
       !!! Operators: #20-39 !!!
@@ -45863,6 +45878,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       implicit none
       
 +ca comdynk
+      character(maxstrlen_dynk) dynk_stringzerotrim
 
       integer ii
       
@@ -45889,23 +45905,26 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       end do
       write (*,*) "cexpr_dynk: (",ncexpr_dynk,")"
       do ii=1,ncexpr_dynk
-         write (*,*) ii, ":", "'"//cexpr_dynk(ii)//"'"
+         write (*,*) ii, ":", "'"//
+     &        trim(dynk_stringzerotrim(cexpr_dynk(ii)))//"'"
       end do
 
       write (*,*) "SET:"      
       write (*,*) "sets(,:) csets(,1) csets(,2) lsets - (",
      &     nsets_dynk,")"
       do ii=1,nsets_dynk
-         write (*,*) ii, ":", sets_dynk(ii,:), 
-     &        "'"//csets_dynk(ii,1)//"' ", "'"//csets_dynk(ii,2)//"'",
+         write (*,*) ii, ":", sets_dynk(ii,:),
+     &        "'"//trim(dynk_stringzerotrim(csets_dynk(ii,1)))//
+     &  "' ", "'"//trim(dynk_stringzerotrim(csets_dynk(ii,2)))//"'",
      &        lsets_dynk(ii)
       end do
       
       write (*,*) "csets_unique_dynk: (",nsets_unique_dynk,")"
       do ii=1,nsets_unique_dynk
-         write (*,*) ii, ":", "'"//csets_unique_dynk(ii,1)//"' ",
-     &                        "'"//csets_unique_dynk(ii,2)//"' = ",
-     &                             fsets_origvalue_dynk(ii)
+         write (*,*) ii, ":", "'"//
+     &       trim(dynk_stringzerotrim(csets_unique_dynk(ii,1)))//"' '"//
+     &       trim(dynk_stringzerotrim(csets_unique_dynk(ii,2)))//"' = ",
+     &        fsets_origvalue_dynk(ii)
       end do
 
       write (*,*) "****************************************************"
@@ -45918,6 +45937,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     last modified: 30-10-2014
 !     Replace "\0" with ' ' in strings.
 !     Usefull before output, else "write (*,*)" will actually write all the \0s
+!
+!     Warning: Do not add any write(*,*) inside this function:
+!     if this function is called by a write(*,*) and then does a write,
+!     the program may deadlock!
 !----------------------------------------------------------------------------
       implicit none
 +ca comdynk
@@ -46072,8 +46095,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          do ii=1, nsets_unique_dynk
             if (ldynkdebug)
      &           write (*,*) "DYNKDEBUG> resetting: '",
-     &           csets_unique_dynk(ii,1),"':'",csets_unique_dynk(ii,2),
-     &           "'", -ii, 0, .false.
+     &               trim(dynk_stringzerotrim(csets_unique_dynk(ii,1))),
+     &         "':'",trim(dynk_stringzerotrim(csets_unique_dynk(ii,2))),
+     &         "', funNum=", -ii, "turn=", 0, "setR=", .false.
+
             call dynk_setvalue(csets_unique_dynk(ii,1),
      &                         csets_unique_dynk(ii,2),
      &                         -ii, 0, .false. )
@@ -46119,7 +46144,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                ngetvaldata = getvaldata_len
                call dynk_getvalue( csets_dynk(ii,1), csets_dynk(ii,2),
      &                             getvaldata, ngetvaldata )
-               write (*,*) "DYNK>", getvaldata(:ngetvaldata)
+               write (*,*) "DYNKDEBUG> Read back value = ",
+     &              getvaldata(:ngetvaldata)
             endif
             
             !For the output file: Which function was used?
@@ -46184,10 +46210,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
       ! General temporaries
       integer foff !base offset into fexpr array
-      
-C     For some reason, write(*,*) statements here hangs the program.
-C     STOP <integer> is therefore used instead.
-      
+            
       if (  funNum .lt. 0 .and. 
      &     -funNum .le. nsets_unique_dynk .and. 
      &        turn .eq. 0 ) then
@@ -46195,18 +46218,27 @@ C     STOP <integer> is therefore used instead.
          retval = fsets_origvalue_dynk(-funNum)
          return
       elseif (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
-         !Error
-         stop 1
+         write(*,*) "DYNK> **** ERROR in dynk_computeFUN() ****"
+         write(*,*) "DYNK> funNum =", funNum, "turn=", turn
+         write(*,*) "DYNK> Invalid funNum & turn combination"
+         call dynk_dumpdata
+         call prror(-1)
       endif
       
-      if     ( funcs_dynk(funNum,2) .eq.  0 ) then !GET
+      select case ( funcs_dynk(funNum,2) )                              ! WHICH FUNCTION TYPE?
+      case (0)                                                          ! GET
          retval = fexpr_dynk(funcs_dynk(funNum,3))
-      elseif ( funcs_dynk(funNum,2) .eq.  1 ) then !FILE
+      case (1)                                                          ! FILE
          if (turn .gt. funcs_dynk(funNum,5) ) then
-            stop 3
+            write(*,*) "DYNK> **** ERROR in dynk_computeFUN():FILE ****"
+            write(*,*) "DYNK> funNum =", funNum, "turn=", turn
+            write(*,*) "DYNK> Turn > length of file = ", 
+     &           funcs_dynk(funNum,5)
+            call dynk_dumpdata
+            call prror(-1)
          endif
          retval = fexpr_dynk(funcs_dynk(funNum,4)+turn-1)
-      elseif ( funcs_dynk(funNum,2) .eq.  2 ) then !FILELIN
+      case(2)                                                           ! FILELIN
          filelin_start    = funcs_dynk(funNum,4)
          filelin_xypoints = funcs_dynk(funNum,5)
          !Pass the correct array views/sections to dynk_lininterp
@@ -46215,7 +46247,8 @@ C     STOP <integer> is therefore used instead.
      &       fexpr_dynk(filelin_start +  filelin_xypoints:
      &                  filelin_start +2*filelin_xypoints-1),
      &        filelin_xypoints )
-      elseif ( funcs_dynk(funNum,2) .eq.  6 ) then !RANDG
+         
+      case (6)                                                          ! RANDG
          ! Save old seeds and loud our current seeds
          call recuut(tmpseed1,tmpseed2)
          call recuin(iexpr_dynk(funcs_dynk(funNum,3)+3),
@@ -46230,43 +46263,46 @@ C     STOP <integer> is therefore used instead.
          ! Change to mu, sigma
          retval = fexpr_dynk(funcs_dynk(funNum,4))
      &          + fexpr_dynk(funcs_dynk(funNum,4)+1)*ranecu_rvec(1)
-      elseif ( funcs_dynk(funNum,2) .eq. 20 ) then !ADD
+         
+      case (20)                                                         ! ADD
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 21 ) then !SUB
+      case (21)                                                         ! SUB
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          - dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 22 ) then !MUL
+      case (22)                                                         ! MUL
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          * dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 23 ) then !DIV
+      case (23)                                                         ! DIV
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &          / dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 24 ) then !POW
+      case (24)                                                         ! POW
          retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
      &         ** dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 30 ) then !MINUS
+         
+      case (30)                                                         ! MINUS
          retval = (-1)*dynk_computeFUN(funcs_dynk(funNum,3),turn)
-      elseif ( funcs_dynk(funNum,2) .eq. 31 ) then !SQRT
+      case (31)                                                         ! SQRT
          retval = sqrt(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 32 ) then !SIN
+      case (32)                                                         ! SIN
          retval = sin(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 33 ) then !COS
+      case (33)                                                         ! COS
          retval = cos(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 34 ) then !LOG
+      case (34)                                                         ! LOG
          retval = log(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 35 ) then !LOG10
+      case (35)                                                         ! LOG10
          retval = log10(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 36 ) then !EXP
+      case (36)                                                         ! EXP
          retval = exp(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-      elseif ( funcs_dynk(funNum,2) .eq. 40 ) then !CONST
+
+      case (40)                                                         ! CONST
          retval = fexpr_dynk(funcs_dynk(funNum,3))
-      elseif ( funcs_dynk(funNum,2) .eq. 41 ) then !TURN
+      case (41)                                                         ! TURN
          retval = turn
-      elseif ( funcs_dynk(funNum,2) .eq. 42 ) then !LIN
+      case (42)                                                         ! LIN
          retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
      &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
-      elseif ( funcs_dynk(funNum,2) .eq. 43 ) then !LINSEG
+      case (43)                                                         ! LINSEG
          filelin_start    = funcs_dynk(funNum,3)
          filelin_xypoints = 2
          !Pass the correct array views/sections to dynk_lininterp
@@ -46274,16 +46310,17 @@ C     STOP <integer> is therefore used instead.
      &       fexpr_dynk(filelin_start:filelin_start+1),
      &       fexpr_dynk(filelin_start+2:filelin_xypoints+3),
      &        filelin_xypoints )
-      elseif ( funcs_dynk(funNum,2) .eq. 44 .or.   !QUAD
-     &         funcs_dynk(funNum,2) .eq. 45 ) then !QUADSEG
+      case (44,45)                                                      ! QUAD/QUADSEG
          retval = turn*turn*fexpr_dynk(funcs_dynk(funNum,3))   +
      &                 turn*fexpr_dynk(funcs_dynk(funNum,3)+1) +
      &                      fexpr_dynk(funcs_dynk(funNum,3)+2)
-      elseif ( funcs_dynk(funNum,2) .eq. 60 ) then !SIN
+
+      case (60)                                                         ! SIN
          retval = fexpr_dynk(funcs_dynk(funNum,3))
      &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
      &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
-      elseif ( funcs_dynk(funNum,2) .eq. 80 ) then !PELP
+
+      case (80)                                                         ! PELP
          foff = funcs_dynk(funNum,3)
          if (turn .le. fexpr_dynk(foff)) then ! <= tinj
             ! Constant Iinj
@@ -46313,9 +46350,13 @@ C     STOP <integer> is therefore used instead.
             ! Constant Inom
             retval = fexpr_dynk(foff+12)
          endif
-      else ! UNKNOWN
-         stop 2
-      end if
+      case default
+         write(*,*) "DYNK> **** ERROR in dynk_computeFUN(): ****"
+         write(*,*) "DYNK> funNum =", funNum, "turn=", turn
+         write(*,*) "DYNK> Unknown function type ", funcs_dynk(funNum,2)
+         call dynk_dumpdata
+         call prror(-1)
+      end select
 
       end function
       
@@ -46355,21 +46396,23 @@ C     STOP <integer> is therefore used instead.
       
       element_name_stripped = trim(dynk_stringzerotrim(element_name))
       att_name_stripped = trim(dynk_stringzerotrim(att_name))
-      
-      write (*,*)
-      write (*,*) "In dynk_setvalue()"
-      if (funNUM .gt. 0) then
-         write (*,*) "Using function number =", funNUM,
-     &        "named '", cexpr_dynk(funcs_dynk(funNum,1)), "'"
-      elseif (funNUM .lt. 0) then
-         write (*,*) "Using function number =", funNUM,
-     &    "reffering to origvalue of '",csets_unique_dynk(-funNUM,1),
-     &    "':'", csets_unique_dynk(-funNUM,2),"'"
-      end if
-      write (*,*) "Turn =", turn, "setR =", setR
-      write (*,*) "Element = '", element_name, 
-     &     "', attribute = '", att_name, "'"
-C      write (*,*) "Function value =", dynk_computeFUN(funNum,turn)
+
+      if ( ldynkdebug ) then
+         write (*,*) "DYNKDEBUG> In dynk_setvalue(), element_name = '",
+     &        element_name_stripped, "', att_name = '",
+     &        att_name_stripped, "', funNum =", funNum, ", setR = ",setR
+         if (funNUM .gt. 0) then
+            write (*,*) "DYNKDEBUG> Using function number =", funNUM,
+     &           "named '", 
+     &           trim(dynk_stringzerotrim(cexpr_dynk(
+     &                                      funcs_dynk(funNum,1)))), "'"
+         elseif (funNUM .lt. 0) then
+            write (*,*) "DYNKDEBUG> Using function number =", funNUM,
+     &           "reffering to origvalue of '",
+     &       trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,1))),
+     & "':'",trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,2))),"'"
+         end if
+      endif
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
       ! Get type
@@ -46768,20 +46811,17 @@ C     Here comes the logic for setting the value of the attribute for all instan
       
       integer ii
       double precision dydx, y0
-
-C     For some reason, write(*,*) statements when called from dynk_computeFUN
-C     hangs the program. STOP <integer> is therefore used instead.
-            
-
+      
       !Sanity checks
       if (datalen .le. 0) then
-C         write(*,*) "ERROR in dynk_lininterp: datalen=0"
-         stop 10
+         write(*,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(*,*) "DYNK> datalen was 0!"
+         call prror(-1)
       endif
       if ( x .lt. xvals(1) .or. x .gt. xvals(datalen) ) then
-C         write(*,*) "ERROR in dynk_lininterp: x =", x,
-C     &              "outside range", xvals(1),xvals(datalen)
-         stop 11
+         write(*,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(*,*) "x =",x, "outside range", xvals(1),xvals(datalen)
+         call prror(-1)
       endif
 
       !Find the right indexes i1 and i2
@@ -46793,10 +46833,10 @@ C     &              "outside range", xvals(1),xvals(datalen)
       
       do ii=1, datalen-1
          if (xvals(ii).ge. xvals(ii+1)) then
-C            write (*,*) "ERROR in dynk_lininterp"
-C            write (*,*) "xvals should be in increasing order"
-C            write (*,*) "xvals =", xvals(:datalen)
-            stop 12
+            write (*,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+            write (*,*) "DYNK> xvals should be in increasing order"
+            write (*,*) "DYNK> xvals =", xvals(:datalen)
+            call prror(-1)
          endif
          
          if (x .le. xvals(ii+1)) then
@@ -46809,9 +46849,11 @@ C            write (*,*) "xvals =", xvals(:datalen)
       enddo
       
       !We didn't return yet: Something wrong
-C      write (*,*) "ERROR in dynk_lininterp: Reached end of function"
-C      write (*,*) "This should not happen - please contact developers"
-      stop 13
+      write (*,*) "DYNK> ****ERROR in dynk_lininterp() ****"
+      write (*,*) "DYNK> Reached the end of the function"
+      write (*,*) "DYNK> This should not happen, "//
+     &            "please contact developers"
+      call prror(-1)
 
       end function
       
