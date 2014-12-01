@@ -46532,7 +46532,8 @@ C     Here comes the logic for setting the value of the attribute for all instan
             endif
             call initialize_element(ii, .false.)
          else
-            write (*,*)"Unknown type"
+            WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+            write (*,*) "DYNK> Unknown type"
             call prror(-1)
          endif
       endif
