@@ -879,6 +879,7 @@
       common /mu/ mux, muy
       common /xcheck/ xbob,ybob,xpbob,ypbob,xineff,yineff,xpineff,      &
      &ypineff
+      common /ipart/ ipart
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !
@@ -34650,6 +34651,12 @@ C Should get me a NaN
 +if bnlelens
 +ca rhicelens
 +ei
++if collimat
+! Module to access ipart array
++ca collpara	
++ca dbthin6d
++ca dbcommon
++ei
 +ca dbdcum
       logical checkRE, checkEL, checkRL, checkOC, checkRT 
 +ca save
@@ -34921,13 +34928,23 @@ C Should get me a NaN
 	 if ( apflag ) then
 	   do j=1,napx
 	     if(pstop(j)) then
-+if fluka	
 	       lparID = .false.
 	       jjx=1
++if collimat
+	       do jj=1,npart
++ei
++if .not.collimat
 	       do jj=1,napx
++ei
 	         if (plost(jj).ne.0) then
++if fluka	
 	           if ( fluka_uid(j).eq.plost(jj).or.
-     &                  fluka_gen(j).eq.plost(jj) ) lparID=.true.
+     &                  fluka_gen(j).eq.plost(jj) )
++ei
++if collimat
+	           if ( ipart(j)+100*samplenumber .eq. plost(jj) )
++ei
+     &     		lparID=.true.
 	           jjx=jj+1 !points to the last zero 
 	         end if
 	       end do
@@ -34936,13 +34953,13 @@ C Should get me a NaN
 	         pstop(j) = .false.
 	       else
 	         !new lost particle, store ID and print it
++if fluka	
 	         plost(jjx) = fluka_uid(j)
++ei
++if collimat
+	         plost(jjx) = ipart(j)+100*samplenumber
++ei
 	       end if
-+ei
-+if .not.fluka
-	       if (plost(j).ne.0) pstop(j) = .false.
-	       plost(j) = 1
-+ei
 	     end if
 	   end do
 	 end if
@@ -34965,7 +34982,10 @@ C Should get me a NaN
 +if fluka
      &         '(3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE14.7))')     &
 +ei
-+if .not.fluka
++if collimat
+     &         '(3(1X,I8),1X,A16,1X,F12.5,1X,I8,7(1X,1PE14.7))')        &
++ei
++if .not.fluka.and..not.collimat
      &         '(3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE14.7))')              &
 +ei
 +if .not.backtrk
@@ -34976,6 +34996,9 @@ C Should get me a NaN
 +ei
 +if fluka	
      &         fluka_uid(j), fluka_gen(j), fluka_weight(j),             &
++ei
++if collimat	
+     &         ipart(j)+100*samplenumber,                               &
 +ei
 +if .not.backtrk
      &         xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3,                &
