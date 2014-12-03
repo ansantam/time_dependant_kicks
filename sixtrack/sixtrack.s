@@ -45078,7 +45078,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             fexpr_dynk(nfexpr_dynk + ii + t) = y
          enddo
          
-         nfexpr_dynk = nfexpr_dynk+2*t
+         nfexpr_dynk = nfexpr_dynk + 2*t
          funcs_dynk(nfuncs_dynk,5) = t
          close(664)
 
@@ -45369,7 +45369,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &        getfields_fields(2)(1:getfields_lfields(2))
          
          read(getfields_fields(4)(1:getfields_lfields(4)),*)
-     &        fexpr_dynk(nfexpr_dynk) ! a
+     &        fexpr_dynk(nfexpr_dynk)   ! a
          read(getfields_fields(5)(1:getfields_lfields(5)),*)
      &        fexpr_dynk(nfexpr_dynk+1) ! b
          read(getfields_fields(6)(1:getfields_lfields(6)),*)
@@ -45412,14 +45412,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          ! Compute a:
          fexpr_dynk(nfexpr_dynk) = deriv/(x1-x2)
-     &        + (y2-y1)/((x1-x2)*(x1-x2))
+     &        + (y2-y1)/((x1-x2)**2)
          ! Compute b:
          fexpr_dynk(nfexpr_dynk+1) = (y2-y1)/(x2-x1)
      &        - (x1+x2)*fexpr_dynk(nfexpr_dynk)
          ! Compute c:
-         fexpr_dynk(nfexpr_dynk+2) = y1
-     &        - x1*x1*fexpr_dynk(nfexpr_dynk)
-     &        - x1*fexpr_dynk(nfexpr_dynk+1)
+         fexpr_dynk(nfexpr_dynk+2) = y1 + (
+     &        - x1**2 * fexpr_dynk(nfexpr_dynk)
+     &        - x1    * fexpr_dynk(nfexpr_dynk+1) )
          
          ! Store input data:
          fexpr_dynk(nfexpr_dynk+3) = x1
@@ -45494,14 +45494,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          read(getfields_fields(9) (1:getfields_lfields( 9)),*) R
          read(getfields_fields(10)(1:getfields_lfields(10)),*) te
                   
-         derivI_te = A*(te-tinj)                    ! nostore
-         I_te      = A/2*(te-tinj)*(te-tinj) + Iinj ! nostore
+         derivI_te = A*(te-tinj)                 ! nostore
+         I_te      = (A/2.0)*(te-tinj)**2 + Iinj ! nostore
          bexp      = derivI_te/I_te
          aexp      = exp(-bexp*te)*I_te
          t1        = log(R/(aexp*bexp))/bexp
          I1        = aexp*exp(bexp*t1)
-         td        = (Inom-I1)/R+t1-R/(2*D)
-         tnom      = td+R/D
+         td        = (Inom-I1)/R + (t1 - R/(2*D))
+         tnom      = td + R/D
          
          !Sanity checks
          if (.not. (tinj .lt. te .and.
@@ -46269,11 +46269,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          retval = dynk_lininterp( dble(turn),
      &       fexpr_dynk(filelin_start:filelin_start+1),
      &       fexpr_dynk(filelin_start+2:filelin_xypoints+3),
-     &        filelin_xypoints )
+     &       filelin_xypoints )
       case (44,45)                                                      ! QUAD/QUADSEG
-         retval = turn*turn*fexpr_dynk(funcs_dynk(funNum,3))   +
+         retval = (turn**2)*fexpr_dynk(funcs_dynk(funNum,3))   + (
      &                 turn*fexpr_dynk(funcs_dynk(funNum,3)+1) +
-     &                      fexpr_dynk(funcs_dynk(funNum,3)+2)
+     &                      fexpr_dynk(funcs_dynk(funNum,3)+2) )
 
       case (60)                                                         ! SIN
          retval = fexpr_dynk(funcs_dynk(funNum,3))
@@ -46287,9 +46287,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             retval = fexpr_dynk(foff+5)
          elseif (turn .le. fexpr_dynk(foff+1)) then ! <= te
             ! Parabola (accelerate)
-            retval = fexpr_dynk(foff+6)        *
-     &                 (turn-fexpr_dynk(foff)) *
-     &                 (turn-fexpr_dynk(foff)) / 2.0
+            retval = ( fexpr_dynk(foff+6) *
+     &                 (turn-fexpr_dynk(foff))**2 ) / 2.0
      &             + fexpr_dynk(foff+5)
          elseif (turn .le. fexpr_dynk(foff+2)) then ! <= t1
             ! Exponential
@@ -46302,10 +46301,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &             + fexpr_dynk(foff+9)
          elseif (turn .le. fexpr_dynk(foff+4)) then ! <= tnom
             ! Parabola (decelerate)
-            retval =   -fexpr_dynk(foff+11)      *
-     &                 (fexpr_dynk(foff+4)-turn) *
-     &                 (fexpr_dynk(foff+4)-turn) / 2.0
-     &             + fexpr_dynk(foff+12)
+            retval =  - ( (fexpr_dynk(foff+11) *
+     &                    (fexpr_dynk(foff+4)-turn)**2) ) / 2.0
+     &                + fexpr_dynk(foff+12)
          else ! > tnom
             ! Constant Inom
             retval = fexpr_dynk(foff+12)
@@ -46793,7 +46791,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
       endif
       
       do ii=1, datalen-1
-         if (xvals(ii).ge. xvals(ii+1)) then
+         if (xvals(ii) .ge. xvals(ii+1)) then
             write (*,*) "DYNK> **** ERROR in dynk_lininterp() ****"
             write (*,*) "DYNK> xvals should be in increasing order"
             write (*,*) "DYNK> xvals =", xvals(:datalen)
@@ -46804,7 +46802,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
             ! we're in the right interval
             dydx = (yvals(ii+1)-yvals(ii)) / (xvals(ii+1)-xvals(ii))
             y0   = yvals(ii) - dydx*xvals(ii)
-            dynk_lininterp = dydx*x+y0
+            dynk_lininterp = dydx*x + y0
             return
          endif
       enddo
