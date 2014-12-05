@@ -46160,6 +46160,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
       !Functions to call
       double precision dynk_lininterp
++if crlibm
++ca crlibco
++ei
       
       ! Temporaries for FILELIN
       integer filelin_start, filelin_xypoints
@@ -46243,18 +46246,48 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       case (30)                                                         ! MINUS
          retval = (-1)*dynk_computeFUN(funcs_dynk(funNum,3),turn)
       case (31)                                                         ! SQRT
-         retval = sqrt(dynk_computeFUN(funcs_dynk(funNum,3),turn))
+C+if crlibm
+C      retval = sqrt_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
+C+ei
+C+if .not.crlibm      
+      retval = sqrt(dynk_computeFUN(funcs_dynk(funNum,3),turn))
+C+ei
       case (32)                                                         ! SIN
++if crlibm
+         retval = sin_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
++if .not.crlibm
          retval = sin(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
       case (33)                                                         ! COS
++if crlibm
+         retval = cos_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
++if .not.crlibm
          retval = cos(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
       case (34)                                                         ! LOG
++if crlibm
+         retval = log_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
++if .not.crlibm
          retval = log(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
       case (35)                                                         ! LOG10
++if crlibm
+         retval = log10_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
++if .not. crlibm
          retval = log10(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
       case (36)                                                         ! EXP
++if crlibm
+         retval = exp_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
++if .not.crlibm
          retval = exp(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-
++ei
+      
       case (40)                                                         ! CONST
          retval = fexpr_dynk(funcs_dynk(funNum,3))
       case (41)                                                         ! TURN
@@ -46276,10 +46309,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &                      fexpr_dynk(funcs_dynk(funNum,3)+2) )
 
       case (60)                                                         ! SIN
-         retval = fexpr_dynk(funcs_dynk(funNum,3))
++if crlibm
+      retval = fexpr_dynk(funcs_dynk(funNum,3))
+     &     * SIN_RN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
+     &             + fexpr_dynk(funcs_dynk(funNum,3)+2) )
+
++ei
++if .not.crlibm
+      retval = fexpr_dynk(funcs_dynk(funNum,3))
      &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
      &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
-
++ei
+      
       case (80)                                                         ! PELP
          foff = funcs_dynk(funNum,3)
          if (turn .le. fexpr_dynk(foff)) then ! <= tinj
