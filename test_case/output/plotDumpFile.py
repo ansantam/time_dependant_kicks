@@ -78,11 +78,15 @@ def get_turndata(fdata, turn):
 plot_particleNum(fdata,turnIdxs)
 
 corr = []
-
-for t in xrange(1,61):
+print
+for t in xrange(1,10000000):
     print "TURN =",t
     tdata = np.asarray(get_turndata(fdata,t),dtype=fileDType)
-
+    if len(tdata) == 0:
+        print "*** Stopping here, no more particles to plot ***"
+        print
+        break
+    
     corr.append(np.corrcoef(tdata['z'], tdata['x'])[0,1])    
 
     
@@ -130,30 +134,35 @@ fps = 10
 
 movieFileName = "pngs/xy.mp4"
 print "Assembling movie '" + movieFileName + "' at", fps, "fps:"
-os.system("rm " + movieFileName)
+#os.system("rm " + movieFileName)
 command = "ffmpeg -sameq -r "+str(fps)+" -i " + "pngs/xy_%05d.png " + movieFileName
 print "Command = '" + command + "'"
-os.system(command)
+#os.system(command)
+print "Done."
 
 print "Converting to .gif:"
 movieFileName = "pngs/xy.gif"
 command = "convert " + "pngs/xy_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
 print "Command = '" + command + "'"
-os.system(command)
-
+#os.system(command)
+print "Done."
 
 movieFileName = "pngs/zx.mp4"
 print "Assembling movie '" + movieFileName + "' at", fps, "fps:"
 os.system("rm " + movieFileName)
 command = "ffmpeg -sameq -r "+str(fps)+" -i " + "pngs/zx_%05d.png " + movieFileName
 print "Command = '" + command + "'"
-os.system(command)
+#os.system(command)
+print "Done."
+
 
 print "Converting to .gif:"
 movieFileName = "pngs/zx.gif"
 command = "convert " + "pngs/zx_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
 print "Command = '" + command + "'"
-os.system(command)
+#os.system(command)
+print "Done."
+
 
 plt.figure(5)
 plt.clf()
