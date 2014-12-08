@@ -34596,7 +34596,7 @@ C Should get me a NaN
 !-----------------------------------------------------------------------
 !
 !     P.Garcia Ortega, A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 12-06-2014
+!     last modified:  8-12-2014
 !     aperture check and dump lost particles
 !     always in main code
 !-----------------------------------------------------------------------
@@ -34921,7 +34921,7 @@ C Should get me a NaN
         
          endif
 +ei
-
+	
 !	 If lost particles aren't killed, the lost info is dumped only
 !	 the first time they hit the aperture. Their secondaries generated
 !	 from a lost particles are considered lost as well
@@ -34944,6 +34944,9 @@ C Should get me a NaN
 +if collimat
 	           if ( ipart(j)+100*samplenumber .eq. plost(jj) )
 +ei
++if .not.collimat .and. .not.fluka
+	           if ( j .eq. plost(jj) )
++ei
      &     		lparID=.true.
 	           jjx=jj+1 !points to the last zero 
 	         end if
@@ -34958,6 +34961,9 @@ C Should get me a NaN
 +ei
 +if collimat
 	         plost(jjx) = ipart(j)+100*samplenumber
++ei
++if .not.collimat .and. .not.fluka
+	         plost(jjx) = j
 +ei
 	       end if
 	     end if
@@ -34982,11 +34988,8 @@ C Should get me a NaN
 +if fluka
      &         '(3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE14.7))')     &
 +ei
-+if collimat
++if .not.fluka
      &         '(3(1X,I8),1X,A16,1X,F12.5,1X,I8,7(1X,1PE14.7))')        &
-+ei
-+if .not.fluka.and..not.collimat
-     &         '(3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE14.7))')              &
 +ei
 +if .not.backtrk
      &         turn, i, ix, bez(ix), dcum(i),                           &
@@ -34999,6 +35002,9 @@ C Should get me a NaN
 +ei
 +if collimat	
      &         ipart(j)+100*samplenumber,                               &
++ei
++if .not.fluka.and..not.collimat	
+     &         j,                                                       &
 +ei
 +if .not.backtrk
      &         xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3,                &
