@@ -34944,7 +34944,9 @@ C Should get me a NaN
 +if collimat
 	           if ( ipart(j)+100*samplenumber .eq. plost(jj) )
 +ei
++if collimat.or.fluka
      &     		lparID=.true.
++ei
 	           jjx=jj+1 !points to the last zero 
 	         end if
 	       end do
