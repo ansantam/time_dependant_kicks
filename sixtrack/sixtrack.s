@@ -1326,7 +1326,7 @@ C     Store the SET statements
       character(maxstrlen_dynk) csets_dynk (maxsets_dynk,2) ! 1 row/SET (same ordering as sets_dynk), cols are:
                                                             ! (1) element name
                                                             ! (2) attribute name
-      logical lsets_dynk(maxsets_dynk) ! 1 entry/SET. True if SETR, false if SET.
+
       integer nsets_dynk ! Number of used positions in arrays
       
       character(maxstrlen_dynk) csets_unique_dynk (maxsets_dynk,2) !Similar to csets_dynk,
@@ -1342,7 +1342,7 @@ C     Store the SET statements
      &     iexpr_dynk, fexpr_dynk, cexpr_dynk,
      &     nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk
 
-      common /dynkComSet/ sets_dynk, csets_dynk, lsets_dynk, nsets_dynk
+      common /dynkComSet/ sets_dynk, csets_dynk, nsets_dynk
       common /dynkComUniqueSet/ 
      &     csets_unique_dynk, fsets_origvalue_dynk, nsets_unique_dynk
 
@@ -18346,7 +18346,7 @@ cc2008
      &        getfields_nfields, getfields_lerr )
          if ( getfields_lerr ) call prror(51)
          if (ldynkdebug) then
-            write (*,*) "DYNKDEBUG> Got a SET(R) block, len=", 
+            write (*,*) "DYNKDEBUG> Got a SET block, len=", 
      &           len(ch), ": '", ch, "'"
             do ii=1,getfields_nfields
                write (*,*) "DYNKDEBUG> Field(",ii,") ='",
@@ -45652,7 +45652,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
       sets_dynk(nsets_dynk,1) =
      &     dynk_findFUNindex( getfields_fields(4)
-     &     (1:getfields_lfields(4)), 1 )
+     &     (1:getfields_lfields(4)), 1 ) ! function_name -> function index
       if ( sets_dynk(nsets_dynk,1) .eq. -1 ) then
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
          write (*,*) "specified function ",
@@ -45661,22 +45661,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          call prror(51)
       endif
       read(getfields_fields(5)(1:getfields_lfields(5)),*)
-     &     sets_dynk(nsets_dynk,2)
+     &     sets_dynk(nsets_dynk,2) ! startTurn
       read(getfields_fields(6)(1:getfields_lfields(6)),*)
-     &     sets_dynk(nsets_dynk,3)
+     &     sets_dynk(nsets_dynk,3) ! endTurn
       read(getfields_fields(7)(1:getfields_lfields(7)),*)
-     &     sets_dynk(nsets_dynk,4)
+     &     sets_dynk(nsets_dynk,4) ! turnShift
 
       csets_dynk(nsets_dynk,1)(1:getfields_lfields(2)) =
-     &     getfields_fields(2)(1:getfields_lfields(2))
+     &     getfields_fields(2)(1:getfields_lfields(2)) ! element_name
       csets_dynk(nsets_dynk,2)(1:getfields_lfields(3)) =
-     &     getfields_fields(3)(1:getfields_lfields(3))
-
-      if (getfields_fields(1)(1:getfields_lfields(1)).eq."SETR") then
-         lsets_dynk(nsets_dynk) = .true.
-      else
-         lsets_dynk(nsets_dynk) = .false.
-      endif
+     &     getfields_fields(3)(1:getfields_lfields(3)) ! attribute_name
       
       ! Sanity check
       if (sets_dynk(nsets_dynk,1).eq.-1) then
@@ -45689,7 +45683,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          write (*,*) "*************************************"
          call prror(51)
       endif
-      if (getfields_lfields(2) .gt. 16) then ! length of BEZ elements is 16
+      if (getfields_lfields(2) .gt. 16) then
+         ! length of elements in BEZ array is 16
          write (*,*) "*************************************"
          write (*,*) "ERROR in DYNK block parsing (fort.3):"
          write (*,*) "SET got an element name with length =",
@@ -45870,13 +45865,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       end do
 
       write (*,*) "SET:"      
-      write (*,*) "sets(,:) csets(,1) csets(,2) lsets - (",
+      write (*,*) "sets(,:) csets(,1) csets(,2): (",
      &     nsets_dynk,")"
       do ii=1,nsets_dynk
          write (*,*) ii, ":", sets_dynk(ii,:),
      &        "'"//trim(dynk_stringzerotrim(csets_dynk(ii,1)))//
-     &  "' ", "'"//trim(dynk_stringzerotrim(csets_dynk(ii,2)))//"'",
-     &        lsets_dynk(ii)
+     &  "' ", "'"//trim(dynk_stringzerotrim(csets_dynk(ii,2)))//"'"
       end do
       
       write (*,*) "csets_unique_dynk: (",nsets_unique_dynk,")"
@@ -46057,11 +46051,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &           write (*,*) "DYNKDEBUG> resetting: '",
      &               trim(dynk_stringzerotrim(csets_unique_dynk(ii,1))),
      &         "':'",trim(dynk_stringzerotrim(csets_unique_dynk(ii,2))),
-     &         "', funNum=", -ii, "turn=", 0, "setR=", .false.
+     &         "', funNum=", -ii, "turn=", 0
 
             call dynk_setvalue(csets_unique_dynk(ii,1),
      &                         csets_unique_dynk(ii,2),
-     &                         -ii, 0, .false. )
+     &                         -ii, 0 )
          enddo
          
       endif
@@ -46098,7 +46092,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &           "', shiftedTurn=",shiftedTurn
 
             call dynk_setvalue(csets_dynk(ii,1), csets_dynk(ii,2),
-     &           sets_dynk(ii,1), shiftedTurn, lsets_dynk(ii) )
+     &           sets_dynk(ii,1), shiftedTurn )
             
             if (ldynkdebug) then
                ngetvaldata = getvaldata_len
@@ -46360,16 +46354,12 @@ C+ei
       end function
       
       subroutine dynk_setvalue(element_name, att_name, 
-     &     funNum, turn, setR)
+     &     funNum, turn )
 !-----------------------------------------------------------------------
 !     A.Santamaria & K.Sjobak, BE-ABP/HSS
 !     last modified: 31-10-2014
 !     Set the value of the element's attribute 
 !     to the value provided by dynk_computeFUN(funNum, turn)
-!
-!     If setR=.true., recompute function value
-!     for each sub-element, else compute it once
-!     per SET statement in fort.3 and per turn.
 !-----------------------------------------------------------------------
       implicit none
 
@@ -46382,8 +46372,7 @@ C+ei
 
       character(maxstrlen_dynk) element_name, att_name
       integer funNum, turn
-      logical setR
-      intent (in) element_name, att_name, funNum, turn, setR
+      intent (in) element_name, att_name, funNum, turn
       !Functions
       double precision dynk_computeFUN
       character(maxstrlen_dynk) dynk_stringzerotrim
@@ -46392,6 +46381,9 @@ C+ei
       double precision fun_val
       character(maxstrlen_dynk) element_name_stripped
       character(maxstrlen_dynk) att_name_stripped
+
+      logical ldoubleElement
+      ldoubleElement = .false. ! this 
       
       element_name_stripped = trim(dynk_stringzerotrim(element_name))
       att_name_stripped = trim(dynk_stringzerotrim(att_name))
@@ -46399,7 +46391,7 @@ C+ei
       if ( ldynkdebug ) then
          write (*,*) "DYNKDEBUG> In dynk_setvalue(), element_name = '",
      &        element_name_stripped, "', att_name = '",
-     &        att_name_stripped, "', funNum =", funNum, ", setR = ",setR
+     &        att_name_stripped, "', funNum =", funNum
          if (funNUM .gt. 0) then
             write (*,*) "DYNKDEBUG> Using function number =", funNUM,
      &           "named '", 
@@ -46415,14 +46407,16 @@ C+ei
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
       ! Get type
-      if (.not.setR) then
-        fun_val= dynk_computeFUN(funNum,turn)
-      else
-        fun_val = 0.0
-      endif
       do ii=1,il
         if (element_name_stripped.eq.bez(ii)) then  ! name found
-          el_type=kz(ii) ! type found
+          el_type=kz(ii)       ! type found
+          
+          if (ldoubleElement) then ! Sanity check
+            write (*,*) "DYNK> ERROR: two elements with the same BEZ?"
+            call prror(-1)
+          end if
+          ldoubleElement = .true.
+          
           if ((abs(el_type).eq.1).or.    ! horizontal bending kick
      &        (abs(el_type).eq.2).or.    ! quadrupole kick
      &        (abs(el_type).eq.3).or.    ! sextupole kick
@@ -46434,11 +46428,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &        (abs(el_type).eq.9).or.    ! 18th pole kick
      &        (abs(el_type).eq.10)) then ! 20th pole kick
             if (att_name_stripped.eq."average_ms") then !
-              if (setR) then
-                ed(ii)=dynk_computeFUN(funNum,turn)
-              else
-                ed(ii)=fun_val
-              endif
+               ed(ii) = dynk_computeFUN(funNum,turn)
             else
               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
@@ -46448,17 +46438,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
             call initialize_element(ii, .false.)
           elseif (abs(el_type).eq.11) then ! multipoles 
             if (att_name_stripped.eq."bending_str") then ! [rad]
-              if (setR) then
-                ed(ii)= dynk_computeFUN(funNum,turn)
-              else
-                ed(ii)=fun_val
-              endif
+               ed(ii) = dynk_computeFUN(funNum,turn)
             elseif (att_name_stripped.eq."radius") then ![m]
-              if (setR) then
-                ek(ii)= dynk_computeFUN(funNum,turn)
-              else
-                ek(ii)=fun_val
-              endif
+               ek(ii) = dynk_computeFUN(funNum,turn)
             else
               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
@@ -46467,23 +46449,11 @@ C     Here comes the logic for setting the value of the attribute for all instan
             endif
           elseif (abs(el_type).eq.12) then ! cavities 
             if (att_name_stripped.eq."voltage") then ! [MV]
-              if (setR) then
-                ed(ii)= dynk_computeFUN(funNum,turn)
-              else
-                ed(ii)=fun_val
-              endif
+               ed(ii) = dynk_computeFUN(funNum,turn)
             elseif (att_name_stripped.eq."harmonic") then !
-              if (setR) then
-                ek(ii)= dynk_computeFUN(funNum,turn)
-              else
-                ek(ii)=fun_val
-              endif
+               ek(ii) = dynk_computeFUN(funNum,turn)
             elseif (att_name_stripped.eq."lag_angle") then ! [deg]
-              if (setR) then
-                el(ii)= dynk_computeFUN(funNum,turn)
-              else
-                el(ii)=fun_val
-              endif
+               el(ii) = dynk_computeFUN(funNum,turn)
             else
               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
@@ -46493,23 +46463,11 @@ C     Here comes the logic for setting the value of the attribute for all instan
             call initialize_element(ii, .false.)
           elseif (abs(el_type).eq.16) then ! AC dipole 
             if (att_name_stripped.eq."amplitude") then ! [T.m]
-              if (setR) then
-                ed(ii)= dynk_computeFUN(funNum,turn)
-              else
-                ed(ii)=fun_val
-              endif
+               ed(ii) = dynk_computeFUN(funNum,turn)
             elseif (att_name_stripped.eq."frequency") then ! [2pi]
-              if (setR) then
-                ek(ii)= dynk_computeFUN(funNum,turn)
-              else
-                ek(ii)=fun_val
-              endif
+               ek(ii) = dynk_computeFUN(funNum,turn)
             elseif (att_name_stripped.eq."phase") then ! [rad]
-              if (setR) then
-                el(ii)= dynk_computeFUN(funNum,turn)
-              else
-                el(ii)=fun_val
-              endif
+               el(ii) = dynk_computeFUN(funNum,turn)
             else
               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
@@ -46518,23 +46476,11 @@ C     Here comes the logic for setting the value of the attribute for all instan
             endif
           elseif (abs(el_type).eq.20) then ! beam-beam separation
             if (att_name_stripped.eq."horizontal") then ! [mm]
-              if (setR) then
-                ed(ii)= dynk_computeFUN(funNum,turn)
-              else
-                ed(ii)=fun_val
-              endif
+               ed(ii) = dynk_computeFUN(funNum,turn)
             elseif (att_name_stripped.eq."vertical") then ! [mm]
-              if (setR) then
-                ek(ii)= dynk_computeFUN(funNum,turn)
-              else
-                ek(ii)=fun_val
-              endif
+               ek(ii) = dynk_computeFUN(funNum,turn)
             elseif (att_name_stripped.eq."strength") then ! [m]
-              if (setR) then
-                el(ii)= dynk_computeFUN(funNum,turn)
-              else
-                el(ii)=fun_val
-              endif
+               el(ii) = dynk_computeFUN(funNum,turn)
             else
               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
@@ -46546,23 +46492,11 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &           (abs(el_type).eq.27).or.    ! cc mult. kick order 3
      &           (abs(el_type).eq.28)) then  ! cc mult. kick order 4
             if (att_name_stripped.eq."voltage") then ![MV]   
-              if (setR) then
-                ed(ii)=dynk_computeFUN(funNum,turn)
-              else
-                ed(ii)=fun_val
-              endif
+               ed(ii) = dynk_computeFUN(funNum,turn)
             elseif (att_name_stripped.eq."frequency") then ![MHz]
-              if (setR) then
-                ek(ii)= dynk_computeFUN(funNum,turn)
-              else
-                ek(ii)=fun_val
-              endif
+               ek(ii) = dynk_computeFUN(funNum,turn)
             elseif (att_name_stripped.eq."phase") then ![rad]
-              if (setR) then
-                el(ii)=dynk_computeFUN(funNum,turn)
-              else
-                el(ii)=fun_val
-              endif
+               el(ii) = dynk_computeFUN(funNum,turn)
             else
                WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
                WRITE (*,*) "DYNK> attribute '",att_name_stripped,"' ",
