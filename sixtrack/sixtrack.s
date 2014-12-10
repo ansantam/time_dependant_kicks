@@ -216,11 +216,11 @@
 +if fluka
 
 !     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
+!     last modified: 08-12-2014
 !     synch masses of proton and electron to values used by FLUKA
 !     inserted in main code by the 'fluka' compilation flag
-!     electron mass from PDG, 1992
-      parameter( pmap = 0.93827231d3, pmae = 0.51099906d0)
+!     proton and electron mass from PDG, 2014
+      parameter( pmap = 0.938272046d3, pmae = 0.510998928d0)
 
 +ei
       parameter(crade = 2.817940285d-15, clight = 2.99792458d8)
@@ -34944,7 +34944,7 @@ C Should get me a NaN
 +if collimat
 	           if ( ipart(j)+100*samplenumber .eq. plost(jj) )
 +ei
-+if .not.collimat .and. .not.fluka
++if .not.collimat.and..not.fluka
 	           if ( j .eq. plost(jj) )
 +ei
      &     		lparID=.true.
@@ -34962,7 +34962,7 @@ C Should get me a NaN
 +if collimat
 	         plost(jjx) = ipart(j)+100*samplenumber
 +ei
-+if .not.collimat .and. .not.fluka
++if .not.collimat.and..not.fluka
 	         plost(jjx) = j
 +ei
 	       end if
@@ -35575,11 +35575,14 @@ C Should get me a NaN
 
 !     statistical quantities (used only locally)
       double precision x_sum2, y_sum2, xpsum2, ypsum2, xxpsum, yypsum
+      double precision E_sum2, dtsum2, Edtsum
       double precision temix, temiy, tbetx, tbety, talfx, talfy
+      double precision temil, tbetl, talfl
 
 !     temporary variables
       integer japx
       logical lerr
+      double precision tmpE, tmpT
 
       lerr=.false.
 
@@ -35590,12 +35593,18 @@ C Should get me a NaN
       ypsum2=zero
       xxpsum=zero
       yypsum=zero
+      E_sum2=zero
+      dtsum2=zero
+      Edtsum=zero
       temix=zero
       temiy=zero
+      temil=zero
       tbetx=zero
       tbety=zero
+      tbetl=zero
       talfx=zero
       talfy=zero
+      talfl=zero
       
       if ( napx.eq.0 ) then
 !       this case should never happen, as aperture check is always performed
@@ -35610,20 +35619,28 @@ C Should get me a NaN
 !       compute beam matrix
 !       - sum of squares
         do japx=1,napx
-           x_sum2=x_sum2+(xv(1,japx))**2        ! [mm^2]    
-           y_sum2=y_sum2+(xv(2,japx))**2        ! [mm^2]    
-           xpsum2=xpsum2+(yv(1,japx))**2        ! [0.001^2] 
-           ypsum2=ypsum2+(yv(2,japx))**2        ! [0.001^2] 
-           xxpsum=xxpsum+xv(1,japx)*yv(1,japx)  ! [mm*0.001]
-           yypsum=yypsum+xv(2,japx)*yv(2,japx)  ! [mm*0.001]
+           tmpE=(ejv(japx)-e0)*1d-3              ! [GeV]
+           tmpT=-sigmv(japx)/clight*(e0/e0f)*1d6 ! [ns]
+           x_sum2=x_sum2+(xv(1,japx))**2         ! [mm^2]
+           y_sum2=y_sum2+(xv(2,japx))**2         ! [mm^2]
+           E_sum2=E_sum2+tmpE**2                 ! [GeV^2]
+           xpsum2=xpsum2+(yv(1,japx))**2         ! [0.001^2]
+           ypsum2=ypsum2+(yv(2,japx))**2         ! [0.001^2]
+           dtsum2=dtsum2+tmpT**2                 ! [ns^2]
+           xxpsum=xxpsum+xv(1,japx)*yv(1,japx)   ! [mm*0.001]
+           yypsum=yypsum+xv(2,japx)*yv(2,japx)   ! [mm*0.001]
+           Edtsum=Edtsum+tmpE*tmpT               ! [eVs]
         enddo
 !       - averages
-        x_sum2=x_sum2/dble(napx) ! [mm^2]    
-        y_sum2=y_sum2/dble(napx) ! [mm^2]    
-        xpsum2=xpsum2/dble(napx) ! [0.001^2] 
-        ypsum2=ypsum2/dble(napx) ! [0.001^2] 
+        x_sum2=x_sum2/dble(napx) ! [mm^2]
+        y_sum2=y_sum2/dble(napx) ! [mm^2]
+        E_sum2=E_sum2/dble(napx) ! [GeV^2]
+        xpsum2=xpsum2/dble(napx) ! [0.001^2]
+        ypsum2=ypsum2/dble(napx) ! [0.001^2]
+        dtsum2=dtsum2/dble(napx) ! [ns^2]
         xxpsum=xxpsum/dble(napx) ! [mm*0.001]
         yypsum=yypsum/dble(napx) ! [mm*0.001]
+        Edtsum=Edtsum/dble(napx) ! [eVs]
 !       - actual quantities
 !         . horizontal plane
         temix=x_sum2*xpsum2-xxpsum**2
@@ -35657,25 +35674,43 @@ C Should get me a NaN
         temiy=sqrt(temiy)         ! [mm 0.001]
         talfy=-yypsum/temiy       ! []
         tbety=y_sum2/temiy        ! [m]
+!         . longitudinal plane
+        temil=E_sum2*dtsum2-Edtsum**2
+        if ( temil .lt. zero ) then
+           temil=abs(temil)
+           write(*,*) ''
+           write(*,*) ' problems of precision when computing the lon'
+           write(*,*) '   emittance (beam matrix analysis)'
+           write(*,*) ' at element (ientry,ix,bez,dcum) ', 
+     &                  ientry, ix, bez(ix), dcum(ientry)
+           write(*,*) '   at turn ',nturn
+           write(*,*) ''
+           lerr=.true.
+        endif
+        temil=sqrt(temil)         ! [eVs]
+        talfl=-Edtsum/temil       ! []
+        tbetl=dtsum2/temil        ! [ns]
       endif
 
 !     dump it:
       if ( lhighprec ) then
          write(unit,1981)                                               &
      &           nturn, ientry, ix, bez(ix), dcum(ientry), napx,        &
-     &           temix, tbetx, talfx, temiy, tbety, talfy
+     &           temix, tbetx, talfx, temiy, tbety, talfy,
+     &           temil, tbetl, talfl
       else
          write(unit,1982)                                               &
      &           nturn, ientry, ix, bez(ix), dcum(ientry), napx,        &
-     &           temix, tbetx, talfx, temiy, tbety, talfy
+     &           temix, tbetx, talfx, temiy, tbety, talfy,
+     &           temil, tbetl, talfl
       endif
 
       if ( lerr ) call prror(-1)
 
       return
 
- 1981 format (3(1X,I8),1X,A16,1X,F12.5,1X,I8,6(1X,1PE25.18))
- 1982 format (3(1X,I8),1X,A16,1X,F12.5,1X,I8,6(1X,1PE16.9))
+ 1981 format (3(1X,I8),1X,A16,1X,F12.5,1X,I8,9(1X,1PE25.18))
+ 1982 format (3(1X,I8),1X,A16,1X,F12.5,1X,I8,9(1X,1PE16.9))
       end subroutine
 
       subroutine dist1
@@ -62132,10 +62167,11 @@ c$$$     &           myalphay * cos(phiy))
 +if fluka
 
 !     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
+!     last modified: 08-12-2014
 !     synch masses of proton and electron to values used by FLUKA
 !     inserted in main code by the 'fluka' compilation flag
-      ecmsq = (2d0 * 0.93827231d0) * plab                                !hr09
+!     proton mass from PDG, 2014
+      ecmsq = (2d0 * 0.938272046d0) * plab                               !hr09
 
 +ei
 +if crlibm
