@@ -13764,7 +13764,7 @@ cc2008
       call intepr(2,1,ch,ch1)
 ! reading character strings so OK
       read(ch1,*) idat,(ilm0(m),m=1,40)
-+ei
++ei ! Marked as redundant by beauty/count.awk ???
       if(idat.eq.idum) goto 270
       i=i+1
       if(i.gt.nblo-1) call prror(18)
@@ -16361,6 +16361,9 @@ cc2008
 +ei
       read(ch1,*,round='nearest')                                       &
      & idat,irel,ap11,ap22,ap33,ap44,apang,ofxx,ofzz
++if crlibm
+      call disable_xp()
++ei
 +ei
 
 +if .not.fio
