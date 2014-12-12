@@ -15042,6 +15042,7 @@ cc2008
       if(ierro.gt.0) call prror(58)
       lineno3=lineno3+1
       if(ch(1:1).eq.'/') goto 740
+      ! Get first data line: name, R_0, \delta_0
       call intepr(1,1,ch,ch1)
 +if fio
 +if crlibm
@@ -15073,11 +15074,14 @@ cc2008
       endif
 +ei
 +ei
+      ! Renaming variables?
       i=1
       r0a=one
       im=im+1
       benkc(im)=benki
       r00(im)=r0
+      ! Find single element which matches the name, set its
+      ! irm from the MULT block counter im.
       do 750 j=1,il
       if(imn.eq.bez(j)) then
         irm(j)=im
@@ -15096,6 +15100,7 @@ cc2008
 +if .not.cr
       write(*,10210) imn,r0,benki
 +ei
+      ! Read data lines: B_n rms-B_n A_n rms-A_n
   770 bk0d=zero
       bkad=zero
       ak0d=zero
@@ -15175,6 +15180,7 @@ cc2008
       if(ierro.gt.0) call prror(58)
       lineno3=lineno3+1
       if(ch(1:1).eq.'/') goto 790
+      ! Read izu0, mmac, mout, mcut
       ch1(:nchars+3)=ch(:nchars)//' / '
 +if fio
 +if crlibm
@@ -15193,6 +15199,7 @@ cc2008
 +if vvector
       if(mmac.gt.nmac) call prror(55)
 +ei
+      !Generate normal distributed random numbers into zfz
       call recuin(izu0,irecuin)
       call ranecu(zfz,nzfz,mcut)
       rsum=zero
@@ -15230,6 +15237,8 @@ cc2008
 +if .not.cr
       write(*,10130)
 +ei
+      ! Set flags mout1, mout2, mount3, mout4 depending on mout
+      ! Enables/disables different functionality
       if(mout.ge.8) mout4=1
       if(mout.eq.7.or.mout.eq.15) then
         mout1=1
@@ -15251,6 +15260,8 @@ cc2008
       else if(mout.eq.1.or.mout.eq.9) then
         mout1=1
       endif
+      
+      ! Reads from fort.16 IF mout1=1
       if(mout1.eq.1) then
 +if cr
         write(lout,*)
@@ -25392,6 +25403,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             write(31,'(a16,1p,d19.11,2d14.6,d17.9)') bez(ix),           &
      &zfz(izu-2),zfz(izu-1),zfz(izu),extalign(i,3)
           endif
+         
+!-- MULTIPOLE BLOCK
           if(kzz.eq.11) then
             r0=ek(ix)
             if(abs(r0).le.pieni) goto 150
@@ -27271,6 +27284,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca solenoid
         ktrack(i)=56
         goto 290
+!--Multipole block
   150   r0=ek(ix)
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
