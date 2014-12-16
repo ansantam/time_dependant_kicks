@@ -15145,6 +15145,8 @@ cc2008
       endif
 +ei
 +ei
+      ! Set nmu for the current single element (j)
+      ! to the currently highest multipole seen (i)
       if(abs(bk0d).gt.pieni.or.abs(bkad).gt.pieni                       &
      &.or.abs(ak0d).gt.pieni.or.abs(akad).gt.pieni) nmu(j)=i
 +if cr
@@ -15164,7 +15166,7 @@ cc2008
       i=i+1
       r0a=r0a*r0
       if(i.gt.mmul+1) call prror(105)
-      if(ch(:4).ne.next) goto 770
+      if(ch(:4).ne.next) goto 770 ! loop
 +if cr
       write(lout,10380)
 +ei
@@ -15261,7 +15263,7 @@ cc2008
         mout1=1
       endif
       
-      ! Reads from fort.16 IF mout1=1
+      ! Reads from fort.16 IF mout1==1
       if(mout1.eq.1) then
 +if cr
         write(lout,*)
@@ -15282,12 +15284,13 @@ cc2008
 +if .not.cr
         write(*,*)
 +ei
-        iexread=0
+        iexread=0 ! Reading regular multipoles(1) or skew components (2)
         ifiend16=0
         iexnum=0
         read(16,10020,end=861)
         rewind 16
-        do 860 i=1,mper*mbloz
+
+        do 860 i=1,mper*mbloz ! Loop over all structure elements
           ix=ic(i)
           if(ix.gt.nblo) then
             ix=ix-nblo
@@ -15300,7 +15303,7 @@ cc2008
               else
                 goto 820
               endif
-              call intepr(3,1,ch,ch1)
+              call intepr(3,1,ch,ch1) ! Read the name of element
 ! ilm0 are character strings, should be OK
               read(ch1,*) ilm0(1)
 +ei
@@ -15330,6 +15333,8 @@ cc2008
      &extaux(18)
               lineno16=lineno16+1
               read(16,*,end=870,iostat=ierro) extaux(19),extaux(20)
+
+              
               lineno16=lineno16+1
               read(16,*,end=870,iostat=ierro) extaux(21),extaux(22),    &
      &extaux(23)
@@ -15472,7 +15477,7 @@ cc2008
                 if(bez(ix).eq.bezext(j)) call prror(80)
   830         continue
   840         continue
-            endif
+            endif ! closing if(iexread.eq.0) then
             if(ilm0(1).eq.bez(ix)) then
 +if debug
 !             call warr('ilm0(1)',0d0,1,i,0,0)
@@ -25367,6 +25372,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     call dumpbin('asearch',95,995)
 !     call abend('asearch                                           ')
 +ei
+
+        !! Initialize kicks
         izu=0
         do 150 i=1,iu
 +if debug
@@ -25382,8 +25389,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(iorg.lt.0) mzu(i)=izu
           izu=mzu(i)+1
           smizf(i)=zfz(izu)*ek(ix)
-          smiv(m,i)=sm(ix)+smizf(i)
-          smi(i)=smiv(m,i)
+          smiv(m,i)=sm(ix)+smizf(i) ! Also in initalize_element!
+          smi(i)=smiv(m,i)          ! Also in initalize_element!
 +if debug
 !         call warr('smizf(i)',smizf(i),i,0,0,0)
 !         call warr('smiv(m,i)',smiv(m,i),m,i,0,0)
@@ -49458,7 +49465,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
           ic(ii)=msym(i)*ic(ihi)
    30 if(ic(ii).lt.-nblo) ic(ii)=-ic(ii)
 !--ORGANISATION OF RANDOM NUMBERS
-   40 iu=mper*mbloz
+   40 iu=mper*mbloz ! < -- !!!
       if(niu(1).lt.0) niu(1)=iabs(niu(1))
       if(niu(2).lt.0) niu(2)=iabs(niu(2))
       if(niu(1).eq.0) niu(1)=1
@@ -49554,7 +49561,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
   115   continue
       endif
       if(kanf.ne.1) then
-!--UMSPEICHERUNG AUF DEN STARTPUNKT
+!-- Re-saving of the starting point (UMSPEICHERUNG AUF DEN STARTPUNKT)
         kanf1=kanf-1
         do 130 i=1,kanf1
           if(iorg.ge.0) ilfr(i)=mzu(i)
