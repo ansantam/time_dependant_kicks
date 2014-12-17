@@ -19235,7 +19235,7 @@ cc2008
 !
 !-----------------------------------------------------------------------
 !     K.Sjobak & A.Santamaria, BE-ABP/HSS
-!     last modified: 04-11-2014
+!     last modified: 16-12-2014
 !     Initialize a lattice element with index elIdx,
 !     such as done when reading fort.2 (GEOM) and in DYNK.
 !     
@@ -19259,19 +19259,12 @@ cc2008
       integer i
 
 !--Cavities
-      if(abs(kz(elIdx)).eq.12) then
-         !Some 1st time initialization in daten()
+      if(abs(kz(elIdx)).eq.12) then  !Some 1st time initialization in daten()
          if (lfirst) then
             lisinit(elIdx)=.true.
          elseif ( .not. lisinit(elIdx) ) then !not lfirst and not lisinit
-            write (*,*) "ERROR in initialize_element/cavity (kz=",
-     &           kz(elIdx),")"
-            write (*,*) "Can't change settings of a cavity which is off"
             call prror(-1)
          else !not lfirst
-            write(*,*) "DYNK> Cavities: Not sure that ",
-     &           "initialize_elements now accounts for everything"
-            write(*,*) "DYNK> For now, DYNK disabled for cavities"
             call prror(-1)
          endif
          phasc(elIdx)=el(elIdx)
@@ -19291,21 +19284,11 @@ cc2008
 
       elseif(kz(elIdx).eq.2) then
          if(.not.lfirst) then
-            write(*,*) "In initialize_element, kz=2, elIdx", elIdx,
-     &          "-> '", bez(elIdx), "ed is", ed(elIdx), "' !!!!"
-            do i=1,mbloz ! more than mbloz I think?
+            do i=1,mbloz !--Kyrre: more than mbloz I think?, Andrea: it is lfirst=.false.
                if ( ic(i)-nblo.eq.elIdx ) then
-C                 ktrack(i)=12
                  sm(elIdx)=ed(elIdx)
-                 write(*,*) "In initialize_element, HIT at i", i,
-     &                "ic(i) =", ic(i), ic(i)-nblo, ktrack(i)
-                 write(*,*) "In initialize_element, smiv was",smiv(1,i),
-     &                "smizf(i) = ", smizf(i)
                  smiv(1,i)=sm(elIdx)+smizf(i)
                  smi(i)=smiv(1,i)
-                 write(*,*) "In initialize_element, smiv is", smiv(1,i),
-     &                "smizf(i) = ", smizf(i)
-
 +ca stra02
                endif
             enddo
@@ -19314,6 +19297,9 @@ C                 ktrack(i)=12
          if(.not.lfirst) then
             do i=1,mbloz
                if ( ic(i)-nblo.eq.elIdx ) then
+                 sm(elIdx)=ed(elIdx)
+                 smiv(1,i)=sm(elIdx)+smizf(i)
+                 smi(i)=smiv(1,i)
 +ca stra03
                endif
             enddo
@@ -19321,10 +19307,13 @@ C                 ktrack(i)=12
 
       elseif((kz(elIdx).eq.4).and.
      &   abs(el(elIdx)).gt.pieni) then
-         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
+         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
          if(.not.lfirst) then
             do i=1,mbloz
                if ( ic(i)-nblo.eq.elIdx ) then
+                 sm(elIdx)=ed(elIdx)
+                 smiv(1,i)=sm(elIdx)+smizf(i)
+                 smi(i)=smiv(1,i)
 +ca stra04
                endif
             enddo
@@ -19332,10 +19321,13 @@ C                 ktrack(i)=12
 
       elseif((kz(elIdx).eq.5).and.
      &   abs(el(elIdx)).gt.pieni) then
-         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
+         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
          if(.not.lfirst) then
             do i=1,mbloz
                if ( ic(i)-nblo.eq.elIdx ) then
+                 sm(elIdx)=ed(elIdx)
+                 smiv(1,i)=sm(elIdx)+smizf(i)
+                 smi(i)=smiv(1,i)
 +ca stra05
                endif
             enddo
@@ -19345,6 +19337,9 @@ C                 ktrack(i)=12
          if(.not.lfirst) then
             do i=1,mbloz
                if ( ic(i)-nblo.eq.elIdx ) then
+                 sm(elIdx)=ed(elIdx)
+                 smiv(1,i)=sm(elIdx)+smizf(i)
+                 smi(i)=smiv(1,i)
 +ca stra06
                endif
             enddo
@@ -19354,6 +19349,9 @@ C                 ktrack(i)=12
          if(.not.lfirst) then
             do i=1,mbloz
                if ( ic(i)-nblo.eq.elIdx ) then
+                 sm(elIdx)=ed(elIdx)
+                 smiv(1,i)=sm(elIdx)+smizf(i)
+                 smi(i)=smiv(1,i)
 +ca stra07
                endif
             enddo
@@ -19363,6 +19361,9 @@ C                 ktrack(i)=12
          if(.not.lfirst) then
             do i=1,mbloz
                if ( ic(i)-nblo.eq.elIdx ) then
+                 sm(elIdx)=ed(elIdx)
+                 smiv(1,i)=sm(elIdx)+smizf(i)
+                 smi(i)=smiv(1,i)
 +ca stra08
                endif
             enddo
@@ -19372,6 +19373,9 @@ C                 ktrack(i)=12
          if(.not.lfirst) then
             do i=1,mbloz
                if ( ic(i)-nblo.eq.elIdx ) then
+                 sm(elIdx)=ed(elIdx)
+                 smiv(1,i)=sm(elIdx)+smizf(i)
+                 smi(i)=smiv(1,i)
 +ca stra09
                endif
             enddo
@@ -19381,11 +19385,15 @@ C                 ktrack(i)=12
          if(.not.lfirst) then
             do i=1,mbloz
                if ( ic(i)-nblo.eq.elIdx ) then
+                 sm(elIdx)=ed(elIdx)
+                 smiv(1,i)=sm(elIdx)+smizf(i)
+                 smi(i)=smiv(1,i)
 +ca stra10
                endif
             enddo
          endif 
 !--Multipoles
+!--Treating dipoles ("special" case), read from fort.2
       elseif(kz(elIdx).eq.11.and.abs(el(elIdx)+one).le.pieni) then
          dki(elIdx,1) = ed(elIdx)
          dki(elIdx,3) = ek(elIdx)
@@ -19398,6 +19406,68 @@ C                 ktrack(i)=12
          ed(elIdx) = one
          ek(elIdx) = one
          el(elIdx) = zero
+!--Setting up tracking variables 
+!--ktracks not included since they weren't necessary in the non linear elements
+c$$$      elseif(kz(elIdx).eq.11) then
+c$$$         if(.not.lfirst) then
+c$$$            do i=1,mbloz
+c$$$               if (ic(i)-nblo.eq.elIdx) then
+c$$$
+c$$$                  smiv(1,i) = sm(elIdx)+smizf(i)
+c$$$                  smi(i)    = smiv(1,i)
+c$$$
+c$$$                  do 140 k=1,nmz
+c$$$                    izu=izu+1
+c$$$                    aaiv(k,m,i)=(ed(elIdx)*(ak0(im,k)+zfz(izu)*
+c$$$     &              aka(im,k)))/r0a
+c$$$                    bbiv(k,m,i)=(ed(elIdx)*(bk0(im,k)+zfz(izu)*
+c$$$     &              bka(im,k)))/r0a
+c$$$                    bbi(i,k)=bbiv(k,m,i)
+c$$$ 140                r0a=r0a*r0
+c$$$                    izu=izu+2*mmul-2*nmz
+c$$$
+c$$$                  r0 = ek(elIdx)
+c$$$                  nmz = nmu(elIdx) !--highest multipole order
+c$$$                  im = irm(elIdx)  !--irm(ix) = MUL block index
+c$$$
+c$$$                  if(abs(dki(elIdx,1)).gt.pieni.and.
+c$$$     &            abs(dki(elIdx,2)).le.pieni) then  
+c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
+c$$$+ca stra11
+c$$$                     else
+c$$$+ca stra12
+c$$$                     endif
+c$$$                  elseif(abs(dki(elIdx,1)).le.pieni.and.
+c$$$     &            abs(dki(elIdx,2)).gt. pieni) then  
+c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
+c$$$+ca stra13
+c$$$                     else
+c$$$+ca stra14
+c$$$                     endif
+c$$$                  elseif(abs(dki(elIdx,1)).gt.pieni.and.
+c$$$     &            abs(dki(elIdx,2)).le.pieni) then  
+c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
+c$$$+ca stra11
+c$$$                     else
+c$$$+ca stra12
+c$$$                     endif
+c$$$                  elseif(abs(dki(elIdx,1)).le.pieni.and.
+c$$$     &            abs(dki(elIdx,2)).gt.pieni) then  
+c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
+c$$$+ca stra13
+c$$$                     else
+c$$$+ca stra14
+c$$$                     endif
+c$$$                  endif
+c$$$
+c$$$                  if(mout2.eq.1) then
+c$$$                     benkcc = ed(elIdx)*benkc(irm(elIdx))
+c$$$                     r0a = one
+c$$$                     r000 = r0*r00(irm(elIdx))
+c$$$                  endif
+c$$$               endif
+c$$$            enddo
+c$$$         endif 
 !--Crab Cavities
       elseif(abs(kz(elIdx)).eq.23) then
          crabph(elIdx)=el(elIdx)
@@ -25439,8 +25509,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
              bbiv35(k,m,i)=(ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k)))/r0a !hr05
 +ei
               bbi(i,k)=bbiv(k,m,i)
-  140       r0a=r0a*r0
-            izu=izu+2*mmul-2*nmz
+              write (*,*) "DBGDBG: ", ix, k, ed(ix),
+     &             aaiv(k,m,i), bbiv(k,m,i),
+     &             "MAINCR"
+
+  140         r0a=r0a*r0
+              izu=izu+2*mmul-2*nmz
+              
           endif
   150   continue
 +if debug
@@ -46033,8 +46108,25 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
       save ldynksetsEnable
 
+      !DBG:
+      integer ix
+
       if ( ldynkdebug ) 
      &     write(*,*) 'DYNKDEBUG> In dynk_apply(), turn = ', turn
+      
+      do ii=1,iu
+          ix=ic(ii)
+          if(ix.le.nblo) continue
+          ix=ix-nblo
+          if (kz(ix) .eq. 11) then
+             do jj=1,nmu(ix)
+                write (*,*) "DBGDBG: ", ix, jj, ed(ix), 
+     &               aaiv(jj,1,ii), bbiv(jj,1,ii),
+     &               "MAINCR"
+             end do
+          endif
+       end do
+
       
       !Initialize variables
       do jj=1, nsets_unique_dynk
