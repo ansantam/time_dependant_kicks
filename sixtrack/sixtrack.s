@@ -13948,7 +13948,6 @@ cc2008
       call intepr(2,1,ch,ch1)
 ! reading character strings so OK
       read(ch1,*) idat,(ilm0(m),m=1,40)
-+ei
       if(idat.eq.idum) goto 270
       i=i+1
       if(i.gt.nblo-1) call prror(18)
@@ -14024,7 +14023,6 @@ cc2008
   430 call intepr(3,i2,ch,ch1)
 ! reading character strings so OK
       read(ch1,*) (ilm0(k),k=1,40)
-+ei
       do 490 k=1,40
         if(ilm0(k).eq.idum) goto 490
         if(ilm0(k).eq.go) goto 480
@@ -14651,7 +14649,6 @@ cc2008
         call intepr(3,1,ch,ch1)
 ! ilm0 are character strings so should be OK
         read(ch1,*) (ilm0(i),i=1,ncor)
-+ei
       endif
       if(iclo6.eq.1.or.iclo6.eq.2) nsix=0
       if(nvar.ne.6) then
@@ -15021,7 +15018,6 @@ cc2008
       call intepr(2,1,ch,ch1)
 ! ilm0 are character strings, should be OK
       read(ch1,*) (ilm0(m),m=1,40)
-+ei
       do 700 m=1,40
       if(ilm0(m).eq.idum) goto 700
       nlin=nlin+1
@@ -15474,7 +15470,6 @@ cc2008
               call intepr(3,1,ch,ch1)
 ! ilm0 are character strings, should be OK
               read(ch1,*) ilm0(1)
-+ei
               iexnum=iexnum+1
               bezext(iexnum)=ilm0(1)
 +if fio
@@ -17983,7 +17978,6 @@ cc2008
         xstr=fround(errno,fields,5)
         nf=nf-1
       endif
-+ei
 +ei
 +ei
 +if nagfor
