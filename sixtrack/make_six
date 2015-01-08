@@ -900,6 +900,15 @@ then
     FCLMAP+=$FLK_ADD_FLAGS
 fi
 
+#Test that the sixtrack.s is sane
+echo ""
+echo "Running 'awk -f beauty/count.awk sixtrack.s' to check sanity of astuce directives in sixtrack.s:"
+if ! awk -f beauty/count.awk sixtrack.s; then
+    echo ""
+    echo -e "\e[5m\e[41m WARNING: ASTUCE blocks doesn't match up in sixtrack.s \e[49m\e[0m"
+fi
+
+#Print final message before actually starting the build
 echo ""
 echo "We are about to build $ename"
 echo "last modified on $moddate"

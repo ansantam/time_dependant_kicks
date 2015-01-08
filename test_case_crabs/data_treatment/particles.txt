@@ -1,0 +1,3 @@
+Number of particles initial distribution 	= 640
+Number of particles final distribution 		= 639
+Number of particles lost 			= 1
