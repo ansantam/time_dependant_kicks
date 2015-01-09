@@ -19258,6 +19258,8 @@ cc2008
 
 !--Cavities
       if(abs(kz(elIdx)).eq.12) then  !Some 1st time initialization in daten()
+         ! TODO: If we try to change a cavity with DYNK, we will always get the ELSE -> prror(-1)
+         ! Oops...
          if (lfirst) then
             lisinit(elIdx)=.true.
          elseif ( .not. lisinit(elIdx) ) then !not lfirst and not lisinit
