@@ -536,6 +536,12 @@ then
     values[12]=true
     echo "Option Checkpoint/Restart turned ON"
 fi
+if test "$collimat" = "" -a "$cr" = ""
+then
+    echo "Options collimat and cr are incompatible - please use only one."
+    exit 1
+fi
+
 # Set up compiler
 if test "$nagfor" = ""
 then
@@ -1248,13 +1254,13 @@ if test "$api" != ""
 then
   if test -s "$ename"
   then
-      echo "It appears to have completed successfully."
+      echo -e "\e[92mIt appears to have completed successfully.\e[39m"
       # and a link for Frank
       cd ..
       ln -sf $ename/$ename SixTrack
       cd $ename
   else
-      echo "It appears to have failed!!!"
+      echo -e "\e[91mIt appears to have failed!!!\e[39m"
       exit 2
   fi
 fi

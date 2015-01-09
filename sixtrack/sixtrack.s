@@ -31991,7 +31991,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               if ( part_hit(j).eq.(10000*ie+iturn) ) then
                 if (part_impact(j).lt.-0.5d0) then
 +if cr
-                  write(lout,*) 'ERR>  Found invalid impact parameter!' &
+                  write(lout,*) 'ERR>  Found invalid impact parameter!',&
      &                  part_impact(j)
 +ei
 +if .not.cr
@@ -65036,6 +65036,9 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       return
 !
 !                    Entry to output the "convenient" restart point
+!STRANGENESS: Entry point 'rluxat' not used,
+!             strange first argument "lout" (should be luxury level)
+!             This is not compatible with CR!
       entry rluxat(lout,inout,k1,k2)
       lout = luxlev
       inout = inseed
@@ -65067,7 +65070,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
          nskip = ndskip(luxlev)
 +if cr
          write(lout,'(A,I2,A,I4)')                                      &
-    &' RANLUX LUXURY LEVEL SET BY RLUXGO :',
+     &' RANLUX LUXURY LEVEL SET BY RLUXGO :',
 +ei
 +if .not.cr
          write(*,'(A,I2,A,I4)') ' RANLUX LUXURY LEVEL SET BY RLUXGO :', &
@@ -67796,7 +67799,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
         nnumxv(j)=crnnumxv(j)
         nlostp(j)=crnlostp(j)
         pstop(j)=crpstop(j)
-        xv(1,j)=rxv(1,j)
+        xv(1,j)=rxv(1,j) ! <--!
         yv(1,j)=cryv(1,j)
         xv(2,j)=crxv(2,j)
         yv(2,j)=cryv(2,j)
