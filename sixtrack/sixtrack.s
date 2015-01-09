@@ -67799,7 +67799,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
         nnumxv(j)=crnnumxv(j)
         nlostp(j)=crnlostp(j)
         pstop(j)=crpstop(j)
-        xv(1,j)=rxv(1,j) ! <--!
+        xv(1,j)=crxv(1,j)
         yv(1,j)=cryv(1,j)
         xv(2,j)=crxv(2,j)
         yv(2,j)=cryv(2,j)
