@@ -1622,16 +1622,12 @@ C     Store the SET statements
          bbiv35(k,m,i)=(ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k)))/r0a !hr05
 +ei
          bbi(i,k)=bbiv(k,m,i)
-
-         write (*,*) "DBGDBG: ", ix, k, ed(ix),
-     &        aaiv(k,m,i), bbiv(k,m,i),
-     &        "MAINCR"
-         
+ 
          r0a=r0a*r0
       enddo
       
       izu=izu+2*mmul-2*nmz
-        
+!------------------------------------------------------------------------------------        
 
 +cd alignf
 +if .not.tilt
@@ -19274,7 +19270,7 @@ cc2008
 
       end subroutine
       
-      subroutine initialize_element(elIdx,lfirst)
+      subroutine initialize_element(ix,lfirst)
 !
 !-----------------------------------------------------------------------
 !     K.Sjobak & A.Santamaria, BE-ABP/HSS
@@ -19288,8 +19284,10 @@ cc2008
 !
       implicit none
       
-      integer, intent(in) :: elIdx
+      integer, intent(in) :: ix
       logical, intent(in) :: lfirst
+
+      integer im, izu, k, m, nmz, r0, r0a !needed to use multini
 
 +ca parpro !needed for common
 +ca parnum !zero
@@ -19297,142 +19295,143 @@ cc2008
 +ca commonmn
 +ca commontr
 +ca commonxz
++ca comdynk
       
       !Set the element to true when initialized - some elements need to be present in fort.2 and then later changed
       logical, save :: lisinit(nele) = .false.
       integer i
 
 !--Cavities
-      if(abs(kz(elIdx)).eq.12) then  !Some 1st time initialization in daten()
+      if(abs(kz(ix)).eq.12) then  !Some 1st time initialization in daten()
          ! TODO: If we try to change a cavity with DYNK, we will always get the ELSE -> prror(-1)
          ! Oops...
          if (lfirst) then
-            lisinit(elIdx)=.true.
-         elseif ( .not. lisinit(elIdx) ) then !not lfirst and not lisinit
+            lisinit(ix)=.true.
+         elseif ( .not. lisinit(ix) ) then !not lfirst and not lisinit
             call prror(-1)
          else !not lfirst
             call prror(-1)
          endif
-         phasc(elIdx)=el(elIdx)
-         el(elIdx)=zero
+         phasc(ix)=el(ix)
+         el(ix)=zero
 !--Nonlinear Elements
-      elseif(kz(elIdx).eq.1) then
+      elseif(kz(ix).eq.1) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra01
                endif
             enddo
          endif 
 
-      elseif(kz(elIdx).eq.2) then
+      elseif(kz(ix).eq.2) then
          if(.not.lfirst) then
             do i=1,mbloz !--Kyrre: more than mbloz I think?, Andrea: it is lfirst=.false.
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra02
                endif
             enddo
          endif 
-      elseif(kz(elIdx).eq.3) then
+      elseif(kz(ix).eq.3) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra03
                endif
             enddo
          endif 
 
-      elseif((kz(elIdx).eq.4).and.
-     &   abs(el(elIdx)).gt.pieni) then
-         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
+      elseif((kz(ix).eq.4).and.
+     &   abs(el(ix)).gt.pieni) then
+         ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra04
                endif
             enddo
          endif 
 
-      elseif((kz(elIdx).eq.5).and.
-     &   abs(el(elIdx)).gt.pieni) then
-         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
+      elseif((kz(ix).eq.5).and.
+     &   abs(el(ix)).gt.pieni) then
+         ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra05
                endif
             enddo
          endif   
 
-      elseif(kz(elIdx).eq.6) then
+      elseif(kz(ix).eq.6) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra06
                endif
             enddo
          endif  
 
-      elseif(kz(elIdx).eq.7) then
+      elseif(kz(ix).eq.7) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra07
                endif
             enddo
          endif         
 
-      elseif(kz(elIdx).eq.8) then
+      elseif(kz(ix).eq.8) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra08
                endif
             enddo
          endif 
 
-      elseif(kz(elIdx).eq.9) then
+      elseif(kz(ix).eq.9) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra09
                endif
             enddo
          endif 
 
-      elseif(kz(elIdx).eq.10) then
+      elseif(kz(ix).eq.10) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra10
                endif
@@ -19440,40 +19439,50 @@ cc2008
          endif 
 !--Multipoles
 !--Treating dipoles ("special" case), read from fort.2
-      elseif(kz(elIdx).eq.11.and.abs(el(elIdx)+one).le.pieni) then
-         dki(elIdx,1) = ed(elIdx)
-         dki(elIdx,3) = ek(elIdx)
-         ed(elIdx) = one
-         ek(elIdx) = one
-         el(elIdx) = zero
-      elseif(kz(elIdx).eq.11.and.abs(el(elIdx)+two).le.pieni) then
-         dki(elIdx,2) = ed(elIdx)
-         dki(elIdx,3) = ek(elIdx)
-         ed(elIdx) = one
-         ek(elIdx) = one
-         el(elIdx) = zero
+      elseif(kz(ix).eq.11.and.abs(el(ix)+one).le.pieni) then
+         dki(ix,1) = ed(ix)
+         dki(ix,3) = ek(ix)
+         ed(ix) = one
+         ek(ix) = one
+         el(ix) = zero
+      elseif(kz(ix).eq.11.and.abs(el(ix)+two).le.pieni) then
+         dki(ix,2) = ed(ix)
+         dki(ix,3) = ek(ix)
+         ed(ix) = one
+         ek(ix) = one
+         el(ix) = zero
 !--Read MUL from fort.3
-!--Read FLUC from fort.3 --> including the correct izu
+!--Using the right izu & setting aaiv, bbiv
+      elseif(kz(ix).eq.11) then
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( ic(i)-nblo.eq.ix ) then
+                  dynk_izuIndex(ix)=izu
++ca multini
+  150   continue
+               endif
+            enddo
+         endif 
 !--Read fort.16
 !--Initialize smiv
 
 
 !--Crab Cavities
-      elseif(abs(kz(elIdx)).eq.23) then
-         crabph(elIdx)=el(elIdx)
-         el(elIdx)=0d0
+      elseif(abs(kz(ix)).eq.23) then
+         crabph(ix)=el(ix)
+         el(ix)=0d0
 !--CC Mult kick order 2
-      elseif(abs(kz(elIdx)).eq.26) then
-         crabph2(elIdx)=el(elIdx)
-         el(elIdx)=0d0
+      elseif(abs(kz(ix)).eq.26) then
+         crabph2(ix)=el(ix)
+         el(ix)=0d0
 !--CC Mult kick order 3
-      elseif(abs(kz(elIdx)).eq.27) then
-         crabph3(elIdx)=el(elIdx)
-         el(elIdx)=0d0
+      elseif(abs(kz(ix)).eq.27) then
+         crabph3(ix)=el(ix)
+         el(ix)=0d0
 !--CC Mult kick order 4
-      else if(abs(kz(elIdx)).eq.28) then
-         crabph4(elIdx)=el(elIdx)
-         el(elIdx)=0d0
+      else if(abs(kz(ix)).eq.28) then
+         crabph4(ix)=el(ix)
+         el(ix)=0d0
       endif
       
       end subroutine
