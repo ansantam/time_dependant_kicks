@@ -908,10 +908,15 @@ fi
 
 #Test that the sixtrack.s is sane
 echo ""
-echo "Running 'awk -f beauty/count.awk sixtrack.s' to check sanity of astuce directives in sixtrack.s:"
-if ! awk -f beauty/count.awk sixtrack.s; then
-    echo ""
-    echo -e "\e[5m\e[41m WARNING: ASTUCE blocks doesn't match up in sixtrack.s \e[49m\e[0m"
+echo "Running 'gawk -f beauty/count.awk sixtrack.s' to check sanity of astuce directives in sixtrack.s:"
+if ! gawk -f beauty/count.awk sixtrack.s; then
+    echo -e "\e[5m\e[41m WARNING: ASTUCE if/ei doesn't match up in sixtrack.s \e[49m\e[0m"
+    echo "This most likely means that you added or removed a +if or +ei,"
+    echo " but forgot about its partner."
+    echo "You may also just be missing the command 'gawk' (GNU AWK),"
+    echo " needed to run this script."
+else
+    echo "--> count.awk completed without errors."
 fi
 
 #Print final message before actually starting the build
