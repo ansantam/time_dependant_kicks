@@ -1334,6 +1334,10 @@ C     Store the SET statements
                                                                    ! but only one entry per elem/attr
       double precision fsets_origvalue_dynk(maxsets_dynk) ! Store original value from dynk
       integer nsets_unique_dynk ! Number of used positions in arrays
+
+!--Storing the right izu for multipoles in dynk
+      integer dynk_izuIndex
+      dimension dynk_izuIndex(nele)
       
 !     fortran COMMON declaration follows padding requirements
       common /dynkComGen/ ldynk, ldynkdebug,
@@ -1346,6 +1350,8 @@ C     Store the SET statements
       common /dynkComSet/ sets_dynk, csets_dynk, nsets_dynk
       common /dynkComUniqueSet/ 
      &     csets_unique_dynk, fsets_origvalue_dynk, nsets_unique_dynk
+     
+      common /dynkComReinitialize/ dynk_izuIndex
 
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
@@ -1588,6 +1594,45 @@ C     Store the SET statements
 !     call dumpbin('abeamcou',2,22)
 !     call abend('after beam coupling                               ')
 +ei
++cd multini
+! Nice description of WTF is happening here...
+      r0=ek(ix)
+      if(abs(r0).le.pieni) goto 150 ! label 150 - just after this code
+      nmz=nmu(ix)
+      if(nmz.eq.0) then
+         izu=izu+2*mmul
+         goto 150
+      endif
+      im=irm(ix)
+      r0a=one
+      do k=1,nmz
+         izu=izu+1
+!     hr05         aaiv(k,m,i)=ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k))/r0a
+         aaiv(k,m,i)=(ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k)))/r0a !hr05
++if time
+!     hr05         aaiv35(k,m,i)=ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k))/r0a
+         aaiv35(k,m,i)=(ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k)))/r0a !hr05
++ei
+         aai(i,k)=aaiv(k,m,i)
+         izu=izu+1
+!     hr05         bbiv(k,m,i)=ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k))/r0a
+         bbiv(k,m,i)=(ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k)))/r0a !hr05
++if time
+!     hr05         bbiv35(k,m,i)=ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k))/r0a
+         bbiv35(k,m,i)=(ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k)))/r0a !hr05
++ei
+         bbi(i,k)=bbiv(k,m,i)
+
+         write (*,*) "DBGDBG: ", ix, k, ed(ix),
+     &        aaiv(k,m,i), bbiv(k,m,i),
+     &        "MAINCR"
+         
+         r0a=r0a*r0
+      enddo
+      
+      izu=izu+2*mmul-2*nmz
+        
+
 +cd alignf
 +if .not.tilt
 *FOX  XL=X(1)-XS ;
@@ -19245,6 +19290,7 @@ cc2008
       
       integer, intent(in) :: elIdx
       logical, intent(in) :: lfirst
+
 +ca parpro !needed for common
 +ca parnum !zero
 +ca common
@@ -19406,68 +19452,12 @@ cc2008
          ed(elIdx) = one
          ek(elIdx) = one
          el(elIdx) = zero
-!--Setting up tracking variables 
-!--ktracks not included since they weren't necessary in the non linear elements
-c$$$      elseif(kz(elIdx).eq.11) then
-c$$$         if(.not.lfirst) then
-c$$$            do i=1,mbloz
-c$$$               if (ic(i)-nblo.eq.elIdx) then
-c$$$
-c$$$                  smiv(1,i) = sm(elIdx)+smizf(i)
-c$$$                  smi(i)    = smiv(1,i)
-c$$$
-c$$$                  do 140 k=1,nmz
-c$$$                    izu=izu+1
-c$$$                    aaiv(k,m,i)=(ed(elIdx)*(ak0(im,k)+zfz(izu)*
-c$$$     &              aka(im,k)))/r0a
-c$$$                    bbiv(k,m,i)=(ed(elIdx)*(bk0(im,k)+zfz(izu)*
-c$$$     &              bka(im,k)))/r0a
-c$$$                    bbi(i,k)=bbiv(k,m,i)
-c$$$ 140                r0a=r0a*r0
-c$$$                    izu=izu+2*mmul-2*nmz
-c$$$
-c$$$                  r0 = ek(elIdx)
-c$$$                  nmz = nmu(elIdx) !--highest multipole order
-c$$$                  im = irm(elIdx)  !--irm(ix) = MUL block index
-c$$$
-c$$$                  if(abs(dki(elIdx,1)).gt.pieni.and.
-c$$$     &            abs(dki(elIdx,2)).le.pieni) then  
-c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
-c$$$+ca stra11
-c$$$                     else
-c$$$+ca stra12
-c$$$                     endif
-c$$$                  elseif(abs(dki(elIdx,1)).le.pieni.and.
-c$$$     &            abs(dki(elIdx,2)).gt. pieni) then  
-c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
-c$$$+ca stra13
-c$$$                     else
-c$$$+ca stra14
-c$$$                     endif
-c$$$                  elseif(abs(dki(elIdx,1)).gt.pieni.and.
-c$$$     &            abs(dki(elIdx,2)).le.pieni) then  
-c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
-c$$$+ca stra11
-c$$$                     else
-c$$$+ca stra12
-c$$$                     endif
-c$$$                  elseif(abs(dki(elIdx,1)).le.pieni.and.
-c$$$     &            abs(dki(elIdx,2)).gt.pieni) then  
-c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
-c$$$+ca stra13
-c$$$                     else
-c$$$+ca stra14
-c$$$                     endif
-c$$$                  endif
-c$$$
-c$$$                  if(mout2.eq.1) then
-c$$$                     benkcc = ed(elIdx)*benkc(irm(elIdx))
-c$$$                     r0a = one
-c$$$                     r000 = r0*r00(irm(elIdx))
-c$$$                  endif
-c$$$               endif
-c$$$            enddo
-c$$$         endif 
+!--Read MUL from fort.3
+!--Read FLUC from fort.3 --> including the correct izu
+!--Read fort.16
+!--Initialize smiv
+
+
 !--Crab Cavities
       elseif(abs(kz(elIdx)).eq.23) then
          crabph(elIdx)=el(elIdx)
@@ -25483,39 +25473,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
 !-- MULTIPOLE BLOCK
           if(kzz.eq.11) then
-            r0=ek(ix)
-            if(abs(r0).le.pieni) goto 150
-            nmz=nmu(ix)
-            if(nmz.eq.0) then
-              izu=izu+2*mmul
-              goto 150
-            endif
-            im=irm(ix)
-            r0a=one
-            do 140 k=1,nmz
-              izu=izu+1
-!hr05         aaiv(k,m,i)=ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k))/r0a
-              aaiv(k,m,i)=(ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k)))/r0a    !hr05
-+if time
-!hr05         aaiv35(k,m,i)=ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k))/r0a
-             aaiv35(k,m,i)=(ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k)))/r0a !hr05
-+ei
-              aai(i,k)=aaiv(k,m,i)
-              izu=izu+1
-!hr05         bbiv(k,m,i)=ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k))/r0a
-              bbiv(k,m,i)=(ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k)))/r0a    !hr05
-+if time
-!hr05         bbiv35(k,m,i)=ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k))/r0a
-             bbiv35(k,m,i)=(ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k)))/r0a !hr05
-+ei
-              bbi(i,k)=bbiv(k,m,i)
-              write (*,*) "DBGDBG: ", ix, k, ed(ix),
-     &             aaiv(k,m,i), bbiv(k,m,i),
-     &             "MAINCR"
-
-  140         r0a=r0a*r0
-              izu=izu+2*mmul-2*nmz
-              
+            dynk_izuIndex(ix)=izu
++ca multini
           endif
   150   continue
 +if debug
@@ -45012,7 +44971,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !-----------------------------------------------------------------------
 !     
       implicit none
-      
++ca parpro      
 +ca comdynk
 +ca comgetfields
       
@@ -45756,6 +45715,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       implicit none
       integer iblocks,fblocks,cblocks
       intent(in) iblocks,fblocks,cblocks
++ca parpro
 +ca comdynk      
 
       if ( (niexpr_dynk+iblocks .gt. maxdata_dynk) .or.
@@ -45779,6 +45739,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     store it in COMMON block dynkComExpr.
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
 +ca comgetfields
       integer ii
@@ -45874,7 +45835,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     Return -1 if nothing was found.
 !-----------------------------------------------------------------------
       implicit none
-
++ca parpro
 +ca comdynk
 
       character(maxstrlen_dynk) funName
@@ -45904,6 +45865,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     Return -1 if nothing was found.
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
       character(maxstrlen_dynk) element_name, att_name
       integer startfrom
@@ -45930,6 +45892,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     Check that DYNK block input in fort.3 was sane
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
       ! functions
       integer dynk_findFUNindex , dynk_findSETindex
@@ -45990,7 +45953,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     Dump arrays with DYNK FUN and SET data to the std. output for debugging
 !----------------------------------------------------------------------------
       implicit none
-      
++ca parpro      
 +ca comdynk
       character(maxstrlen_dynk) dynk_stringzerotrim
 
@@ -46056,6 +46019,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     the program may deadlock!
 !----------------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
       character(maxstrlen_dynk) dynk_stringzerotrim, instring
       intent(in) instring
@@ -46082,6 +46046,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     that elements/attributes for SET actually exist.
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
       !Functions
       double precision dynk_getvalue_single
@@ -46324,6 +46289,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     If turn = 0 and -nsets_unique_dynk<funNum<0: reset to original value
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
       integer funNum, turn
       intent (in) funNum, turn
@@ -46862,6 +46828,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
 !     Wraps dynk_getvalue.
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk      
       character(maxstrlen_dynk) element_name, att_name
       intent(in) element_name, att_name
