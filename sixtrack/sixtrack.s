@@ -46682,7 +46682,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
             call initialize_element(ii, .false.)
          else
             WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-            write (*,*) "DYNK> Unknown type"
+            write (*,*) "DYNK> Unsupported element type", el_type
+            write (*,*) "DYNK> element name = '", element_name_stripped,
+     &           "'"
             call prror(-1)
          endif
       endif
