@@ -19287,7 +19287,7 @@ cc2008
       integer, intent(in) :: ix
       logical, intent(in) :: lfirst
 
-      integer im, izu, store_izu, k, m, nmz, r0, r0a !needed to use multini
+      integer im, izu, k, m, nmz, r0, r0a !needed to use multini
 
 +ca parpro !needed for common
 +ca parnum !zero
@@ -19301,35 +19301,22 @@ cc2008
       logical, save :: lisinit(nele) = .false.
       integer i
 
-!--Cavities
-      if(abs(kz(ix)).eq.12) then  !Some 1st time initialization in daten()
-         ! TODO: If we try to change a cavity with DYNK, we will always get the ELSE -> prror(-1)
-         ! Oops...
-         if (lfirst) then
-            lisinit(ix)=.true.
-         elseif ( .not. lisinit(ix) ) then !not lfirst and not lisinit
-            call prror(-1)
-         else !not lfirst
-            call prror(-1)
-         endif
-         phasc(ix)=el(ix)
-         el(ix)=zero
 !--Nonlinear Elements
-      elseif(kz(ix).eq.1) then
+      if(kz(ix).eq.1) then
          if(.not.lfirst) then
-            do i=1,mbloz
+            do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
-                 sm(ix)=ed(ix)
-                 smiv(1,i)=sm(ix)+smizf(i)
-                 smi(i)=smiv(1,i)
-+ca stra01
+                 sm(ix)=ed(ix)             ! Also done in envar() which is called from clorb()
+                 smiv(1,i)=sm(ix)+smizf(i) ! Also done in program maincr
+                 smi(i)=smiv(1,i)          ! Also done in program maincr
++ca stra01                                 ! Also done in trauthin()/trauthick()
                endif
             enddo
          endif 
 
       elseif(kz(ix).eq.2) then
          if(.not.lfirst) then
-            do i=1,mbloz !--Kyrre: more than mbloz I think?, Andrea: it is lfirst=.false.
+            do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
@@ -19340,7 +19327,7 @@ cc2008
          endif 
       elseif(kz(ix).eq.3) then
          if(.not.lfirst) then
-            do i=1,mbloz
+            do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
@@ -19354,7 +19341,7 @@ cc2008
      &   abs(el(ix)).gt.pieni) then
          ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
          if(.not.lfirst) then
-            do i=1,mbloz
+            do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
@@ -19368,7 +19355,7 @@ cc2008
      &   abs(el(ix)).gt.pieni) then
          ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
          if(.not.lfirst) then
-            do i=1,mbloz
+            do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
@@ -19380,7 +19367,7 @@ cc2008
 
       elseif(kz(ix).eq.6) then
          if(.not.lfirst) then
-            do i=1,mbloz
+            do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
@@ -19392,7 +19379,7 @@ cc2008
 
       elseif(kz(ix).eq.7) then
          if(.not.lfirst) then
-            do i=1,mbloz
+            do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
@@ -19404,7 +19391,7 @@ cc2008
 
       elseif(kz(ix).eq.8) then
          if(.not.lfirst) then
-            do i=1,mbloz
+            do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
@@ -19416,7 +19403,7 @@ cc2008
 
       elseif(kz(ix).eq.9) then
          if(.not.lfirst) then
-            do i=1,mbloz
+            do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
@@ -19428,7 +19415,7 @@ cc2008
 
       elseif(kz(ix).eq.10) then
          if(.not.lfirst) then
-            do i=1,mbloz
+            do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
@@ -19437,101 +19424,122 @@ cc2008
                endif
             enddo
          endif 
-!--Multipoles
-!--Treating dipoles ("special" case), read from fort.2
-      elseif(kz(ix).eq.11.and.abs(el(ix)+one).le.pieni) then
-         dki(ix,1) = ed(ix)
-         dki(ix,3) = ek(ix)
-         ed(ix) = one
-         ek(ix) = one
-         el(ix) = zero
-      elseif(kz(ix).eq.11.and.abs(el(ix)+two).le.pieni) then
-         dki(ix,2) = ed(ix)
-         dki(ix,3) = ek(ix)
-         ed(ix) = one
-         ek(ix) = one
-         el(ix) = zero
-!--Treating all multipoles
-      elseif(kz(ix).eq.11) then
-!--Read fort.16
-!----------------------------
-         if(.not.lfirst) then
-            do i=1,mbloz
-               if ( ic(i)-nblo.eq.ix ) then
-!--Using the right izu & setting aaiv, bbiv (see multini)
-                  store_izu = izu
-                  izu = dynk_izuIndex(ix)
-+ca multini
-                  izu = store_izu
-                  store_izu = 0
-  150   continue !needs to be after a multini block
-!--Initialize smiv
-                  smizf(i)=zfz(izu)*ek(ix)
-                  smiv(m,i)=sm(ix)+smizf(i) 
-                  smi(i)=smiv(m,i)   
 
-        if(abs(r0).le.pieni.or.nmz.eq.0) then
-          if(abs(dki(ix,1)).le.pieni.and.abs(dki(ix,2)).le.pieni) then
-            ktrack(i)=31
-          else if(abs(dki(ix,1)).gt.pieni.and.abs(dki(ix,2)).le.pieni)  &
-     &then
-            if(abs(dki(ix,3)).gt.pieni) then
-              ktrack(i)=33
+!--Multipoles
+      elseif(kz(ix).eq.11) then
+         ! Special case, moved from daten():
+         if (abs(el(ix)+one).le.pieni) then
+            dki(ix,1) = ed(ix)
+            dki(ix,3) = ek(ix)
+            ed(ix) = one
+            ek(ix) = one
+            el(ix) = zero
+         else if(abs(el(ix)+two).le.pieni) then
+            dki(ix,2) = ed(ix)
+            dki(ix,3) = ek(ix)
+            ed(ix) = one
+            ek(ix) = one
+            el(ix) = zero
+         endif
+         
+         !All multipoles:
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                  !--Initialize smiv as usual
+                  sm(ix)=ed(ix)
+                  smiv(m,i)=sm(ix)+smizf(i) 
+                  smi(i)=smiv(m,i)
+
+                  !--Using the right izu & setting aaiv, bbiv (see multini)
+                  izu = dynk_izuIndex(ix)
++ca multini !Also in program maincr()
+ 150              continue ! needs to be after a multini block
+
+                  ! From trauthin() -- TODO: Check that it matches TRAUTHICK
+                  r0=ek(ix)
+                  nmz=nmu(ix)
+                  if(abs(r0).le.pieni.or.nmz.eq.0) then
+                     if(abs(dki(ix,1)).le.pieni .and. 
+     &                    abs(dki(ix,2)).le.pieni) then
+                        ktrack(i)=31
+                     else if(abs(dki(ix,1)).gt.pieni .and.
+     &                       abs(dki(ix,2)).le.pieni) then
+                        if(abs(dki(ix,3)).gt.pieni) then
+                           ktrack(i)=33
 +ca stra11
-            else
-              ktrack(i)=35
+                        else
+                           ktrack(i)=35
 +ca stra12
-            endif
-          else if(abs(dki(ix,1)).le.pieni.and.abs(dki(ix,2)).gt.pieni)  &
-     &then
-            if(abs(dki(ix,3)).gt.pieni) then
-              ktrack(i)=37
+                        endif
+                     else if(abs(dki(ix,1)).le.pieni .and. 
+     &                       abs(dki(ix,2)).gt.pieni) then
+                        if(abs(dki(ix,3)).gt.pieni) then
+                           ktrack(i)=37
 +ca stra13
-            else
-              ktrack(i)=39
+                        else
+                            ktrack(i)=39
 +ca stra14
-            endif
-          endif
-        else
-          if(abs(dki(ix,1)).le.pieni.and.abs(dki(ix,2)).le.pieni) then
-            ktrack(i)=32
-          else if(abs(dki(ix,1)).gt.pieni.and.abs(dki(ix,2)).le.pieni)  &
-     &then
-            if(abs(dki(ix,3)).gt.pieni) then
-              ktrack(i)=34
+                        endif
+                     endif
+                  else
+                     if(abs(dki(ix,1)).le.pieni .and. 
+     &                    abs(dki(ix,2)).le.pieni) then
+                        ktrack(i)=32
+                     else if(abs(dki(ix,1)).gt.pieni .and. 
+     &                       abs(dki(ix,2)).le.pieni) then
+                        if(abs(dki(ix,3)).gt.pieni) then
+                           ktrack(i)=34
 +ca stra11
-            else
-              ktrack(i)=36
+                        else
+                           ktrack(i)=36
 +ca stra12
-            endif
-          else if(abs(dki(ix,1)).le.pieni.and.abs(dki(ix,2)).gt.pieni)  &
-     &then
-            if(abs(dki(ix,3)).gt.pieni) then
-              ktrack(i)=38
+                        endif
+                     else if(abs(dki(ix,1)).le.pieni .and. 
+     &                       abs(dki(ix,2)).gt.pieni) then
+                        if(abs(dki(ix,3)).gt.pieni) then
+                           ktrack(i)=38
 +ca stra13
-            else
-              ktrack(i)=40
+                        else
+                           ktrack(i)=40
 +ca stra14
-            endif
-          endif
-        endif
+                        endif
+                     endif
+                  endif
                endif
             enddo
-         endif 
+         endif
+!--Cavities (BROKEN)
+c$$$      elseif(abs(kz(ix)).eq.12) then !Some 1st time initialization in daten()
+c$$$         ! TODO: If we try to change a cavity with DYNK, we will always get the ELSE -> prror(-1)
+c$$$         ! Oops...
+c$$$         if (lfirst) then
+c$$$            lisinit(ix)=.true.
+c$$$         elseif ( .not. lisinit(ix) ) then !not lfirst and not lisinit
+c$$$            call prror(-1)
+c$$$         else !not lfirst
+c$$$            call prror(-1)
+c$$$         endif
+c$$$         phasc(ix)=el(ix)
+c$$$         el(ix)=zero
 !--Crab Cavities
       elseif(abs(kz(ix)).eq.23) then
+         !Moved from daten()
          crabph(ix)=el(ix)
          el(ix)=0d0
 !--CC Mult kick order 2
       elseif(abs(kz(ix)).eq.26) then
+         !Moved from daten()
          crabph2(ix)=el(ix)
          el(ix)=0d0
 !--CC Mult kick order 3
       elseif(abs(kz(ix)).eq.27) then
+         !Moved from daten()
          crabph3(ix)=el(ix)
          el(ix)=0d0
 !--CC Mult kick order 4
       else if(abs(kz(ix)).eq.28) then
+         !Moved from daten()
          crabph4(ix)=el(ix)
          el(ix)=0d0
       endif
@@ -25533,10 +25541,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
 !-- MULTIPOLE BLOCK
           if(kzz.eq.11) then
-            dynk_izuIndex(ix)=izu
+             dynk_izuIndex(ix)=izu
 +ca multini
           endif
-  150   continue
+ 150   continue
 +if debug
 !     call dumpbin('ado 150',150,150)
 !     call abend('ado 150                                           ')
@@ -36069,6 +36077,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca solenoid
         ktrack(i)=56
         goto 290
+!--Multipole block
   150   r0=ek(ix)
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
@@ -49697,7 +49706,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
           ic(ii)=msym(i)*ic(ihi)
    30 if(ic(ii).lt.-nblo) ic(ii)=-ic(ii)
 !--ORGANISATION OF RANDOM NUMBERS
-   40 iu=mper*mbloz ! < -- !!!
+   40 iu=mper*mbloz
       if(niu(1).lt.0) niu(1)=iabs(niu(1))
       if(niu(2).lt.0) niu(2)=iabs(niu(2))
       if(niu(1).eq.0) niu(1)=1
