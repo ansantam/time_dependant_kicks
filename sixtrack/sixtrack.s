@@ -1334,6 +1334,10 @@ C     Store the SET statements
                                                                    ! but only one entry per elem/attr
       double precision fsets_origvalue_dynk(maxsets_dynk) ! Store original value from dynk
       integer nsets_unique_dynk ! Number of used positions in arrays
+
+!--Storing the right izu for multipoles in dynk
+      integer dynk_izuIndex
+      dimension dynk_izuIndex(nele)
       
 !     fortran COMMON declaration follows padding requirements
       common /dynkComGen/ ldynk, ldynkdebug,
@@ -1346,6 +1350,8 @@ C     Store the SET statements
       common /dynkComSet/ sets_dynk, csets_dynk, nsets_dynk
       common /dynkComUniqueSet/ 
      &     csets_unique_dynk, fsets_origvalue_dynk, nsets_unique_dynk
+     
+      common /dynkComReinitialize/ dynk_izuIndex
 
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
@@ -1588,6 +1594,41 @@ C     Store the SET statements
 !     call dumpbin('abeamcou',2,22)
 !     call abend('after beam coupling                               ')
 +ei
++cd multini
+!--Block used in the code regarding the DYNK block, to treat multipoles. It stores the correct izu index (FLUC) and sets aaiv and bbiv (multipole kicks) 
+      r0=ek(ix)
+      if(abs(r0).le.pieni) goto 150 ! label 150 - just after this code
+      nmz=nmu(ix)
+      if(nmz.eq.0) then
+         izu=izu+2*mmul
+         goto 150
+      endif
+      im=irm(ix)
+      r0a=one
+      do k=1,nmz
+         izu=izu+1
+!     hr05         aaiv(k,m,i)=ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k))/r0a
+         aaiv(k,m,i)=(ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k)))/r0a !hr05
++if time
+!     hr05         aaiv35(k,m,i)=ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k))/r0a
+         aaiv35(k,m,i)=(ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k)))/r0a !hr05
++ei
+         aai(i,k)=aaiv(k,m,i)
+         izu=izu+1
+!     hr05         bbiv(k,m,i)=ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k))/r0a
+         bbiv(k,m,i)=(ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k)))/r0a !hr05
++if time
+!     hr05         bbiv35(k,m,i)=ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k))/r0a
+         bbiv35(k,m,i)=(ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k)))/r0a !hr05
++ei
+         bbi(i,k)=bbiv(k,m,i)
+ 
+         r0a=r0a*r0
+      enddo
+      
+      izu=izu+2*mmul-2*nmz
+!------------------------------------------------------------------------------------        
+
 +cd alignf
 +if .not.tilt
 *FOX  XL=X(1)-XS ;
@@ -19229,7 +19270,7 @@ cc2008
 
       end subroutine
       
-      subroutine initialize_element(elIdx,lfirst)
+      subroutine initialize_element(ix,lfirst)
 !
 !-----------------------------------------------------------------------
 !     K.Sjobak & A.Santamaria, BE-ABP/HSS
@@ -19243,150 +19284,154 @@ cc2008
 !
       implicit none
       
-      integer, intent(in) :: elIdx
+      integer, intent(in) :: ix
       logical, intent(in) :: lfirst
+
+      integer im, izu, store_izu, k, m, nmz, r0, r0a !needed to use multini
+
 +ca parpro !needed for common
 +ca parnum !zero
 +ca common
 +ca commonmn
 +ca commontr
 +ca commonxz
++ca comdynk
       
       !Set the element to true when initialized - some elements need to be present in fort.2 and then later changed
       logical, save :: lisinit(nele) = .false.
       integer i
 
 !--Cavities
-      if(abs(kz(elIdx)).eq.12) then  !Some 1st time initialization in daten()
+      if(abs(kz(ix)).eq.12) then  !Some 1st time initialization in daten()
          ! TODO: If we try to change a cavity with DYNK, we will always get the ELSE -> prror(-1)
          ! Oops...
          if (lfirst) then
-            lisinit(elIdx)=.true.
-         elseif ( .not. lisinit(elIdx) ) then !not lfirst and not lisinit
+            lisinit(ix)=.true.
+         elseif ( .not. lisinit(ix) ) then !not lfirst and not lisinit
             call prror(-1)
          else !not lfirst
             call prror(-1)
          endif
-         phasc(elIdx)=el(elIdx)
-         el(elIdx)=zero
+         phasc(ix)=el(ix)
+         el(ix)=zero
 !--Nonlinear Elements
-      elseif(kz(elIdx).eq.1) then
+      elseif(kz(ix).eq.1) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra01
                endif
             enddo
          endif 
 
-      elseif(kz(elIdx).eq.2) then
+      elseif(kz(ix).eq.2) then
          if(.not.lfirst) then
             do i=1,mbloz !--Kyrre: more than mbloz I think?, Andrea: it is lfirst=.false.
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra02
                endif
             enddo
          endif 
-      elseif(kz(elIdx).eq.3) then
+      elseif(kz(ix).eq.3) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra03
                endif
             enddo
          endif 
 
-      elseif((kz(elIdx).eq.4).and.
-     &   abs(el(elIdx)).gt.pieni) then
-         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
+      elseif((kz(ix).eq.4).and.
+     &   abs(el(ix)).gt.pieni) then
+         ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra04
                endif
             enddo
          endif 
 
-      elseif((kz(elIdx).eq.5).and.
-     &   abs(el(elIdx)).gt.pieni) then
-         ed(elIdx)=-1d0*ed(elIdx)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
+      elseif((kz(ix).eq.5).and.
+     &   abs(el(ix)).gt.pieni) then
+         ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra05
                endif
             enddo
          endif   
 
-      elseif(kz(elIdx).eq.6) then
+      elseif(kz(ix).eq.6) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra06
                endif
             enddo
          endif  
 
-      elseif(kz(elIdx).eq.7) then
+      elseif(kz(ix).eq.7) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra07
                endif
             enddo
          endif         
 
-      elseif(kz(elIdx).eq.8) then
+      elseif(kz(ix).eq.8) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra08
                endif
             enddo
          endif 
 
-      elseif(kz(elIdx).eq.9) then
+      elseif(kz(ix).eq.9) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra09
                endif
             enddo
          endif 
 
-      elseif(kz(elIdx).eq.10) then
+      elseif(kz(ix).eq.10) then
          if(.not.lfirst) then
             do i=1,mbloz
-               if ( ic(i)-nblo.eq.elIdx ) then
-                 sm(elIdx)=ed(elIdx)
-                 smiv(1,i)=sm(elIdx)+smizf(i)
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
 +ca stra10
                endif
@@ -19394,96 +19439,101 @@ cc2008
          endif 
 !--Multipoles
 !--Treating dipoles ("special" case), read from fort.2
-      elseif(kz(elIdx).eq.11.and.abs(el(elIdx)+one).le.pieni) then
-         dki(elIdx,1) = ed(elIdx)
-         dki(elIdx,3) = ek(elIdx)
-         ed(elIdx) = one
-         ek(elIdx) = one
-         el(elIdx) = zero
-      elseif(kz(elIdx).eq.11.and.abs(el(elIdx)+two).le.pieni) then
-         dki(elIdx,2) = ed(elIdx)
-         dki(elIdx,3) = ek(elIdx)
-         ed(elIdx) = one
-         ek(elIdx) = one
-         el(elIdx) = zero
-!--Setting up tracking variables 
-!--ktracks not included since they weren't necessary in the non linear elements
-c$$$      elseif(kz(elIdx).eq.11) then
-c$$$         if(.not.lfirst) then
-c$$$            do i=1,mbloz
-c$$$               if (ic(i)-nblo.eq.elIdx) then
-c$$$
-c$$$                  smiv(1,i) = sm(elIdx)+smizf(i)
-c$$$                  smi(i)    = smiv(1,i)
-c$$$
-c$$$                  do 140 k=1,nmz
-c$$$                    izu=izu+1
-c$$$                    aaiv(k,m,i)=(ed(elIdx)*(ak0(im,k)+zfz(izu)*
-c$$$     &              aka(im,k)))/r0a
-c$$$                    bbiv(k,m,i)=(ed(elIdx)*(bk0(im,k)+zfz(izu)*
-c$$$     &              bka(im,k)))/r0a
-c$$$                    bbi(i,k)=bbiv(k,m,i)
-c$$$ 140                r0a=r0a*r0
-c$$$                    izu=izu+2*mmul-2*nmz
-c$$$
-c$$$                  r0 = ek(elIdx)
-c$$$                  nmz = nmu(elIdx) !--highest multipole order
-c$$$                  im = irm(elIdx)  !--irm(ix) = MUL block index
-c$$$
-c$$$                  if(abs(dki(elIdx,1)).gt.pieni.and.
-c$$$     &            abs(dki(elIdx,2)).le.pieni) then  
-c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
-c$$$+ca stra11
-c$$$                     else
-c$$$+ca stra12
-c$$$                     endif
-c$$$                  elseif(abs(dki(elIdx,1)).le.pieni.and.
-c$$$     &            abs(dki(elIdx,2)).gt. pieni) then  
-c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
-c$$$+ca stra13
-c$$$                     else
-c$$$+ca stra14
-c$$$                     endif
-c$$$                  elseif(abs(dki(elIdx,1)).gt.pieni.and.
-c$$$     &            abs(dki(elIdx,2)).le.pieni) then  
-c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
-c$$$+ca stra11
-c$$$                     else
-c$$$+ca stra12
-c$$$                     endif
-c$$$                  elseif(abs(dki(elIdx,1)).le.pieni.and.
-c$$$     &            abs(dki(elIdx,2)).gt.pieni) then  
-c$$$                     if(abs(dki(elIdx,3)).gt.pieni) then
-c$$$+ca stra13
-c$$$                     else
-c$$$+ca stra14
-c$$$                     endif
-c$$$                  endif
-c$$$
-c$$$                  if(mout2.eq.1) then
-c$$$                     benkcc = ed(elIdx)*benkc(irm(elIdx))
-c$$$                     r0a = one
-c$$$                     r000 = r0*r00(irm(elIdx))
-c$$$                  endif
-c$$$               endif
-c$$$            enddo
-c$$$         endif 
+      elseif(kz(ix).eq.11.and.abs(el(ix)+one).le.pieni) then
+         dki(ix,1) = ed(ix)
+         dki(ix,3) = ek(ix)
+         ed(ix) = one
+         ek(ix) = one
+         el(ix) = zero
+      elseif(kz(ix).eq.11.and.abs(el(ix)+two).le.pieni) then
+         dki(ix,2) = ed(ix)
+         dki(ix,3) = ek(ix)
+         ed(ix) = one
+         ek(ix) = one
+         el(ix) = zero
+!--Treating all multipoles
+      elseif(kz(ix).eq.11) then
+!--Read fort.16
+!----------------------------
+         if(.not.lfirst) then
+            do i=1,mbloz
+               if ( ic(i)-nblo.eq.ix ) then
+!--Using the right izu & setting aaiv, bbiv (see multini)
+                  store_izu = izu
+                  izu = dynk_izuIndex(ix)
++ca multini
+                  izu = store_izu
+                  store_izu = 0
+  150   continue !needs to be after a multini block
+!--Initialize smiv
+                  smizf(i)=zfz(izu)*ek(ix)
+                  smiv(m,i)=sm(ix)+smizf(i) 
+                  smi(i)=smiv(m,i)   
+
+        if(abs(r0).le.pieni.or.nmz.eq.0) then
+          if(abs(dki(ix,1)).le.pieni.and.abs(dki(ix,2)).le.pieni) then
+            ktrack(i)=31
+          else if(abs(dki(ix,1)).gt.pieni.and.abs(dki(ix,2)).le.pieni)  &
+     &then
+            if(abs(dki(ix,3)).gt.pieni) then
+              ktrack(i)=33
++ca stra11
+            else
+              ktrack(i)=35
++ca stra12
+            endif
+          else if(abs(dki(ix,1)).le.pieni.and.abs(dki(ix,2)).gt.pieni)  &
+     &then
+            if(abs(dki(ix,3)).gt.pieni) then
+              ktrack(i)=37
++ca stra13
+            else
+              ktrack(i)=39
++ca stra14
+            endif
+          endif
+        else
+          if(abs(dki(ix,1)).le.pieni.and.abs(dki(ix,2)).le.pieni) then
+            ktrack(i)=32
+          else if(abs(dki(ix,1)).gt.pieni.and.abs(dki(ix,2)).le.pieni)  &
+     &then
+            if(abs(dki(ix,3)).gt.pieni) then
+              ktrack(i)=34
++ca stra11
+            else
+              ktrack(i)=36
++ca stra12
+            endif
+          else if(abs(dki(ix,1)).le.pieni.and.abs(dki(ix,2)).gt.pieni)  &
+     &then
+            if(abs(dki(ix,3)).gt.pieni) then
+              ktrack(i)=38
++ca stra13
+            else
+              ktrack(i)=40
++ca stra14
+            endif
+          endif
+        endif
+               endif
+            enddo
+         endif 
 !--Crab Cavities
-      elseif(abs(kz(elIdx)).eq.23) then
-         crabph(elIdx)=el(elIdx)
-         el(elIdx)=0d0
+      elseif(abs(kz(ix)).eq.23) then
+         crabph(ix)=el(ix)
+         el(ix)=0d0
 !--CC Mult kick order 2
-      elseif(abs(kz(elIdx)).eq.26) then
-         crabph2(elIdx)=el(elIdx)
-         el(elIdx)=0d0
+      elseif(abs(kz(ix)).eq.26) then
+         crabph2(ix)=el(ix)
+         el(ix)=0d0
 !--CC Mult kick order 3
-      elseif(abs(kz(elIdx)).eq.27) then
-         crabph3(elIdx)=el(elIdx)
-         el(elIdx)=0d0
+      elseif(abs(kz(ix)).eq.27) then
+         crabph3(ix)=el(ix)
+         el(ix)=0d0
 !--CC Mult kick order 4
-      else if(abs(kz(elIdx)).eq.28) then
-         crabph4(elIdx)=el(elIdx)
-         el(elIdx)=0d0
+      else if(abs(kz(ix)).eq.28) then
+         crabph4(ix)=el(ix)
+         el(ix)=0d0
       endif
       
       end subroutine
@@ -25483,39 +25533,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
 !-- MULTIPOLE BLOCK
           if(kzz.eq.11) then
-            r0=ek(ix)
-            if(abs(r0).le.pieni) goto 150
-            nmz=nmu(ix)
-            if(nmz.eq.0) then
-              izu=izu+2*mmul
-              goto 150
-            endif
-            im=irm(ix)
-            r0a=one
-            do 140 k=1,nmz
-              izu=izu+1
-!hr05         aaiv(k,m,i)=ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k))/r0a
-              aaiv(k,m,i)=(ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k)))/r0a    !hr05
-+if time
-!hr05         aaiv35(k,m,i)=ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k))/r0a
-             aaiv35(k,m,i)=(ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k)))/r0a !hr05
-+ei
-              aai(i,k)=aaiv(k,m,i)
-              izu=izu+1
-!hr05         bbiv(k,m,i)=ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k))/r0a
-              bbiv(k,m,i)=(ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k)))/r0a    !hr05
-+if time
-!hr05         bbiv35(k,m,i)=ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k))/r0a
-             bbiv35(k,m,i)=(ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k)))/r0a !hr05
-+ei
-              bbi(i,k)=bbiv(k,m,i)
-              write (*,*) "DBGDBG: ", ix, k, ed(ix),
-     &             aaiv(k,m,i), bbiv(k,m,i),
-     &             "MAINCR"
-
-  140         r0a=r0a*r0
-              izu=izu+2*mmul-2*nmz
-              
+            dynk_izuIndex(ix)=izu
++ca multini
           endif
   150   continue
 +if debug
@@ -45012,7 +45031,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !-----------------------------------------------------------------------
 !     
       implicit none
-      
++ca parpro      
 +ca comdynk
 +ca comgetfields
       
@@ -45756,6 +45775,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       implicit none
       integer iblocks,fblocks,cblocks
       intent(in) iblocks,fblocks,cblocks
++ca parpro
 +ca comdynk      
 
       if ( (niexpr_dynk+iblocks .gt. maxdata_dynk) .or.
@@ -45779,6 +45799,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     store it in COMMON block dynkComExpr.
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
 +ca comgetfields
       integer ii
@@ -45874,7 +45895,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     Return -1 if nothing was found.
 !-----------------------------------------------------------------------
       implicit none
-
++ca parpro
 +ca comdynk
 
       character(maxstrlen_dynk) funName
@@ -45904,6 +45925,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     Return -1 if nothing was found.
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
       character(maxstrlen_dynk) element_name, att_name
       integer startfrom
@@ -45930,6 +45952,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     Check that DYNK block input in fort.3 was sane
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
       ! functions
       integer dynk_findFUNindex , dynk_findSETindex
@@ -45990,7 +46013,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     Dump arrays with DYNK FUN and SET data to the std. output for debugging
 !----------------------------------------------------------------------------
       implicit none
-      
++ca parpro      
 +ca comdynk
       character(maxstrlen_dynk) dynk_stringzerotrim
 
@@ -46056,6 +46079,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     the program may deadlock!
 !----------------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
       character(maxstrlen_dynk) dynk_stringzerotrim, instring
       intent(in) instring
@@ -46082,6 +46106,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     that elements/attributes for SET actually exist.
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
       !Functions
       double precision dynk_getvalue_single
@@ -46324,6 +46349,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     If turn = 0 and -nsets_unique_dynk<funNum<0: reset to original value
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk
       integer funNum, turn
       intent (in) funNum, turn
@@ -46612,12 +46638,24 @@ C     Here comes the logic for setting the value of the attribute for all instan
               call prror(-1)
             endif
             call initialize_element(ii, .false.)
-          elseif (abs(el_type).eq.11) then ! multipoles 
-            if (att_name_stripped.eq."bending_str") then ! [rad]
-               ed(ii) = dynk_computeFUN(funNum,turn)
-            elseif (att_name_stripped.eq."radius") then ![m]
-               ek(ii) = dynk_computeFUN(funNum,turn)
-            else
+          elseif (abs(el_type).eq.11.and.abs(el(ii)+one).le.pieni) then ! multipoles 
+             if (att_name_stripped.eq."bending_str") then 
+                dki(ii,1) = dynk_computeFUN(funNum,turn)
+             elseif (att_name_stripped.eq."radius") then
+                dki(ii,3) = dynk_computeFUN(funNum,turn)
+             endif
+          elseif (abs(el_type).eq.11.and.abs(el(ii)+two).le.pieni) then
+             if (att_name_stripped.eq."bending_str") then 
+                dki(ii,2) = dynk_computeFUN(funNum,turn)
+             elseif (att_name_stripped.eq."radius") then
+                dki(ii,3) = dynk_computeFUN(funNum,turn)
+             endif
+          elseif (abs(el_type).eq.11) then
+             if (att_name_stripped.eq."bending_str") then ! [rad]
+                ed(ii) = dynk_computeFUN(funNum,turn)
+             elseif (att_name_stripped.eq."radius") then ![m]
+                ek(ii) = dynk_computeFUN(funNum,turn)
+             else
               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
      &             "does not exist for type =", el_type, "(multipole)"
@@ -46672,7 +46710,15 @@ C     Here comes the logic for setting the value of the attribute for all instan
             elseif (att_name_stripped.eq."frequency") then ![MHz]
                ek(ii) = dynk_computeFUN(funNum,turn)
             elseif (att_name_stripped.eq."phase") then ![rad]
-               el(ii) = dynk_computeFUN(funNum,turn)
+               if (abs(el_type).eq.23) then
+                 crabph(ii) = dynk_computeFUN(funNum,turn)
+               elseif (abs(el_type).eq.26) then
+                 crabph2(ii) = dynk_computeFUN(funNum,turn)
+               elseif (abs(el_type).eq.27) then
+                 crabph3(ii) = dynk_computeFUN(funNum,turn)
+               elseif (abs(el_type).eq.28) then
+                 crabph4(ii) = dynk_computeFUN(funNum,turn)
+               endif     
             else
                WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
                WRITE (*,*) "DYNK> attribute '",att_name_stripped,"' ",
@@ -46748,20 +46794,48 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &                 " for type",el_type," name '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
-            elseif (abs(el_type).eq.11) then ! multipoles 
-               if (att_name_s.eq."bending_str") then ! [rad]
+          elseif (abs(el_type).eq.11.and.abs(el(ii)+one).le.pieni) then ! multipoles 
+             if (att_name_s.eq."bending_str") then 
                   nretdata = nretdata+1
-                  retdata(nretdata) = ed(ii)                
-               elseif (att_name_s.eq."radius") then ! [m]
+                  retdata(nretdata) = dki(ii,1)    
+             elseif (att_name_s.eq."radius") then
+                  nretdata = nretdata+1
+                  retdata(nretdata) = dki(ii,3) 
+             else
+                write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                write(*,*) "DYNK> Unknown attribute '",
+     &               trim(att_name_s),"'",
+     &               " for multipole '", trim(bez(ii)), "'"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.11.and.abs(el(ii)+two).le.pieni) then
+             if (att_name_s.eq."bending_str") then 
+                  nretdata = nretdata+1
+                  retdata(nretdata) = dki(ii,2) 
+             elseif (att_name_s.eq."radius") then
+                  nretdata = nretdata+1
+                  retdata(nretdata) = dki(ii,3) 
+             else
+                write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                write(*,*) "DYNK> Unknown attribute '",
+     &               trim(att_name_s),"'",
+     &               " for multipole '", trim(bez(ii)), "'"
+                call prror(-1)
+             endif
+          elseif (abs(el_type).eq.11) then
+             if (att_name_s.eq."bending_str") then ! [rad]
+                  nretdata = nretdata+1
+                  retdata(nretdata) = ed(ii)  
+             elseif (att_name_s.eq."radius") then ![m]
                   nretdata = nretdata+1
                   retdata(nretdata) = ek(ii) 
-               else
-                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*) "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-                  call prror(-1)
-               endif
+             else
+                write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                write(*,*) "DYNK> Unknown attribute '",
+     &               trim(att_name_s),"'",
+     &               " for multipole '", trim(bez(ii)), "'"
+                call prror(-1)
+             endif
             elseif (abs(el_type).eq.12) then ! cavities 
                if (att_name_s.eq."voltage") then ! MV
                   nretdata = nretdata+1
@@ -46864,6 +46938,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
 !     Wraps dynk_getvalue.
 !-----------------------------------------------------------------------
       implicit none
++ca parpro
 +ca comdynk      
       character(maxstrlen_dynk) element_name, att_name
       intent(in) element_name, att_name
