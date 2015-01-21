@@ -19510,7 +19510,7 @@ cc2008
             enddo
          endif
 !--Cavities (BROKEN)
-c$$$      elseif(abs(kz(ix)).eq.12) then !Some 1st time initialization in daten()
+      elseif(abs(kz(ix)).eq.12) then !Some 1st time initialization in daten()
 c$$$         ! TODO: If we try to change a cavity with DYNK, we will always get the ELSE -> prror(-1)
 c$$$         ! Oops...
 c$$$         if (lfirst) then
@@ -19520,8 +19520,9 @@ c$$$            call prror(-1)
 c$$$         else !not lfirst
 c$$$            call prror(-1)
 c$$$         endif
-c$$$         phasc(ix)=el(ix)
-c$$$         el(ix)=zero
+         ! Moved from daten:
+         phasc(ix)=el(ix)
+         el(ix)=zero
 !--Crab Cavities
       elseif(abs(kz(ix)).eq.23) then
          !Moved from daten()
