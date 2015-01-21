@@ -1595,7 +1595,9 @@ C     Store the SET statements
 !     call abend('after beam coupling                               ')
 +ei
 +cd multini
-!--Block used in the code regarding the DYNK block, to treat multipoles. It stores the correct izu index (FLUC) and sets aaiv and bbiv (multipole kicks) 
+!-- Initialize multipoles, combining settings from fort.2 with 
+!-- coefficients from MULT and random values from FLUC. 
+!-- Used in program maincr and from initialize_elements.
       r0=ek(ix)
       if(abs(r0).le.pieni) goto 150 ! label 150 - just after this code
       nmz=nmu(ix)
@@ -18360,7 +18362,8 @@ cc2008
 !-----------------------------------------------------------------------
 !  DYNAMIC KICKS
 !  A.Mereghetti, for the FLUKA Team
-!  last modified: 03-09-2014
+!  K.Sjobak & A. Santamaria, BE-ABP/HSS
+!  last modified: 21-01-2014
 !  always in main code
 !-----------------------------------------------------------------------
  2200 read(3,10020,end=1530,iostat=ierro) ch
@@ -18372,12 +18375,24 @@ cc2008
 
       if (ch(:4).eq."DEBU") then
          ldynkdebug = .true.
-         write (*,*) "DYNK> DYNK block debugging is ON"
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &        "DYNK> DYNK block debugging is ON"
          goto 2200 !loop DYNK
          
       else if (ch(:6).eq."NOFILE") then
          ldynkfiledisable = .true.
-         write (*,*) "DYNK> Disabled writing dynksets.dat"
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &        "DYNK> Disabled writing dynksets.dat"
          goto 2200 !loop DYNK
          
       else if (ch(:3).eq."FUN") then
@@ -18385,10 +18400,22 @@ cc2008
      &        getfields_nfields, getfields_lerr )
          if ( getfields_lerr ) call prror(51)
          if (ldynkdebug) then
-            write (*,*) "DYNKDEBUG> Got a FUN block, len=", 
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*)
++ei
+     &           "DYNKDEBUG> Got a FUN block, len=", 
      &           len(ch), ": '", ch, "'"
             do ii=1,getfields_nfields
-               write (*,*) "DYNKDEBUG> Field(",ii,") ='",
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNKDEBUG> Field(",ii,") ='",
      &              getfields_fields(ii)(1:getfields_lfields(ii)),"'"
             enddo
          endif
@@ -18401,10 +18428,22 @@ cc2008
      &        getfields_nfields, getfields_lerr )
          if ( getfields_lerr ) call prror(51)
          if (ldynkdebug) then
-            write (*,*) "DYNKDEBUG> Got a SET block, len=", 
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*)
++ei
+     &           "DYNKDEBUG> Got a SET block, len=", 
      &           len(ch), ": '", ch, "'"
             do ii=1,getfields_nfields
-               write (*,*) "DYNKDEBUG> Field(",ii,") ='",
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNKDEBUG> Field(",ii,") ='",
      &              getfields_fields(ii)(1:getfields_lfields(ii)),"'"
             enddo
          endif
@@ -18414,14 +18453,28 @@ cc2008
 
       else if (ch(:4).eq.next) then
          if (ldynkdebug) then
-            write (*,*) "DYNKDEBUG> Finished parsing DYNK block"
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*)
++ei
+     &           "DYNKDEBUG> Finished parsing DYNK block"
             call dynk_dumpdata
          endif
          if (ldynk) then
++if cr
+            write (lout,*)
+            write (lout,*) "******************************************"
+            write (lout,*) "** More than one DYNK block encountered **"
+            write (lout,*) "******************************************"
++ei
++if .not.cr
             write (*,*)
             write (*,*) "******************************************"
             write (*,*) "** More than one DYNK block encountered **"
             write (*,*) "******************************************"
++ei
             call prror(51)
          else
             ldynk = .true.
@@ -18430,19 +18483,38 @@ cc2008
          goto 110 ! loop BLOCK
 
       else
++if cr
+         write (lout,*) 
+         write (lout,*) "*******************************************"
+         write (lout,*) "ERROR while parsing DYNK block in fort.3"
+         write (lout,*) 
+     &        "Expected keywords FUN, SET, DEBU, NOFILE or NEXT"
+         write (lout,*) "Got ch:"
+         write (lout,*) "'"//ch//"'"
+         write (lout,*) "*******************************************"
++ei
++if .not.cr
          write (*,*) 
          write (*,*) "*******************************************"
          write (*,*) "ERROR while parsing DYNK block in fort.3"
-         write (*,*) "Expected keywords FUN, SET or NEXT"
+         write (*,*) "Expected keywords FUN, SET, DEBU, NOFILE or NEXT"
          write (*,*) "Got ch:"
          write (*,*) "'"//ch//"'"
          write (*,*) "*******************************************"
++ei
          call prror(51)
       endif
-      ! Should never be here
+      ! Should never arrive here
++if .not.cr
       write (*,*) "*****************************"
       write (*,*) "*LOGIC ERROR IN PARSING DYNK*"
       write (*,*) "*****************************"
++ei
++if cr
+      write (lout,*) "*****************************"
+      write (lout,*) "*LOGIC ERROR IN PARSING DYNK*"
+      write (lout,*) "*****************************"
++ei
       call prror(51)
 
 !-----------------------------------------------------------------------
@@ -45964,6 +46036,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       implicit none
 +ca parpro
 +ca comdynk
++if cr
++ca crcoall
++ei
       ! functions
       integer dynk_findFUNindex , dynk_findSETindex
 
@@ -45976,7 +46051,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          jj = dynk_findFUNindex(cexpr_dynk(funcs_dynk(ii,1)),ii+1)
          if ( jj.ne. -1) then
             sane = .false.
-            write (*,*) "DYNK> Insane: function ", 
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*) 
++ei
+     &           "DYNK> Insane: function ", 
      &           ii, "has the same name as", jj
          end if
       end do
@@ -45991,14 +46072,26 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             if ( sets_dynk(jj,2) .le. sets_dynk(ii,2) .and.
      &           sets_dynk(jj,3) .ge. sets_dynk(ii,2) ) then
                sane = .false.
-               write (*,*) "DYNK> Insane: Lower edge of SET #", jj,
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*) 
++ei
+     &              "DYNK> Insane: Lower edge of SET #", jj,
      &         "=", sets_dynk(jj,2)," <= lower edge of SET #",ii,
      &         "=", sets_dynk(ii,2),"; and also higer edge of SET #",jj,
      &         "=", sets_dynk(jj,3)," >= lower edge of SET #", ii
             else if (sets_dynk(jj,3) .ge. sets_dynk(ii,3) .and.
      &               sets_dynk(jj,2) .le. sets_dynk(ii,3) ) then
                sane = .false.
-               write (*,*) "DYNK> Insane: Upper edge of SET #", jj,
++if cr
+               write(lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNK> Insane: Upper edge of SET #", jj,
      &         "=", sets_dynk(jj,3)," >= upper edge of SET #",ii,
      &         "=", sets_dynk(ii,3),"; and also lower edge of SET #",jj,
      &         "=", sets_dynk(jj,2)," <= upper edge of SET #", ii
@@ -46006,13 +46099,26 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          enddo
       enddo
       if (.not. sane) then
-         write (*,*) "****************************************"
-         write (*,*) "*******DYNK input was insane************"
-         write (*,*) "****************************************"
++if cr
+         write (lout,*) "****************************************"
+         write (lout,*) "*******DYNK input was insane************"
+         write (lout,*) "****************************************"
++ei
++if .not.cr
+         write (*,*)    "****************************************"
+         write (*,*)    "*******DYNK input was insane************"
+         write (*,*)    "****************************************"
++ei
          call dynk_dumpdata
          call prror(-11)
       else if (sane .and. ldynkdebug) then
-         write (*,*) "DYNK> DYNK input was sane"
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &        "DYNK> DYNK input was sane"
       end if
       end subroutine
 
@@ -46025,55 +46131,146 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       implicit none
 +ca parpro      
 +ca comdynk
++if cr
++ca crcoall
++ei
       character(maxstrlen_dynk) dynk_stringzerotrim
 
       integer ii
-      
-      write (*,*) "**************** DYNK parser knows: ****************"      
++if cr
+      write(lout,*)
++ei
++if .not.cr
+      write(*,*)
++ei      
+     &     "**************** DYNK parser knows: ****************"
 
-      write (*,*) "OPTIONS:"
-      write (*,*) " ldynk            =", ldynk
-      write (*,*) " ldynkdebug       =", ldynkdebug
-      write (*,*) " ldynkfiledisable =", ldynkfiledisable
-      write (*,*) " ldynkfileopen    =", ldynkfileopen
-      
-      write (*,*) "FUN:"
-      write (*,*) "ifuncs: (",nfuncs_dynk,")"
++if cr
+      write (lout,*) "OPTIONS:"
+      write (lout,*) " ldynk            =", ldynk
+      write (lout,*) " ldynkdebug       =", ldynkdebug
+      write (lout,*) " ldynkfiledisable =", ldynkfiledisable
+      write (lout,*) " ldynkfileopen    =", ldynkfileopen
++ei
++if .not.cr
+      write (*,*)    "OPTIONS:"
+      write (*,*)    " ldynk            =", ldynk
+      write (*,*)    " ldynkdebug       =", ldynkdebug
+      write (*,*)    " ldynkfiledisable =", ldynkfiledisable
+      write (*,*)    " ldynkfileopen    =", ldynkfileopen
++ei
+
++if cr
+      write (lout,*) "FUN:"
+      write (lout,*) "ifuncs: (",nfuncs_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "FUN:"
+      write (*,*)    "ifuncs: (",nfuncs_dynk,")"
++ei
       do ii=1,nfuncs_dynk
-         write (*,*) ii, ":", funcs_dynk(ii,:)
++if cr
+         write (lout,*) 
++ei
++if .not.cr
+         write (*,*) 
++ei
+     &        ii, ":", funcs_dynk(ii,:)
+
       end do
-      write (*,*) "iexpr_dynk: (",niexpr_dynk,")"
++if cr
+      write (lout,*) "iexpr_dynk: (",niexpr_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "iexpr_dynk: (",niexpr_dynk,")"
++ei
       do ii=1,niexpr_dynk
-         write (*,*) ii, ":", iexpr_dynk(ii)
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &     ii, ":", iexpr_dynk(ii)
       end do
-      write (*,*) "fexpr_dynk: (",nfexpr_dynk,")"
++if cr
+      write (lout,*) "fexpr_dynk: (",nfexpr_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "fexpr_dynk: (",nfexpr_dynk,")"
++ei
       do ii=1,nfexpr_dynk
-         write (*,*) ii, ":", fexpr_dynk(ii)
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &   ii, ":", fexpr_dynk(ii)
       end do
-      write (*,*) "cexpr_dynk: (",ncexpr_dynk,")"
++if cr
+      write (lout,*) "cexpr_dynk: (",ncexpr_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "cexpr_dynk: (",ncexpr_dynk,")"
++ei
       do ii=1,ncexpr_dynk
-         write (*,*) ii, ":", "'"//
-     &        trim(dynk_stringzerotrim(cexpr_dynk(ii)))//"'"
++if cr
+         write(lout,*)
++ei
++if .not.cr
+         write(*,*)
++ei
+     &   ii, ":", "'"//trim(dynk_stringzerotrim(cexpr_dynk(ii)))//"'"
       end do
 
-      write (*,*) "SET:"      
-      write (*,*) "sets(,:) csets(,1) csets(,2): (",
++if cr
+      write (lout,*) "SET:"      
+      write (lout,*) "sets(,:) csets(,1) csets(,2): (",
      &     nsets_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "SET:"      
+      write (*,*)    "sets(,:) csets(,1) csets(,2): (",
+     &     nsets_dynk,")"
++ei
       do ii=1,nsets_dynk
-         write (*,*) ii, ":", sets_dynk(ii,:),
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*) 
++ei
+     &        ii, ":", sets_dynk(ii,:),
      &        "'"//trim(dynk_stringzerotrim(csets_dynk(ii,1)))//
      &  "' ", "'"//trim(dynk_stringzerotrim(csets_dynk(ii,2)))//"'"
       end do
       
-      write (*,*) "csets_unique_dynk: (",nsets_unique_dynk,")"
++if cr
+      write (lout,*) "csets_unique_dynk: (",nsets_unique_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "csets_unique_dynk: (",nsets_unique_dynk,")"
++ei
       do ii=1,nsets_unique_dynk
-         write (*,*) ii, ":", "'"//
++if cr
+         write(lout,*)
++ei
++if .not.cr
+         write (*,*) 
++ei
+     &       ii, ":", "'"//
      &       trim(dynk_stringzerotrim(csets_unique_dynk(ii,1)))//"' '"//
      &       trim(dynk_stringzerotrim(csets_unique_dynk(ii,2)))//"' = ",
      &        fsets_origvalue_dynk(ii)
       end do
 
-      write (*,*) "****************************************************"
++if cr
+      write (lout,*) "*************************************************"
++ei
++if .not.cr
+      write (*,*)    "*************************************************"
++ei
       
       end subroutine
 
@@ -46118,13 +46315,24 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       implicit none
 +ca parpro
 +ca comdynk
++if cr
++ca crcoall
++ei
       !Functions
       double precision dynk_getvalue
       integer dynk_findSETindex
       !Temp variables
       integer ii
 
-      if (ldynkdebug) write(*,*) "DYNKDEBUG> In dynk_pretrack()"
+      if (ldynkdebug) then
++if cr
+         write(lout,*)
++ei
++if .not.cr
+         write(*,*)
++ei
+     &    "DYNKDEBUG> In dynk_pretrack()"
+      end if
       
       ! Find which elem/attr combos are affected by SET
       nsets_unique_dynk = 0 !Assuming this is only run once
@@ -46178,6 +46386,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !-----------------------------------------------------------------------
       implicit none
 
++if cr
++ca crcoall
++ei
 +ca parpro
 +ca parnum
 +ca common
@@ -46204,8 +46415,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
       save ldynksetsEnable
 
-      if ( ldynkdebug ) 
-     &     write(*,*) 'DYNKDEBUG> In dynk_apply(), turn = ', turn
+      if ( ldynkdebug ) then
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &   'DYNKDEBUG> In dynk_apply(), turn = ', turn
+      end if
       
       !Initialize variables
       do jj=1, nsets_unique_dynk
@@ -46219,9 +46437,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! Reset RNGs
          do ii=1, nfuncs_dynk
             if (funcs_dynk(ii,2) .eq. 6) then !RANDG
-               if (ldynkdebug) write (*,*) 
+               if (ldynkdebug) then
++if cr
+                  write (lout,*) 
++ei
++if .not.cr
+                  write (*,*) 
++ei
      &              "DYNKDEBUG> Resetting RNG for FUN named '",
      &              cexpr_dynk(funcs_dynk(ii,1)), "'"
+               endif
 
                iexpr_dynk(funcs_dynk(ii,3)+3) =
      &         iexpr_dynk(funcs_dynk(ii,3) )
@@ -46239,12 +46464,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          ! Reset values
          do ii=1, nsets_unique_dynk
-            if (ldynkdebug)
-     &           write (*,*) "DYNKDEBUG> resetting: '",
+            if (ldynkdebug) then
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNKDEBUG> resetting: '",
      &               trim(dynk_stringzerotrim(csets_unique_dynk(ii,1))),
      &         "':'",trim(dynk_stringzerotrim(csets_unique_dynk(ii,2))),
      &         "', funNum=", -ii, "turn=", 0
-
+            endif
             call dynk_setvalue(csets_unique_dynk(ii,1),
      &                         csets_unique_dynk(ii,2),
      &                         -ii, 0 )
@@ -46261,7 +46492,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             ldynksetsEnable = .false.
          else
             write(665,*) "# turn element attribute SETidx funname ",
-     &        "nvalues value1 value2 ..."
+     &        "nvalues value1 value2 ..." !TODO Update file format
             ldynksetsEnable = .true.
          endif
          ldynkfileopen = .true.
@@ -46277,19 +46508,31 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             shiftedTurn = turn + sets_dynk(ii,4)
             
             !Set the value
-            if (ldynkdebug)
-     &           write(*,*) "DYNKDEBUG> Applying set #", ii, "on '",
+            if (ldynkdebug) then
++if cr
+               write(lout,*)
++ei
++if .not.cr
+               write(*,*)
++ei
+     &              "DYNKDEBUG> Applying set #", ii, "on '",
      &           trim(dynk_stringzerotrim(csets_dynk(ii,1))),
      &           "':'", trim(dynk_stringzerotrim(csets_dynk(ii,2))),
      &           "', shiftedTurn=",shiftedTurn
-
+            endif
             call dynk_setvalue(csets_dynk(ii,1), csets_dynk(ii,2),
      &           sets_dynk(ii,1), shiftedTurn )
             
             if (ldynkdebug) then
                getvaldata = dynk_getvalue( csets_dynk(ii,1), 
      &                                     csets_dynk(ii,2) )
-               write (*,*) "DYNKDEBUG> Read back value = ",
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNKDEBUG> Read back value = ",
      &              getvaldata
             endif
             
@@ -46346,6 +46589,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if crlibm
 +ca crlibco
 +ei
++if cr
++ca crcoall
++ei
       
       ! Temporaries for FILELIN
       integer filelin_start, filelin_xypoints
@@ -46364,9 +46610,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          retval = fsets_origvalue_dynk(-funNum)
          return
       elseif (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
-         write(*,*) "DYNK> **** ERROR in dynk_computeFUN() ****"
-         write(*,*) "DYNK> funNum =", funNum, "turn=", turn
-         write(*,*) "DYNK> Invalid funNum & turn combination"
++if cr
+         write(lout,*) "DYNK> **** ERROR in dynk_computeFUN() ****"
+         write(lout,*) "DYNK> funNum =", funNum, "turn=", turn
+         write(lout,*) "DYNK> Invalid funNum & turn combination"
++ei
++if .not. cr
+         write(*,*)    "DYNK> **** ERROR in dynk_computeFUN() ****"
+         write(*,*)    "DYNK> funNum =", funNum, "turn=", turn
+         write(*,*)    "DYNK> Invalid funNum & turn combination"
++ei
          call dynk_dumpdata
          call prror(-1)
       endif
@@ -46376,10 +46629,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          retval = fexpr_dynk(funcs_dynk(funNum,3))
       case (1)                                                          ! FILE
          if (turn .gt. funcs_dynk(funNum,5) ) then
-            write(*,*) "DYNK> **** ERROR in dynk_computeFUN():FILE ****"
-            write(*,*) "DYNK> funNum =", funNum, "turn=", turn
-            write(*,*) "DYNK> Turn > length of file = ", 
++if cr
+            write(lout,*)"DYNK> ****ERROR in dynk_computeFUN():FILE****"
+            write(lout,*)"DYNK> funNum =", funNum, "turn=", turn
+            write(lout,*)"DYNK> Turn > length of file = ", 
      &           funcs_dynk(funNum,5)
++ei
++if .not.cr
+            write(*,*)   "DYNK> ****ERROR in dynk_computeFUN():FILE****"
+            write(*,*)   "DYNK> funNum =", funNum, "turn=", turn
+            write(*,*)   "DYNK> Turn > length of file = ", 
+     &           funcs_dynk(funNum,5)
++ei
             call dynk_dumpdata
             call prror(-1)
          endif
@@ -46533,9 +46794,18 @@ C+ei
             retval = fexpr_dynk(foff+12)
          endif
       case default
-         write(*,*) "DYNK> **** ERROR in dynk_computeFUN(): ****"
-         write(*,*) "DYNK> funNum =", funNum, "turn=", turn
-         write(*,*) "DYNK> Unknown function type ", funcs_dynk(funNum,2)
++if cr
+         write(lout,*) "DYNK> **** ERROR in dynk_computeFUN(): ****"
+         write(lout,*) "DYNK> funNum =", funNum, "turn=", turn
+         write(lout,*) "DYNK> Unknown function type ",
+     &        funcs_dynk(funNum,2)
++ei
++if .not.cr
+         write(*,*)    "DYNK> **** ERROR in dynk_computeFUN(): ****"
+         write(*,*)    "DYNK> funNum =", funNum, "turn=", turn
+         write(*,*)    "DYNK> Unknown function type ",
+     &        funcs_dynk(funNum,2)
++ei
          call dynk_dumpdata
          call prror(-1)
       end select
@@ -46559,6 +46829,10 @@ C+ei
 +ca commontr
 +ca comdynk
 
++if cr
++ca crcoall
++ei
+
       character(maxstrlen_dynk) element_name, att_name
       integer funNum, turn
       intent (in) element_name, att_name, funNum, turn
@@ -46578,18 +46852,36 @@ C+ei
       att_name_stripped = trim(dynk_stringzerotrim(att_name))
 
       if ( ldynkdebug ) then
-         write (*,*) "DYNKDEBUG> In dynk_setvalue(), element_name = '",
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &        "DYNKDEBUG> In dynk_setvalue(), element_name = '",
      &        element_name_stripped, "', att_name = '",
      &        att_name_stripped, "', funNum =", funNum
          if (funNUM .gt. 0) then
-            write (*,*) "DYNKDEBUG> Using function number =", funNUM,
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*)
++ei
+     &           "DYNKDEBUG> Using function number =", funNUM,
      &           "named '", 
      &           trim(dynk_stringzerotrim(cexpr_dynk(
      &                                      funcs_dynk(funNum,1)))), "'"
          elseif (funNUM .lt. 0) then
-            write (*,*) "DYNKDEBUG> Using function number =", funNUM,
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*)
++ei
+     &           "DYNKDEBUG> Using function number =", funNUM,
      &           "reffering to origvalue of '",
-     &       trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,1))),
+     &          trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,1))),
      & "':'",trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,2))),"'"
          end if
       endif
@@ -46597,58 +46889,104 @@ C+ei
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
       ! Get type
       do ii=1,il
-        if (element_name_stripped.eq.bez(ii)) then  ! name found
-          el_type=kz(ii)       ! type found
-          
-          if (ldoubleElement) then ! Sanity check
-            write (*,*) "DYNK> ERROR: two elements with the same BEZ?"
-            call prror(-1)
-          end if
-          ldoubleElement = .true.
-          
-          if ((abs(el_type).eq.1).or.    ! horizontal bending kick
-     &        (abs(el_type).eq.2).or.    ! quadrupole kick
-     &        (abs(el_type).eq.3).or.    ! sextupole kick
-     &        (abs(el_type).eq.4).or.    ! octupole kick
-     &        (abs(el_type).eq.5).or.    ! decapole kick
-     &        (abs(el_type).eq.6).or.    ! dodecapole kick
-     &        (abs(el_type).eq.7).or.    ! 14th pole kick
-     &        (abs(el_type).eq.8).or.    ! 16th pole kick
-     &        (abs(el_type).eq.9).or.    ! 18th pole kick
-     &        (abs(el_type).eq.10)) then ! 20th pole kick
-            if (att_name_stripped.eq."average_ms") then !
-               ed(ii) = dynk_computeFUN(funNum,turn)
-            else
-               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-     &           "does not exist for type =", el_type, "(2-20th pole)"
-               call prror(-1)
-            endif
-            call initialize_element(ii, .false.)
+         if (element_name_stripped.eq.bez(ii)) then ! name found
+            el_type=kz(ii)      ! type found
             
-          elseif (abs(el_type).eq.11.and.abs(el(ii)+one).le.pieni) then ! multipoles 
-             if (att_name_stripped.eq."bending_str") then 
-                dki(ii,1) = dynk_computeFUN(funNum,turn) !TODO: HUH?!?!? Should be in initialize_element??
-             elseif (att_name_stripped.eq."radius") then
-                dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
-             endif
-          elseif (abs(el_type).eq.11.and.abs(el(ii)+two).le.pieni) then
-             if (att_name_stripped.eq."bending_str") then 
-                dki(ii,2) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
-             elseif (att_name_stripped.eq."radius") then
-                dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
-             endif
-          elseif (abs(el_type).eq.11) then
-             if (att_name_stripped.eq."bending_str") then ! [rad]
-                ed(ii) = dynk_computeFUN(funNum,turn)
-             elseif (att_name_stripped.eq."radius") then  ! [m]
-                ek(ii) = dynk_computeFUN(funNum,turn)
-             else
-                WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-                WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-     &               "does not exist for type =", el_type, "(multipole)"
-                call prror(-1)
-             endif
+            if (ldoubleElement) then ! Sanity check
++if cr
+               write(lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &            "DYNK> ERROR: two elements with the same BEZ?"
+               call prror(-1)
+            end if
+            ldoubleElement = .true.
+          
+            if ((abs(el_type).eq.1).or. ! horizontal bending kick
+     &          (abs(el_type).eq.2).or. ! quadrupole kick
+     &          (abs(el_type).eq.3).or. ! sextupole kick
+     &          (abs(el_type).eq.4).or. ! octupole kick
+     &          (abs(el_type).eq.5).or. ! decapole kick
+     &          (abs(el_type).eq.6).or. ! dodecapole kick
+     &          (abs(el_type).eq.7).or. ! 14th pole kick
+     &          (abs(el_type).eq.8).or. ! 16th pole kick
+     &          (abs(el_type).eq.9).or. ! 18th pole kick
+     &          (abs(el_type).eq.10)) then ! 20th pole kick
+               if (att_name_stripped.eq."average_ms") then !
+                  ed(ii) = dynk_computeFUN(funNum,turn)
+               else
++if cr
+                  WRITE (lout,*)"DYNK> *** ERROR in dynk_setvalue() ***"
+                  WRITE (lout,*)"DYNK> Attribute'", att_name_stripped,
+     &           "' does not exist for type =", el_type, "(2-20th pole)"
++ei
++if .not.cr
+                  WRITE (*,*)   "DYNK> *** ERROR in dynk_setvalue() ***"
+                  WRITE (*,*)   "DYNK> Attribute '", att_name_stripped,
+     &         "' does not exist for type =", el_type, "(2-20th pole)"
++ei
+                  call prror(-1)
+               endif
+               call initialize_element(ii, .false.)
+               
+            elseif (abs(el_type).eq.11 .and. 
+     &              abs(el(ii)+one).le.pieni) then ! multipoles 
+               if (att_name_stripped.eq."bending_str") then 
+                  dki(ii,1) = dynk_computeFUN(funNum,turn) !TODO: HUH?!?!? Should be in initialize_element??
+               elseif (att_name_stripped.eq."radius") then
+                  dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
+               else
++if cr
+                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/hor)"
++ei
++if .not.cr
+                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/hor)"
++ei
+                  call prror(-1)
+               endif
+            elseif (abs(el_type).eq.11 .and. 
+     &              abs(el(ii)+two).le.pieni) then
+               if (att_name_stripped.eq."bending_str") then 
+                  dki(ii,2) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
+               elseif (att_name_stripped.eq."radius") then
+                  dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
+               else
++if cr
+                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/ver)"
++ei
++if .not.cr
+                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/cer)"
++ei
+                  call prror(-1)
+               endif
+            elseif (abs(el_type).eq.11) then !TODO: Always do this. also for the two cases above?
+               if (att_name_stripped.eq."bending_str") then ! [rad]
+                  ed(ii) = dynk_computeFUN(funNum,turn)
+               elseif (att_name_stripped.eq."radius") then ! [m]
+                  ek(ii) = dynk_computeFUN(funNum,turn)
+               else
++if cr
+                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/def)"
++ei
++if .not.cr
+                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/def)"
++ei
+                  call prror(-1)
+               endif
 
           !Not yet supported
 c$$$          elseif (abs(el_type).eq.12) then ! cavities 
@@ -46696,40 +47034,56 @@ c$$$     &              "does not exist for type =", el_type, "(beam-beam)"
 c$$$               call prror(-1)
 c$$$            endif
             
-         elseif ((abs(el_type).eq.23).or.    ! crab cavity
-     &           (abs(el_type).eq.26).or.    ! cc mult. kick order 2
-     &           (abs(el_type).eq.27).or.    ! cc mult. kick order 3
-     &           (abs(el_type).eq.28)) then  ! cc mult. kick order 4
-            if (att_name_stripped.eq."voltage") then ![MV]   
-               ed(ii) = dynk_computeFUN(funNum,turn)
-            elseif (att_name_stripped.eq."frequency") then ![MHz]
-               ek(ii) = dynk_computeFUN(funNum,turn)
-            elseif (att_name_stripped.eq."phase") then ![rad]
-               if (abs(el_type).eq.23) then
-                 crabph(ii) = dynk_computeFUN(funNum,turn)
-               elseif (abs(el_type).eq.26) then
-                 crabph2(ii) = dynk_computeFUN(funNum,turn)
-               elseif (abs(el_type).eq.27) then
-                 crabph3(ii) = dynk_computeFUN(funNum,turn)
-               elseif (abs(el_type).eq.28) then
-                 crabph4(ii) = dynk_computeFUN(funNum,turn)
-               endif     
+            elseif ((abs(el_type).eq.23).or.    ! crab cavity
+     &              (abs(el_type).eq.26).or.    ! cc mult. kick order 2
+     &              (abs(el_type).eq.27).or.    ! cc mult. kick order 3
+     &              (abs(el_type).eq.28)) then  ! cc mult. kick order 4
+               if (att_name_stripped.eq."voltage") then ![MV]   
+                  ed(ii) = dynk_computeFUN(funNum,turn)
+               elseif (att_name_stripped.eq."frequency") then ![MHz]
+                  ek(ii) = dynk_computeFUN(funNum,turn)
+               elseif (att_name_stripped.eq."phase") then ![rad]
+                  if (abs(el_type).eq.23) then
+                     crabph(ii) = dynk_computeFUN(funNum,turn)
+                  elseif (abs(el_type).eq.26) then
+                     crabph2(ii) = dynk_computeFUN(funNum,turn)
+                  elseif (abs(el_type).eq.27) then
+                     crabph3(ii) = dynk_computeFUN(funNum,turn)
+                  elseif (abs(el_type).eq.28) then
+                     crabph4(ii) = dynk_computeFUN(funNum,turn)
+                  endif     
+               else
++if cr
+                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (lout,*) "DYNK> attribute '",att_name_stripped,
+     &              "' does not exist for type =", el_type, "(crab)"
++ei
++if .not.cr
+                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (*,*)    "DYNK> attribute '",att_name_stripped,
+     &              "' does not exist for type =", el_type, "(crab)"
++ei
+                  call prror(-1)
+               endif
+               call initialize_element(ii, .false.)
+            
             else
++if cr
+               WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+               write (lout,*) "DYNK> Unsupported element type", el_type
+               write (lout,*) "DYNK> element name = '",
+     &              element_name_stripped,"'"
++ei
++if .not.cr
                WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-               WRITE (*,*) "DYNK> attribute '",att_name_stripped,"' ",
-     &              "does not exist for type =", el_type, "(crab)"
+               write (*,*) "DYNK> Unsupported element type", el_type
+               write (*,*) "DYNK> element name = '",
+     &              element_name_stripped,"'"
+
++ei
                call prror(-1)
             endif
-            call initialize_element(ii, .false.)
-            
-         else
-            WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-            write (*,*) "DYNK> Unsupported element type", el_type
-            write (*,*) "DYNK> element name = '", element_name_stripped,
-     &           "'"
-            call prror(-1)
          endif
-      endif
       enddo
       
       end subroutine
@@ -46749,6 +47103,11 @@ c$$$            endif
 +ca commonmn
 +ca commontr
 +ca comdynk
+
++if cr
++ca crcoall
++ei
+
       character(maxstrlen_dynk) element_name, att_name
       intent(in) element_name, att_name
       
@@ -46759,7 +47118,15 @@ c$$$            endif
       logical ldoubleElement
       ldoubleElement = .false.  ! For sanity check
       
-      if (ldynkdebug) write(*,*) "DYNKDEBUG> in dynk_getvalue()"
+      if (ldynkdebug) then
++if cr
+         write(lout,*)
++ei
++if .not.cr
+         write(*,*)
++ei
+     &   "DYNKDEBUG> in dynk_getvalue()"
+      end if
       
       element_name_s = trim(dynk_stringzerotrim(element_name))
       att_name_s = trim(dynk_stringzerotrim(att_name))
@@ -46768,28 +47135,43 @@ c$$$            endif
          if (element_name_s.eq.bez(ii)) then ! name found
             el_type=kz(ii)
             if (ldoubleElement) then
-               write (*,*) "DYNK> ERROR: two elements with the same BEZ"
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNK> ERROR: two elements with the same BEZ"
                call prror(-1)
             end if
             ldoubleElement = .true.
             
             if ((abs(el_type).eq.1).or.
-     &           (abs(el_type).eq.2).or.
-     &           (abs(el_type).eq.3).or.
-     &           (abs(el_type).eq.4).or.
-     &           (abs(el_type).eq.5).or.
-     &           (abs(el_type).eq.6).or.
-     &           (abs(el_type).eq.7).or.
-     &           (abs(el_type).eq.8).or.
-     &           (abs(el_type).eq.9).or.
-     &           (abs(el_type).eq.10)) then
+     &          (abs(el_type).eq.2).or.
+     &          (abs(el_type).eq.3).or.
+     &          (abs(el_type).eq.4).or.
+     &          (abs(el_type).eq.5).or.
+     &          (abs(el_type).eq.6).or.
+     &          (abs(el_type).eq.7).or.
+     &          (abs(el_type).eq.8).or.
+     &          (abs(el_type).eq.9).or.
+     &          (abs(el_type).eq.10)) then
                if (att_name_s.eq."average_ms") then
                   dynk_getvalue = ed(ii)
                else
-                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*) "DYNK> Unknown attribute '",
++if cr
+                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(lout,*) "DYNK> Unknown attribute '",
      &                 trim(att_name_s),"'",
      &                 " for type",el_type," name '", trim(bez(ii)), "'"
+
++ei
++if .not.cr
+                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*)    "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for type",el_type," name '", trim(bez(ii)), "'"
++ei
                   call prror(-1)
                endif
                
@@ -46800,10 +47182,19 @@ c$$$            endif
                elseif (att_name_s.eq."radius") then
                   dynk_getvalue = dki(ii,3) 
                else
-                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*) "DYNK> Unknown attribute '",
++if cr
+                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(lout,*) "DYNK> Unknown attribute '",
      &                 trim(att_name_s),"'",
      &                 " for multipole '", trim(bez(ii)), "'"
+
++ei
++if .not.cr
+                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*)    "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for multipole '", trim(bez(ii)), "'"
++ei
                   call prror(-1)
                endif
             elseif (abs(el_type).eq.11 .and. 
@@ -46813,10 +47204,18 @@ c$$$            endif
                elseif (att_name_s.eq."radius") then
                   dynk_getvalue = dki(ii,3) 
                else
-                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*) "DYNK> Unknown attribute '",
++if cr
+                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(lout,*) "DYNK> Unknown attribute '",
      &                 trim(att_name_s),"'",
      &                 " for multipole '", trim(bez(ii)), "'"
++ei
++if .not.cr
+                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*)    "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for multipole '", trim(bez(ii)), "'"
++ei
                   call prror(-1)
                endif
             elseif (abs(el_type).eq.11) then
@@ -46825,10 +47224,18 @@ c$$$            endif
                elseif (att_name_s.eq."radius") then ! [m]
                   dynk_getvalue = ek(ii)
                else
-                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*) "DYNK> Unknown attribute '",
++if cr
+                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(lout,*) "DYNK> Unknown attribute '",
      &                 trim(att_name_s),"'",
      &                 " for multipole '", trim(bez(ii)), "'"
++ei
++if .not.cr
+                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*)    "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for multipole '", trim(bez(ii)), "'"
++ei
                   call prror(-1)
                endif
                
@@ -46908,10 +47315,18 @@ c$$$               endif
                      dynk_getvalue = crabph4(ii)
                   endif
                else
-                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*) "DYNK> Unknown attribute '",
++if cr
+                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(lout,*) "DYNK> Unknown attribute '",
      &                 trim(att_name_s),"'",
      &                 " for crab cavity '", trim(bez(ii)), "'"
++ei
++if .not.cr
+                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*)    "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for crab cavity '", trim(bez(ii)), "'"
++ei
                   call prror(-1)
                endif
             endif !el_type
@@ -46937,6 +47352,11 @@ c$$$               endif
 !     If datalen <= 0, program is aborted. 
 !     
 !-----------------------------------------------------------------------
+
++if cr
++ca crcoall
++ei
+
       double precision x, xvals(*),yvals(*)
       integer datalen
       intent(in) x,xvals,yvals,datalen
@@ -46946,13 +47366,26 @@ c$$$               endif
       
       !Sanity checks
       if (datalen .le. 0) then
-         write(*,*) "DYNK> **** ERROR in dynk_lininterp() ****"
-         write(*,*) "DYNK> datalen was 0!"
++if cr
+         write(lout,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(lout,*) "DYNK> datalen was 0!"
++ei
++if .not.cr
+         write(*,*)    "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(*,*)    "DYNK> datalen was 0!"
++ei
+
          call prror(-1)
       endif
       if ( x .lt. xvals(1) .or. x .gt. xvals(datalen) ) then
-         write(*,*) "DYNK> **** ERROR in dynk_lininterp() ****"
-         write(*,*) "x =",x, "outside range", xvals(1),xvals(datalen)
++if cr
+         write(lout,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(lout,*) "x =",x, "outside range", xvals(1),xvals(datalen)
++ei
++if .not.cr
+         write(*,*)    "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(*,*)    "x =",x, "outside range", xvals(1),xvals(datalen)
++ei
          call prror(-1)
       endif
 
@@ -46965,9 +47398,16 @@ c$$$               endif
       
       do ii=1, datalen-1
          if (xvals(ii) .ge. xvals(ii+1)) then
-            write (*,*) "DYNK> **** ERROR in dynk_lininterp() ****"
-            write (*,*) "DYNK> xvals should be in increasing order"
-            write (*,*) "DYNK> xvals =", xvals(:datalen)
++if cr
+            write (lout,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+            write (lout,*) "DYNK> xvals should be in increasing order"
+            write (lout,*) "DYNK> xvals =", xvals(:datalen)
++ei
++if .not.cr
+            write (*,*)    "DYNK> **** ERROR in dynk_lininterp() ****"
+            write (*,*)    "DYNK> xvals should be in increasing order"
+            write (*,*)    "DYNK> xvals =", xvals(:datalen)
++ei
             call prror(-1)
          endif
          
@@ -46981,10 +47421,18 @@ c$$$               endif
       enddo
       
       !We didn't return yet: Something wrong
-      write (*,*) "DYNK> ****ERROR in dynk_lininterp() ****"
-      write (*,*) "DYNK> Reached the end of the function"
-      write (*,*) "DYNK> This should not happen, "//
-     &            "please contact developers"
++if cr
+      write (lout,*) "DYNK> ****ERROR in dynk_lininterp() ****"
+      write (lout,*) "DYNK> Reached the end of the function"
+      write (lout,*) "DYNK> This should not happen, "//
+     &               "please contact developers"
++ei
++if .not.cr
+      write (*,*)    "DYNK> ****ERROR in dynk_lininterp() ****"
+      write (*,*)    "DYNK> Reached the end of the function"
+      write (*,*)    "DYNK> This should not happen, "//
+     &               "please contact developers"
++ei
       call prror(-1)
 
       end function
