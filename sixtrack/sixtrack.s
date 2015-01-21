@@ -13627,7 +13627,7 @@ cc2008
         endif
       endif
 !----------------------------------------
-! Handled by initialize_element subroutine
+! Handled by initialize_element subroutine:
 !-----------------------------------------
 !--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
 !--THIN LENS
@@ -46119,7 +46119,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca parpro
 +ca comdynk
       !Functions
-      double precision dynk_getvalue_single
+      double precision dynk_getvalue
       integer dynk_findSETindex
       !Temp variables
       integer ii
@@ -46140,7 +46140,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             ! Store original value of data point
             fsets_origvalue_dynk(nsets_unique_dynk) = 42.0
             fsets_origvalue_dynk(nsets_unique_dynk) =  
-     &           dynk_getvalue_single(csets_dynk(ii,1),csets_dynk(ii,2))
+     &           dynk_getvalue(csets_dynk(ii,1),csets_dynk(ii,2))
          endif
       enddo
 
@@ -46148,8 +46148,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       do ii=1,nfuncs_dynk
          if (funcs_dynk(ii,2) .eq. 0) then !GET
             fexpr_dynk(funcs_dynk(ii,3)) =
-     &           dynk_getvalue_single( cexpr_dynk(funcs_dynk(ii,1)+1),
-     &                                 cexpr_dynk(funcs_dynk(ii,1)+2) )
+     &           dynk_getvalue( cexpr_dynk(funcs_dynk(ii,1)+1),
+     &                          cexpr_dynk(funcs_dynk(ii,1)+2) )
          endif
       enddo
 
@@ -46197,34 +46197,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       character(maxstrlen_dynk) dynk_stringzerotrim
       integer dynk_findSETindex
       
-      integer, parameter :: getvaldata_len=20
-      double precision getvaldata(getvaldata_len)
-      integer ngetvaldata
+      double precision dynk_getvalue, getvaldata
       
       character(maxstrlen_dynk) whichFUN(maxsets_dynk) !Which function was used to set a given elem/attr?
       integer whichSET(maxsets_dynk) !Which SET was used for a given elem/attr?
       
       save ldynksetsEnable
 
-      !DBG:
-      integer ix
-
       if ( ldynkdebug ) 
      &     write(*,*) 'DYNKDEBUG> In dynk_apply(), turn = ', turn
-      
-      do ii=1,iu
-          ix=ic(ii)
-          if(ix.le.nblo) continue
-          ix=ix-nblo
-          if (kz(ix) .eq. 11) then
-             do jj=1,nmu(ix)
-                write (*,*) "DBGDBG: ", ix, jj, ed(ix), 
-     &               aaiv(jj,1,ii), bbiv(jj,1,ii),
-     &               "MAINCR"
-             end do
-          endif
-       end do
-
       
       !Initialize variables
       do jj=1, nsets_unique_dynk
@@ -46306,11 +46287,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &           sets_dynk(ii,1), shiftedTurn )
             
             if (ldynkdebug) then
-               ngetvaldata = getvaldata_len
-               call dynk_getvalue( csets_dynk(ii,1), csets_dynk(ii,2),
-     &                             getvaldata, ngetvaldata )
+               getvaldata = dynk_getvalue( csets_dynk(ii,1), 
+     &                                     csets_dynk(ii,2) )
                write (*,*) "DYNKDEBUG> Read back value = ",
-     &              getvaldata(:ngetvaldata)
+     &              getvaldata
             endif
             
             !For the output file: Which function was used?
@@ -46327,11 +46307,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       !Write output file
       if (ldynksetsEnable) then
          do jj=1,nsets_unique_dynk
-            ngetvaldata = getvaldata_len
-            call dynk_getvalue(
-     &           csets_unique_dynk(jj,1),
-     &           csets_unique_dynk(jj,2),
-     &           getvaldata, ngetvaldata )
+            getvaldata =  dynk_getvalue( csets_unique_dynk(jj,1),
+     &                                   csets_unique_dynk(jj,2) )
             
             if (whichSET(jj) .eq. -1) then
                whichFUN(jj) = "N/A"
@@ -46343,7 +46320,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &           dynk_stringzerotrim(csets_unique_dynk(jj,2)),
      &           whichSET(jj),
      &           dynk_stringzerotrim(whichFUN(jj)),
-     &           ngetvaldata, getvaldata(:ngetvaldata)
+     &           1, getvaldata ! TODO: Change file format
          enddo
       endif
 
@@ -46595,7 +46572,7 @@ C+ei
       character(maxstrlen_dynk) att_name_stripped
 
       logical ldoubleElement
-      ldoubleElement = .false. ! this 
+      ldoubleElement = .false. ! For sanity check
       
       element_name_stripped = trim(dynk_stringzerotrim(element_name))
       att_name_stripped = trim(dynk_stringzerotrim(att_name))
@@ -46642,75 +46619,83 @@ C     Here comes the logic for setting the value of the attribute for all instan
             if (att_name_stripped.eq."average_ms") then !
                ed(ii) = dynk_computeFUN(funNum,turn)
             else
-              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-     &        "does not exist for type =", el_type, "(2-20th pole)"
-              call prror(-1)
+               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+     &           "does not exist for type =", el_type, "(2-20th pole)"
+               call prror(-1)
             endif
             call initialize_element(ii, .false.)
+            
           elseif (abs(el_type).eq.11.and.abs(el(ii)+one).le.pieni) then ! multipoles 
              if (att_name_stripped.eq."bending_str") then 
-                dki(ii,1) = dynk_computeFUN(funNum,turn)
+                dki(ii,1) = dynk_computeFUN(funNum,turn) !TODO: HUH?!?!? Should be in initialize_element??
              elseif (att_name_stripped.eq."radius") then
-                dki(ii,3) = dynk_computeFUN(funNum,turn)
+                dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
              endif
           elseif (abs(el_type).eq.11.and.abs(el(ii)+two).le.pieni) then
              if (att_name_stripped.eq."bending_str") then 
-                dki(ii,2) = dynk_computeFUN(funNum,turn)
+                dki(ii,2) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
              elseif (att_name_stripped.eq."radius") then
-                dki(ii,3) = dynk_computeFUN(funNum,turn)
+                dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
              endif
           elseif (abs(el_type).eq.11) then
              if (att_name_stripped.eq."bending_str") then ! [rad]
                 ed(ii) = dynk_computeFUN(funNum,turn)
-             elseif (att_name_stripped.eq."radius") then ![m]
+             elseif (att_name_stripped.eq."radius") then  ! [m]
                 ek(ii) = dynk_computeFUN(funNum,turn)
              else
-              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-     &             "does not exist for type =", el_type, "(multipole)"
-              call prror(-1)
-            endif
-          elseif (abs(el_type).eq.12) then ! cavities 
-            if (att_name_stripped.eq."voltage") then ! [MV]
-               ed(ii) = dynk_computeFUN(funNum,turn)
-            elseif (att_name_stripped.eq."harmonic") then !
-               ek(ii) = dynk_computeFUN(funNum,turn)
-            elseif (att_name_stripped.eq."lag_angle") then ! [deg]
-               el(ii) = dynk_computeFUN(funNum,turn)
-            else
-              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-     &            "does not exist for type =", el_type, "(cavity)"
+                WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+                WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+     &               "does not exist for type =", el_type, "(multipole)"
                 call prror(-1)
-            endif
-            call initialize_element(ii, .false.)
-          elseif (abs(el_type).eq.16) then ! AC dipole 
-            if (att_name_stripped.eq."amplitude") then ! [T.m]
-               ed(ii) = dynk_computeFUN(funNum,turn)
-            elseif (att_name_stripped.eq."frequency") then ! [2pi]
-               ek(ii) = dynk_computeFUN(funNum,turn)
-            elseif (att_name_stripped.eq."phase") then ! [rad]
-               el(ii) = dynk_computeFUN(funNum,turn)
-            else
-              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-     &        "does not exist for type =", el_type,"AC dipole"
-               call prror(-1)
-            endif
-          elseif (abs(el_type).eq.20) then ! beam-beam separation
-            if (att_name_stripped.eq."horizontal") then ! [mm]
-               ed(ii) = dynk_computeFUN(funNum,turn)
-            elseif (att_name_stripped.eq."vertical") then ! [mm]
-               ek(ii) = dynk_computeFUN(funNum,turn)
-            elseif (att_name_stripped.eq."strength") then ! [m]
-               el(ii) = dynk_computeFUN(funNum,turn)
-            else
-              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-     &        "does not exist for type =", el_type, "(beam-beam)"
-              call prror(-1)
-            endif
+             endif
+
+          !Not yet supported
+c$$$          elseif (abs(el_type).eq.12) then ! cavities 
+c$$$            if (att_name_stripped.eq."voltage") then ! [MV]
+c$$$               ed(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."harmonic") then !
+c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."lag_angle") then ! [deg]
+c$$$               el(ii) = dynk_computeFUN(funNum,turn)
+c$$$            else
+c$$$               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+c$$$               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+c$$$     &              "does not exist for type =", el_type, "(cavity)"
+c$$$               call prror(-1)
+c$$$            endif
+c$$$            call initialize_element(ii, .false.)
+            
+          !Not yet supported
+c$$$          elseif (abs(el_type).eq.16) then ! AC dipole 
+c$$$            if (att_name_stripped.eq."amplitude") then ! [T.m]
+c$$$               ed(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."frequency") then ! [2pi]
+c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."phase") then ! [rad]
+c$$$               el(ii) = dynk_computeFUN(funNum,turn)
+c$$$            else
+c$$$              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+c$$$              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+c$$$     &        "does not exist for type =", el_type,"AC dipole"
+c$$$               call prror(-1)
+c$$$            endif
+
+          !Not yet supported
+c$$$          elseif (abs(el_type).eq.20) then ! beam-beam separation
+c$$$            if (att_name_stripped.eq."horizontal") then ! [mm]
+c$$$               ed(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."vertical") then ! [mm]
+c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."strength") then ! [m]
+c$$$               el(ii) = dynk_computeFUN(funNum,turn)
+c$$$            else
+c$$$               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+c$$$               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+c$$$     &              "does not exist for type =", el_type, "(beam-beam)"
+c$$$               call prror(-1)
+c$$$            endif
+            
          elseif ((abs(el_type).eq.23).or.    ! crab cavity
      &           (abs(el_type).eq.26).or.    ! cc mult. kick order 2
      &           (abs(el_type).eq.27).or.    ! cc mult. kick order 3
@@ -46736,6 +46721,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
                call prror(-1)
             endif
             call initialize_element(ii, .false.)
+            
          else
             WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
             write (*,*) "DYNK> Unsupported element type", el_type
@@ -46748,10 +46734,11 @@ C     Here comes the logic for setting the value of the attribute for all instan
       
       end subroutine
 
-      subroutine dynk_getvalue(element_name, att_name, retdata,nretdata)
+      double precision function dynk_getvalue
+     &     (element_name, att_name)
 !-----------------------------------------------------------------------
 !     A.Santamaria & K. Sjobak, BE-ABP/HSS
-!     last modified: 27-10-2014
+!     last modified: 2101-2015
 !
 !     Returns the original value currently set by an element.
 !-----------------------------------------------------------------------
@@ -46764,39 +46751,40 @@ C     Here comes the logic for setting the value of the attribute for all instan
 +ca comdynk
       character(maxstrlen_dynk) element_name, att_name
       intent(in) element_name, att_name
-      double precision retdata(*)
-      integer nretdata
-      intent(out) retdata
-      intent(inout) nretdata
-
-      integer el_type, ii, nretdata_max
+      
+      integer el_type, ii
       character(maxstrlen_dynk) dynk_stringzerotrim
       character(maxstrlen_dynk) element_name_s, att_name_s
       
-      if (ldynkdebug) write(*,*) "DYNKDEBUG> in dynk_getvalue()"
+      logical ldoubleElement
+      ldoubleElement = .false.  ! For sanity check
       
-      nretdata_max = nretdata
-      nretdata = 0
+      if (ldynkdebug) write(*,*) "DYNKDEBUG> in dynk_getvalue()"
       
       element_name_s = trim(dynk_stringzerotrim(element_name))
       att_name_s = trim(dynk_stringzerotrim(att_name))
-
+      
       do ii=1,il
          if (element_name_s.eq.bez(ii)) then ! name found
             el_type=kz(ii)
+            if (ldoubleElement) then
+               write (*,*) "DYNK> ERROR: two elements with the same BEZ"
+               call prror(-1)
+            end if
+            ldoubleElement = .true.
+            
             if ((abs(el_type).eq.1).or.
-     &          (abs(el_type).eq.2).or.
-     &          (abs(el_type).eq.3).or.
-     &          (abs(el_type).eq.4).or.
-     &          (abs(el_type).eq.5).or.
-     &          (abs(el_type).eq.6).or.
-     &          (abs(el_type).eq.7).or.
-     &          (abs(el_type).eq.8).or.
-     &          (abs(el_type).eq.9).or.
-     &          (abs(el_type).eq.10)) then
+     &           (abs(el_type).eq.2).or.
+     &           (abs(el_type).eq.3).or.
+     &           (abs(el_type).eq.4).or.
+     &           (abs(el_type).eq.5).or.
+     &           (abs(el_type).eq.6).or.
+     &           (abs(el_type).eq.7).or.
+     &           (abs(el_type).eq.8).or.
+     &           (abs(el_type).eq.9).or.
+     &           (abs(el_type).eq.10)) then
                if (att_name_s.eq."average_ms") then
-                  nretdata = nretdata+1
-                  retdata(nretdata) = ed(ii)
+                  dynk_getvalue = ed(ii)
                else
                   write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
                   write(*,*) "DYNK> Unknown attribute '",
@@ -46804,120 +46792,121 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &                 " for type",el_type," name '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
-          elseif (abs(el_type).eq.11.and.abs(el(ii)+one).le.pieni) then ! multipoles 
-             if (att_name_s.eq."bending_str") then 
-                  nretdata = nretdata+1
-                  retdata(nretdata) = dki(ii,1)    
-             elseif (att_name_s.eq."radius") then
-                  nretdata = nretdata+1
-                  retdata(nretdata) = dki(ii,3) 
-             else
-                write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                write(*,*) "DYNK> Unknown attribute '",
-     &               trim(att_name_s),"'",
-     &               " for multipole '", trim(bez(ii)), "'"
-                call prror(-1)
-             endif
-          elseif (abs(el_type).eq.11.and.abs(el(ii)+two).le.pieni) then
-             if (att_name_s.eq."bending_str") then 
-                  nretdata = nretdata+1
-                  retdata(nretdata) = dki(ii,2) 
-             elseif (att_name_s.eq."radius") then
-                  nretdata = nretdata+1
-                  retdata(nretdata) = dki(ii,3) 
-             else
-                write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                write(*,*) "DYNK> Unknown attribute '",
-     &               trim(att_name_s),"'",
-     &               " for multipole '", trim(bez(ii)), "'"
-                call prror(-1)
-             endif
-          elseif (abs(el_type).eq.11) then
-             if (att_name_s.eq."bending_str") then ! [rad]
-                  nretdata = nretdata+1
-                  retdata(nretdata) = ed(ii)  
-             elseif (att_name_s.eq."radius") then ![m]
-                  nretdata = nretdata+1
-                  retdata(nretdata) = ek(ii) 
-             else
-                write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                write(*,*) "DYNK> Unknown attribute '",
-     &               trim(att_name_s),"'",
-     &               " for multipole '", trim(bez(ii)), "'"
-                call prror(-1)
-             endif
-            elseif (abs(el_type).eq.12) then ! cavities 
-               if (att_name_s.eq."voltage") then ! MV
-                  nretdata = nretdata+1
-                  retdata(nretdata) = ed(ii)                
-               elseif (att_name_s.eq."harmonic") then ! harmonic number
-                  nretdata = nretdata+1
-                  retdata(nretdata) = ek(ii)                
-               elseif (att_name_s.eq."lag_angle") then ! [deg]
-                  nretdata = nretdata+1
-                  retdata(nretdata) = el(ii)       
+               
+            elseif (abs(el_type).eq.11 .and. 
+     &              abs(el(ii)+one).le.pieni) then        ! multipoles 
+               if (att_name_s.eq."bending_str") then 
+                  dynk_getvalue = dki(ii,1)    
+               elseif (att_name_s.eq."radius") then
+                  dynk_getvalue = dki(ii,3) 
                else
                   write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
                   write(*,*) "DYNK> Unknown attribute '",
      &                 trim(att_name_s),"'",
-     &                 " for cavity '", trim(bez(ii)), "'"
+     &                 " for multipole '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
-            elseif (abs(el_type).eq.16) then ! AC dipole 
-               if (att_name_s.eq."amplitude") then ! [T.m]
-                  nretdata = nretdata+1
-                  retdata(nretdata) = ed(ii)                
-               elseif (att_name_s.eq."frequency") then !  [2pi]
-                  nretdata = nretdata+1
-                  retdata(nretdata) = ek(ii)                
-               elseif (att_name_s.eq."phase") then !  [rad]
-                  nretdata = nretdata+1
-                  retdata(nretdata) = el(ii)      
+            elseif (abs(el_type).eq.11 .and. 
+     &              abs(el(ii)+two).le.pieni) then
+               if (att_name_s.eq."bending_str") then 
+                  dynk_getvalue = dki(ii,2) 
+               elseif (att_name_s.eq."radius") then
+                  dynk_getvalue = dki(ii,3) 
                else
                   write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
                   write(*,*) "DYNK> Unknown attribute '",
      &                 trim(att_name_s),"'",
-     &                 " for AC dipole '", trim(bez(ii)), "'"
+     &                 " for multipole '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
-            elseif (abs(el_type).eq.20) then ! beam-beam separation
-               if (att_name_s.eq."horizontal") then ! [mm]
-                  nretdata = nretdata+1
-                  retdata(nretdata) = ed(ii)                
-               elseif (att_name_s.eq."vertical") then ! [mm]
-                  nretdata = nretdata+1
-                  retdata(nretdata) = ek(ii)                
-               elseif (att_name_s.eq."strength") then ! [m]
-                  nretdata = nretdata+1
-                  retdata(nretdata) = el(ii)       
+            elseif (abs(el_type).eq.11) then
+               if (att_name_s.eq."bending_str") then ! [rad]
+                  dynk_getvalue = ed(ii)
+               elseif (att_name_s.eq."radius") then ! [m]
+                  dynk_getvalue = ek(ii)
                else
                   write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
                   write(*,*) "DYNK> Unknown attribute '",
      &                 trim(att_name_s),"'",
-     &                 " for beam-beam '", trim(bez(ii)), "'"
+     &                 " for multipole '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
-            elseif ((abs(el_type).eq.23).or.    ! crab cavity
-     &              (abs(el_type).eq.26).or.    ! cc mult. kick order 2
-     &              (abs(el_type).eq.27).or.    ! cc mult. kick order 3
-     &              (abs(el_type).eq.28)) then  ! cc mult. kick order 4
+               
+            !Not yet supported
+c$$$            elseif (abs(el_type).eq.12) then ! cavities 
+c$$$               if (att_name_s.eq."voltage") then ! MV
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ed(ii)                
+c$$$               elseif (att_name_s.eq."harmonic") then ! harmonic number
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ek(ii)                
+c$$$               elseif (att_name_s.eq."lag_angle") then ! [deg]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = el(ii)       
+c$$$               else
+c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+c$$$                  write(*,*) "DYNK> Unknown attribute '",
+c$$$     &                 trim(att_name_s),"'",
+c$$$     &                 " for cavity '", trim(bez(ii)), "'"
+c$$$                  call prror(-1)
+c$$$               endif
+             
+            !Not yet supported
+c$$$            elseif (abs(el_type).eq.16) then ! AC dipole 
+c$$$               if (att_name_s.eq."amplitude") then ! [T.m]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ed(ii)                
+c$$$               elseif (att_name_s.eq."frequency") then !  [2pi]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ek(ii)                
+c$$$               elseif (att_name_s.eq."phase") then !  [rad]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = el(ii)      
+c$$$               else
+c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+c$$$                  write(*,*) "DYNK> Unknown attribute '",
+c$$$     &                 trim(att_name_s),"'",
+c$$$     &                 " for AC dipole '", trim(bez(ii)), "'"
+c$$$                  call prror(-1)
+c$$$               endif
+               
+            !Not yet supported
+c$$$            elseif (abs(el_type).eq.20) then ! beam-beam separation
+c$$$               if (att_name_s.eq."horizontal") then ! [mm]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ed(ii)                
+c$$$               elseif (att_name_s.eq."vertical") then ! [mm]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ek(ii)                
+c$$$               elseif (att_name_s.eq."strength") then ! [m]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = el(ii)       
+c$$$               else
+c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+c$$$                  write(*,*) "DYNK> Unknown attribute '",
+c$$$     &                 trim(att_name_s),"'",
+c$$$     &                 " for beam-beam '", trim(bez(ii)), "'"
+c$$$                  call prror(-1)
+c$$$               endif
+               
+            elseif ((abs(el_type).eq.23).or. ! crab cavity
+     &              (abs(el_type).eq.26).or. ! cc mult. kick order 2
+     &              (abs(el_type).eq.27).or. ! cc mult. kick order 3
+     &              (abs(el_type).eq.28)) then ! cc mult. kick order 4
                if (att_name_s.eq."voltage") then ![MV]
-                  nretdata = nretdata+1
-                  retdata(nretdata) = ed(ii)                
+                  dynk_getvalue = ed(ii)
                elseif (att_name_s.eq."frequency") then ![MHz]
-                  nretdata = nretdata+1
-                  retdata(nretdata) = ek(ii)                
+                  dynk_getvalue = ek(ii)
                elseif (att_name_s.eq."phase") then ![rad]
-                  nretdata = nretdata+1
                   if (abs(el_type).eq.23) then
-                    retdata(nretdata)=crabph(ii)
+                     dynk_getvalue = crabph(ii)
                   elseif (abs(el_type).eq.26) then
-                    retdata(nretdata)=crabph2(ii)
+                     dynk_getvalue = crabph2(ii)
                   elseif (abs(el_type).eq.27) then
-                    retdata(nretdata)=crabph3(ii)
+                     dynk_getvalue = crabph3(ii)
                   elseif (abs(el_type).eq.28) then
-                    retdata(nretdata)=crabph4(ii)
-                  endif     
+                     dynk_getvalue = crabph4(ii)
+                  endif
                else
                   write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
                   write(*,*) "DYNK> Unknown attribute '",
@@ -46925,67 +46914,13 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &                 " for crab cavity '", trim(bez(ii)), "'"
                   call prror(-1)
                endif
-            endif
-         endif
-         if (nretdata .gt. nretdata_max) then
-            write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-            write(*,*) "Returning too many values:",
-     &           nretdata, ">", nretdata_max
-            call prror(-1)
-         endif
-      enddo
-      
-      end subroutine
-      
-      double precision function 
-     &     dynk_getvalue_single(element_name, att_name)
-!-----------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 24-10-2014
-!     
-!     Get the value of an element/attribute under the assumption
-!     that all instances are identical.
-!     Wraps dynk_getvalue.
-!-----------------------------------------------------------------------
-      implicit none
-+ca parpro
-+ca comdynk      
-      character(maxstrlen_dynk) element_name, att_name
-      intent(in) element_name, att_name
+            endif !el_type
 
-      character(maxstrlen_dynk) dynk_stringzerotrim
-
-      double precision getvaldata(20), foo
-      integer ngetvaldata,ii
-      
-      ngetvaldata = 20
-      call dynk_getvalue( element_name, att_name,
-     &                    getvaldata, ngetvaldata )
-      
-      if (ngetvaldata .eq. 0) then
-        write (*,*) "DYNK> *** ERROR in dynk_getvalue_single() ***"
-        write (*,*) "DYNK> Got no data!"
-        write (*,*) "DYNK> Incorrect element/attribute name?"
-        write (*,*) "'",trim(dynk_stringzerotrim(element_name)),"', '",
-     &                  trim(dynk_stringzerotrim(att_name)),"'"
-        call prror(-1)
-      endif
-      
-      foo = getvaldata(1)
-      
-      do ii=2,ngetvaldata
-         if (foo .ne. getvaldata(2)) then !They should be copies
-            write (*,*) "DYNK> *** ERROR in dynk_getvalue_single() ***"
-            write (*,*) "DYNK> If multiple data found, ",
-     &           "they should be identical copies!"
-            call prror(-1)
-         endif
+         endif !bez
       enddo
-      
-      dynk_getvalue_single = foo
       
       end function
-
+      
       double precision function dynk_lininterp(x,xvals,yvals,datalen)
       implicit none
 !-----------------------------------------------------------------------
