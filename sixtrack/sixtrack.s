@@ -18214,9 +18214,9 @@ cc2008
             write(*,10470) bez(ii), ndumpt(ii), dumpunit(ii),dumpfmt(ii)
 !           At which structure indices is this single element found? (Sanity check)
             kk = 0
-            do jj=1,mbloz      ! Loop over all structure elements
+            do jj=1,mper*mbloz      ! Loop over all structure elements
               if ( ic(jj)-nblo .eq. ii ) then
-                write (ch1,*) jj ! internal write for left-adjusting
+                write (ch1,*) jj    ! internal write for left-adjusting
                 write (*,10472) " -> Found as structure element no. " 
      &               // trim(adjustl(ch1))
                 kk = kk + 1
@@ -18300,9 +18300,9 @@ cc2008
             write(*,10470) bez(ii), nstatt(ii), statunit(ii)
 !           At which structure indices is this single element found? (Sanity check)
             kk = 0
-            do jj=1,mbloz      ! Loop over all structure elements
+            do jj=1,mper*mbloz      ! Loop over all structure elements
               if ( ic(jj)-nblo .eq. ii ) then
-                write (ch1,*) jj ! internal write for left-adjusting
+                write (ch1,*) jj    ! internal write for left-adjusting
                 write (*,10472) " -> Found as structure element no. " 
      &               // trim(adjustl(ch1))
                 kk = kk + 1
@@ -18463,9 +18463,9 @@ cc2008
             write(*,10470) bez(ii), nbmatt(ii), bmatunit(ii)
 !           At which structure indices is this single element found? (Sanity check)
             kk = 0
-            do jj=1,mbloz      ! Loop over all structure elements
+            do jj=1,mper*mbloz      ! Loop over all structure elements
               if ( ic(jj)-nblo .eq. ii ) then
-                write (ch1,*) jj ! internal write for left-adjusting
+                write (ch1,*) jj    ! internal write for left-adjusting
                 write (*,10472) " -> Found as structure element no. " 
      &               // trim(adjustl(ch1))
                 kk = kk + 1
