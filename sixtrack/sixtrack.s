@@ -1242,9 +1242,9 @@
 *     line to be split
       character tmpline*( l_max_string )
 *     array of fields
-      character fields( n_max_fields )*( l_max_string )
+      character gfields( n_max_fields )*( l_max_string )
 *     number of identified fields
-      integer nfields
+      integer gnfields
 *     length of each what:
       integer lfields( n_max_fields )
 *     an error flag
@@ -18565,11 +18565,11 @@ cc2008
         goto 2222
       elseif ( ch(:3).eq.'FUN' ) then
 *       the user is declaring a function
-        call read_fields( ch, fields, lfields, nfields, lerr )
+        call read_fields( ch, gfields, lfields, gnfields, lerr )
         if ( lerr ) call prror(51)
 *       recognise the function
         do ii=1,nfuns
-          if ( fields(2)(1:lfuns) .eq. funs(ii) ) then
+          if ( gfields(2)(1:lfuns) .eq. funs(ii) ) then
 *           recognised function
             goto 2201
           endif
@@ -18597,7 +18597,7 @@ cc2008
           call prror(51)
         endif
         iDynkFun( NacqDynkFuns ) = ii
-        if ( nfields-3 .gt. NmaxDynkFunPar ) then
+        if ( gnfields-3 .gt. NmaxDynkFunPar ) then
           write(*,*) ' too many numerical parameters in line:'
           write(*,*) ch(:80)
           write(*,*) ' I will use only the first ', NmaxDynkFunPar
@@ -18614,37 +18614,37 @@ cc2008
             write(*,*) ''
             call prror(51)
           endif
-          dynkprofname(numdynkprofiles)=fields(6)(1:lfields(6))
-          read (fields(4)(1:lfields(4)),*) parDynkFun(NacqDynkFuns,1)
-          read (fields(5)(1:lfields(5)),*) parDynkFun(NacqDynkFuns,2)
+          dynkprofname(numdynkprofiles)=gfields(6)(1:lfields(6))
+          read (gfields(4)(1:lfields(4)),*) parDynkFun(NacqDynkFuns,1)
+          read (gfields(5)(1:lfields(5)),*) parDynkFun(NacqDynkFuns,2)
           jDynkFun(NacqDynkFuns)=numdynkprofiles
         else
 *         an actual function is declared: store parameters
-          do ii=1,min(nfields-3,NmaxDynkFunPar)
-            read (fields(ii+3)(1:lfields(ii+3)),*)
+          do ii=1,min(gnfields-3,NmaxDynkFunPar)
+            read (gfields(ii+3)(1:lfields(ii+3)),*)
      &                                      parDynkFun(NacqDynkFuns,ii)
           enddo
         endif
 *       store infos concerning the use of the original kick
-        if ( fields(3)(1:1) .ne. '-' ) then
+        if ( gfields(3)(1:1) .ne. '-' ) then
           do ii=1,lfields(3)
-            read (fields(3)(ii:ii),*) i1
+            read (gfields(3)(ii:ii),*) i1
             lparDynkFun(NacqDynkFuns,i1)=.true.
           enddo
         endif
         goto 2222
       else
 *       the user is declaring a combo
-        call read_fields( ch, fields, lfields, nfields, lerr )
+        call read_fields( ch, gfields, lfields, gnfields, lerr )
         if ( lerr ) call prror(51)
 *       find declared element in the list of SINGLE ELEMENTs already declared:
         do i1=1,NacqDynkSEs
           i2=iSEDynks(i1)
-          if(bez(i2)(1:lfields(1)).eq.fields(1)(1:lfields(1))) goto 2203
+          if(bez(i2)(1:lfields(1)).eq.gfields(1)(1:lfields(1)))goto 2203
         enddo
 *       find declared element in the list of SINGLE ELEMENTs:
         do i2=1,il
-          if(bez(i2)(1:lfields(1)).eq.fields(1)(1:lfields(1))) goto 2202
+          if(bez(i2)(1:lfields(1)).eq.gfields(1)(1:lfields(1)))goto 2202
         enddo
 *       SINGLE ELEMENT not recognised
         write(*,*) ''
@@ -18672,9 +18672,9 @@ cc2008
         nComboDynks(i1)=nComboDynks(i1)+1
 *       default value of turn start
         nTurnsComboDynks(i1,nComboDynks(i1))=1
-        if ( fields(2)(1:1) .ne. '-' ) then
+        if ( gfields(2)(1:1) .ne. '-' ) then
 *         store first function
-          read (fields(2)(1:lfields(2)),*) 
+          read (gfields(2)(1:lfields(2)),*) 
      &                               mapComboDynks(i1,nComboDynks(i1),1)
           if ( mapComboDynks(i1,nComboDynks(i1),1).lt.0 ) then
             write(*,*) ''
@@ -18684,11 +18684,11 @@ cc2008
             call prror(51)
           endif
         endif
-        if ( nfields.ge.4 ) then
-          if ( fields(3)(1:1).ne.'-' .and. fields(4)(1:1).ne.'-' ) then
+        if ( gnfields.ge.4 ) then
+          if ( gfields(3)(1:1).ne.'-'.and. gfields(4)(1:1).ne.'-' ) then
 *           store combination operation
             do ii=1,noper
-              if ( fields(3)(1:loper) .eq. oper(ii)(1:loper) ) then
+              if ( gfields(3)(1:loper) .eq. oper(ii)(1:loper) ) then
                 mapComboDynks(i1,nComboDynks(i1),2)=ii
                 goto 2204
               endif
@@ -18700,7 +18700,7 @@ cc2008
             call prror(51)
  2204       continue
 *           store second function
-            read (fields(4)(1:lfields(4)),*) 
+            read (gfields(4)(1:lfields(4)),*) 
      &                               mapComboDynks(i1,nComboDynks(i1),3)
             if ( mapComboDynks(i1,nComboDynks(i1),3).lt.0 ) then
               write(*,*) ''
@@ -18711,10 +18711,10 @@ cc2008
             endif
           endif
         endif
-        if ( nfields.ge.5 ) then
+        if ( gnfields.ge.5 ) then
 *         store offset function
-          if ( fields(5)(1:1) .ne. '-' ) then
-            read (fields(5)(1:lfields(5)),*) 
+          if ( gfields(5)(1:1) .ne. '-' ) then
+            read (gfields(5)(1:lfields(5)),*) 
      &                               mapComboDynks(i1,nComboDynks(i1),4)
             if ( mapComboDynks(i1,nComboDynks(i1),4).lt.0 ) then
               write(*,*) ''
@@ -18725,10 +18725,10 @@ cc2008
             endif
           endif
         endif
-        if ( nfields.ge.6 ) then
+        if ( gnfields.ge.6 ) then
 *         store nstart
-          if ( fields(6)(1:1) .ne. '-' ) then
-            read (fields(6)(1:lfields(6)),*)
+          if ( gfields(6)(1:1) .ne. '-' ) then
+            read (gfields(6)(1:lfields(6)),*)
      &                              nTurnsComboDynks(i1,nComboDynks(i1))
             if ( nTurnsComboDynks(i1,nComboDynks(i1)).lt.0 ) then
               write(*,*)''
@@ -18739,10 +18739,10 @@ cc2008
             endif
           endif
         endif
-        if ( nfields.ge.7 ) then
+        if ( gnfields.ge.7 ) then
 *         activate logging and store unit
-          if ( fields(7)(1:1) .ne. '-' ) then
-            read (fields(7)(1:lfields(7)),*) uSEDlog(i1)
+          if ( gfields(7)(1:1) .ne. '-' ) then
+            read (gfields(7)(1:lfields(7)),*) uSEDlog(i1)
             if ( uSEDlog(i1).lt.0 ) then
               write(*,*)''
               write(*,*)' invalid declaration of logging unit in line:'
@@ -18754,10 +18754,10 @@ cc2008
             nSEDlog(i1) = 1 ! default frequency
           endif
         endif
-        if ( nfields.ge.8 ) then
+        if ( gnfields.ge.8 ) then
 *         update frequency of logging
-          if ( fields(8)(1:1) .ne. '-' ) then
-            read (fields(8)(1:lfields(8)),*) nSEDlog(i1)
+          if ( gfields(8)(1:1) .ne. '-' ) then
+            read (gfields(8)(1:lfields(8)),*) nSEDlog(i1)
             if ( nSEDlog(i1).le.0 ) nSEDlog(i1)=1
           endif
         endif
@@ -19509,7 +19509,7 @@ cc2008
       return
       end
 
-      subroutine read_fields( tmpline, fields, lfields, nfields, lerr )
+      subroutine read_fields( tmpline, gfields, lfields, gnfields, lerr)
 !
 !-----------------------------------------------------------------------
 !     A.Mereghetti, for the FLUKA Team
@@ -19529,10 +19529,10 @@ cc2008
 
 *     initialise output variables
       lerr = .false.
-      nfields=0
+      gnfields=0
       do ii=1,n_max_fields
          do jj=1,l_max_string
-            fields(ii)(jj:jj)=' '
+            gfields(ii)(jj:jj)=' '
          enddo
          lfields(ii)=0
       enddo
@@ -19544,17 +19544,17 @@ cc2008
 *           blank char
             if ( lchar ) then
 *              end of a string: record it
-               lfields(nfields)=lenstr
-               fields(nfields)(1:lfields(nfields))=
-     &               tmpline(istart:istart+lfields(nfields))
+               lfields(gnfields)=lenstr
+               gfields(gnfields)(1:lfields(gnfields))=
+     &               tmpline(istart:istart+lfields(gnfields))
                lchar = .false.
             endif
          else
 *           non-blank char
             if ( .not. lchar ) then
 *              a new what starts
-               nfields = nfields +1
-               if ( nfields.gt.n_max_fields ) then
+               gnfields = gnfields +1
+               if ( gnfields.gt.n_max_fields ) then
                   write (*,*) ' error! too many fields in line:'
                   write (*,*) tmpline
                   write (*,*) ' please increase n_max_fields'
