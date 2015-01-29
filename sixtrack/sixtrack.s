@@ -148,35 +148,24 @@
       integer mbea,mcor,mcop,mmul,mpa,mran,nbb,nblo,nblz,ncom,ncor1,    &
      &nelb,nele,nema,ninv,nlya,nmac,nmon1,npart,nper,nplo,npos,nran,    &
      &nrco,ntr,nzfz
-+if .not.fluka
       parameter(npart = 64,nmac = 1)
-+ei
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     increase number of particles that can be transported
-!     inserted in main code by the 'fluka' compilation flag
-      parameter(npart = 1500,nmac = 1)
-
-+ei
 +if .not.collimat
 +if bignblz
       parameter(nele=1200,nblo=600,nper=16,nelb=140,nblz=200000,        &
      &nzfz = 300000,mmul = 20)
 +ei
 +if .not.bignblz
-      parameter(nele=6000,nblo=2000,nper=2,nelb=140,nblz=25000,         &
+      parameter(nele=1200,nblo=600,nper=16,nelb=140,nblz=20000,         &
      &nzfz = 300000,mmul = 20)
 +ei
 +ei
 +if collimat
 +if beamgas
-      parameter(nele=50000,nblo=10000,nper=16,nelb=140,nblz=200000,     &
+      parameter(nele=50000,nblo=10000,nper=16,nelb=140,nblz=200000,         &
      &nzfz = 300000,mmul = 11)
 +ei
 +if .not.beamgas
-      parameter(nele=6000,nblo=2000,nper=16,nelb=140,nblz=25000,        &
+      parameter(nele=5000,nblo=400,nper=16,nelb=140,nblz=15000,         &
      &nzfz = 300000,mmul = 11)
 +ei
 +ei
@@ -209,20 +198,7 @@
       parameter(c1m13 = 1.0d-13,c1m15 = 1.0d-15)
       parameter(c1m18 = 1.0d-18,c1m21 = 1.0d-21,c1m24 = 1.0d-24)
       parameter(c1m36 = 1.0d-36,c1m38 = 1.0d-38)
-+if .not.fluka
-!     electron mass from PDG, 2002
       parameter(pmap = 938.271998d0,pmae = .510998902d0)
-+ei
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 08-12-2014
-!     synch masses of proton and electron to values used by FLUKA
-!     inserted in main code by the 'fluka' compilation flag
-!     proton and electron mass from PDG, 2014
-      parameter( pmap = 0.938272046d3, pmae = 0.510998928d0)
-
-+ei
       parameter(crade = 2.817940285d-15, clight = 2.99792458d8)
 +cd parbeam
       integer idim,kstep,nx,ny
@@ -248,37 +224,27 @@
      &iclo6,iclo6r,icode,icoe,icomb,icomb0,iconv,icow,icr,idam,idfor,   &
      &idis,idp,ierro,iffw,ifh,iicav,il,ilin,imad,imbb,                  &
      &imc,imtr,iorg,iout,                                               &
-     &ipos,ipr,iprint,ipt,iq,iqmod,iqmod6,iratioe,ird,ire,ires,         &
-     &irew,irm,irmod2,ise,ise1,ise2,ise3,isea,iskew,iskip,istw,         &
+     &ipos,ipr,iprint,ipt,iq,iqmod,iqmod6,iratioe,irco,ird,ire,ires,    &
+     &irew,irip,irm,irmod2,ise,ise1,ise2,ise3,isea,iskew,iskip,istw,    &
      &isub,itco,itcro,itf,ithick,ition,itionc,itqv,its6d,iu,iver,ivox,  &
      &ivoz,iwg,ixcav,izu0,kanf,kp,kpa,kwtype,kz,lhc,m21,m22,m23,mblo,   &
      &mbloz,mcut,mel,mesa,mmac,mout2,mp,mper,mstr,msym,mtyp,mzu,napx,   &
      &napxo,nbeam,nch,ncororb,ncorrep,ncorru,ncy,ndafi,nde,nhcorr,      &
-     &nhmoni,niu,nlin,nmu,npp,nprint,nqc,nre,nrr,nskew,                 &
+     &nhmoni,niu,nlin,nmu,npp,nprint,nqc,nre,nrel,nrr,nrturn,nskew,     &
      &nstart,nstop,nt,nta,ntco,nte,ntwin,nu,numl,numlr,nur,nvcorr,      &
      &nvmoni,nwr, nturn1, nturn2, nturn3, nturn4,numlcp,numlmax,nnuml
-      double precision a,ak0,aka,alfx,alfz,amp0,aper,ape,bbcu,          &
+      double precision a,ak0,aka,alfx,alfz,amp0,aper,apx,apz,ape,bbcu,  &
      &bclorb,beamoff,benkc,benki,betac,betam,betx,betz,bk0,bka,bl1,bl2, &
      &clo6,clobeam,clop6,cma1,cma2,cotr,crad,de0,dech,ded,dfft,         &
      &di0,dip0,dki,dkq,dma,dmap,dphix,dphiz,dppoff,dpscor,dqq,dres,dsi, &
      &dsm0,dtr,e0,ed,ej,ejf,ek,el,elbe,emitx,emity,emitz,extalign,      &
      &exterr,eui,euii,gammar,hsy,hsyc,pac,pam,parbe,parbe14,partnum,    &
      &phas,phas0,phasc,pi,pi2,pisqrt,pma,ptnfac,qs,qw0,qwsk,qx0,qxt,qz0,&
-     &qzt,r00,rad,rat,ratio,ratioe,rrtr,rtc,rts,rvf,                    &
+     &qzt,r00,rad,ramp,rat,ratio,ratioe,rfre,rrtr,rtc,rts,rvf,rzph,     &
      &sigcor,sige,sigma0,sigman,sigman2,sigmanq,sigmoff,sigz,sm,ta,tam1,&
      &tam2,tiltc,tilts,tlen,totl,track6d,xpl,xrms,zfz,zpl,zrms,wirel,   &
      &acdipph, crabph, bbbx, bbby, bbbs,                                &
      &crabph2, crabph3, crabph4
-      character*16 el_name
-+if backtrk
-!     A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 12-06-2014
-!     additional variables for back-tracking, when computing locations of
-!        lost particles
-!     inserted in main code by the 'backtrk' compilation flag
-      integer kapold
-      double precision xold,sold,apold,bktpre
-+ei
 +if time
       double precision tcnst35,exterr35,zfz35
       integer icext35
@@ -320,38 +286,7 @@
       common/cororb/betam(nmon1,2),pam(nmon1,2),betac(ncor1,2),         &
      &pac(ncor1,2),bclorb(nmon1,2),nhmoni,nhcorr,nvmoni,nvcorr,         &
      &ncororb(nele)
-
-!     A.Mereghetti, P.Garcia Ortega and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 09-07-2014
-!     use a dedicated array to store the type of aperture of each SINGLE ELEMENT
-!        and if it is tilted / offcentered
-      integer kape
-      logical lapeofftlt
-!     keep in mind if any aperture profile is assigned to any
-!       SINGLE ELEMENT or not
-      logical limifound
-!     echoing / dumpint acquired infos
-      logical ldmpaper                       ! Flag for activating the dump
-      integer aperunit                       ! unit for the output file
-      character*16 aper_filename             ! name of the output file
-!     array to keep track of lost particles if they are not killed
-!     for now, it stores the ID of the particle lost	
-      integer plost
-!     flag for killing particles at the aperture check or let them live	
-      logical apflag                          
-!     always in main code
-+if .not.backtrk
-      common/apert/ ape(7,nele), kape(nele), lapeofftlt(nele),          &
-     &  plost(npart), aper_filename, aperunit, ldmpaper, limifound,
-     &  apflag
-+ei
-+if backtrk
-!     NB: add also temporary variables for back-tracking
-!         inserted in main code by the 'backtrk' compilation flag
-      common/apert/ ape(7,nele),kape(nele),lapeofftlt(nele),            &
-     &  plost(npart), xold(2,npart), apold(7), sold, bktpre, kapold,    &
-     &	limifound, aper_filename, aperunit, ldmpaper, apflag
-+ei
+      common/apert/apx(nele),apz(nele),ape(3,nele)
       common/clos/sigma0(2),iclo,ncorru,ncorrep
       common/combin/icomb0(20),icomb(ncom,20),ratio(ncom,20),           &
      &ratioe(nele),iratioe(nele),icoe
@@ -363,6 +298,8 @@
      &nstart,nstop,iskip,iconv,imad
       common/posti1/ipos,iav,iwg,ivox,ivoz,ires,ifh,toptit(5)
       common/posti2/kwtype,itf,icr,idis,icow,istw,iffw,nprint,ndafi
+      common/ripp/irip,irco,ramp(nele),rfre(nele),rzph(nele),nrel(nele)
+      common/ripp2/nrturn
       common/skew/qwsk(2),betx(2),betz(2),alfx(2),alfz(2),iskew,nskew(6)
       common/pawc/hmal(nplo)
       common/tit/sixtit,commen,ithick
@@ -422,12 +359,13 @@
       double precision aml6,edcor
       common/sixdim/aml6(6,6),edcor(2)
 +cd commonxz
-      double precision aai,ampt,bbi,damp,smi,smizf,xsi,                 &
+      double precision aai,ampt,bbi,damp,rfres,rsmi,rzphs,smi,smizf,xsi,&
      &zsi
       integer napxto
       real tlim,time0,time1,time2,time3,trtime
       common/xz/xsi(nblz),zsi(nblz),smi(nblz),smizf(nblz),              &
      &aai(nblz,mmul),bbi(nblz,mmul)
+      common/rfres/rsmi(nblz),rfres(nblz),rzphs(nblz)
       common/damp/damp,ampt
       common/ttime/tlim,time0,time1,time2,time3,trtime,napxto
 +cd commonta
@@ -880,7 +818,6 @@
       common /mu/ mux, muy
       common /xcheck/ xbob,ybob,xpbob,ypbob,xineff,yineff,xpineff,      &
      &ypineff
-      common /ipart/ ipart
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !
@@ -1108,254 +1045,6 @@
       common/materia/mat
       common/sindif/xpsd,zpsd,psd
       common/cdpodx/dpodx
-!
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-!
-+cd   dbdcum
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     COMMON block for computing the dcum, i.e. the longitudinal s-coordinate
-!     always in main code
-
-!     dcum is computed at the END of each entry of the accelerator structure
-!       thus, for BLOCks, values are given at the end
-!     entries are identified by the usual indices: 1:nblz
-!     two further entries are added, at the beginning and at the end of the 
-!       array, for storing the positions of the MARKERs at the beginning and
-!       end of the accelerator structure
-
-      double precision dcum                  ! actual values [m]
-      logical print_dcum                     ! flag for printout
-      parameter ( print_dcum = .false. )
-
-      common /dcumdb/ dcum(0:nblz+1)
-!
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-!
-+cd   dbreaddis
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     COMMON for reading a beam distribution
-!     always in main code
-
-!     in case the DIST input block is issued, the beam distribution
-!       is read from a text file
-
-      logical dist_enable                    ! DIST input block given
-      logical dist_echo                      ! echo the read distribution?
-      character*16 dist_filename             !
-      integer dist_read_unit                 ! unit for reading the distribution
-      integer dist_echo_unit                 ! unit for echoing the distribution
-
-      common /readdisdb/ dist_filename, dist_echo, dist_enable,
-     &                   dist_read_unit, dist_echo_unit
-!
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-!
-+cd   dbdump
-
-!     A.Mereghetti, D.Sinuela Pastor and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 13-06-2014
-!     COMMON for dumping the beam population
-!     always in main code
-
-!     in case the DUMP input block is issued, the beam population is dumped
-!       at EACH occurence of the flagged SINGLE ELEMENT(s) in the accelerator
-!       structure
-!     important remarks:
-!     - the chosen SINGLE ELEMENT(s) must be outside a BLOC, and BLOCs cannot
-!       be chosen
-!     - the special name 'ALL' will trigger dump at all SINGLE ELEMENTs
-!       (settings of dump are stored in index 0 of all the usual arrays);
-!     - the beam population is ALWAYS dumped at the end of the entry,
-!       i.e. AFTER the proper transformation map is applied, and after the 
-!       aperture check, i.e. AFTER the lost particles are filtered out
-!     - a negative or null value of the dump frequency is interpreted as dump
-!       at every turn
-!     - NO check is performed on the logical units, i.e. if the ones selected 
-!       by the user are used in other places of the code...
-!     - the dump format can be changed to the one required by the LHC aperture check
-!	post-processing tools, activating the dumpfmt flag (0=off, by default);
-      logical ldumphighprec                  ! high precision printout required
-                                             !   at all flagged SINGLE ELEMENTs
-      logical ldump                          ! flag the SINGLE ELEMENT for
-                                             !   dumping
-      integer ndumpt                         ! dump every n turns at a flagged
-                                             !   SINGLE ELEMENT (dump frequency)
-      integer dumpunit                       ! fortran unit for dump at a
-                                             !   flagged SINGLE ELEMENT
-      integer dumpfmt                        ! flag the format of the dump
-	
-      common /dumpdb/ ldump(0:nele), ndumpt(0:nele), dumpunit(0:nele),
-     &                dumpfmt(0:nele), ldumphighprec
-!
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-!
-+cd   dbstat
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     COMMON for performing some basic statistics about the beam population
-!     always in main code
-
-!     in case the STAT input block is issued, some statistics about the beam
-!       population is performed at EACH occurence of the flagged SINGLE 
-!       ELEMENT(s) in the accelerator structure
-!     important remarks:
-!     - the chosen SINGLE ELEMENT(s) must be outside a BLOC, and BLOCs cannot
-!       be chosen
-!     - the statistical analysis is ALWAYS performed at the end of the entry,
-!       i.e. AFTER the proper transformation map is applied, and after the 
-!       aperture check, i.e. AFTER the lost particles are filtered out
-!     - a negative or null value of the dump frequency is interpreted as dump
-!       at every turn
-!     - NO check is performed on the logical units, i.e. if the ones selected 
-!       by the user are used in other places of the code...
-
-      logical lstathighprec                  ! high precision printout of 
-                                             !   statistical quantities required
-                                             !   at all flagged SINGLE ELEMENTs
-      logical lstat                          ! flag the SINGLE ELEMENT for
-                                             !   statistical analysis
-      integer nstatt                         ! statistics performed every n 
-                                             !   turns at a flagged SINGLE
-                                             !   ELEMENT (frequency)
-      integer statunit                       ! fortran unit for dump at a
-                                             !   flagged SINGLE ELEMENT
-
-      common /statdb/ lstat(nele), nstatt(nele), statunit(nele),
-     &                lstathighprec
-!
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-!
-+cd   comgetfields
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 29-08-2014
-!     some variables / parameters for a more flexible parsing of input lines
-!     always in main code
-
-*     parameters for the parser
-      integer getfields_n_max_fields, getfields_l_max_string
-      parameter ( getfields_n_max_fields = 10  ) ! max number of returned fields
-      parameter ( getfields_l_max_string = 132 ) ! max len of parsed line and its fields
-
-*     array of fields
-      character getfields_fields
-     &     ( getfields_n_max_fields )*( getfields_l_max_string )
-*     number of identified fields
-      integer getfields_nfields
-*     length of each what:
-      integer getfields_lfields( getfields_n_max_fields )
-*     an error flag
-      logical getfields_lerr
-
-!
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-!
-+cd   combmat
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 01-09-2014
-!     COMMON for computing the beam matrix
-!     always in main code
-
-!     in case the BMAT input block is issued, the calculation of the beam
-!       matrix is performed at EACH occurence of the flagged SINGLE
-!       ELEMENT(s) in the accelerator structure
-!     the logics follows the one of the STAT input block
-
-      logical lbmathighprec                  ! high precision printout of 
-                                             !   quantities required
-                                             !   at all flagged SINGLE ELEMENTs
-      logical lbmat                          ! flag the SINGLE ELEMENT for
-                                             !   the analysis
-      integer nbmatt                         ! beam matrix is computed every n 
-                                             !   turns at a flagged SINGLE
-                                             !   ELEMENT (frequency)
-      integer bmatunit                       ! fortran unit for dump at a
-                                             !   flagged SINGLE ELEMENT
-
-      common /bmatdb/ lbmat(nele), nbmatt(nele), bmatunit(nele),
-     &                lbmathighprec
-!
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-!
-+cd   comdynk
-
-!     A.Mereghetti, for the FLUKA Team,
-!     K.Sjobak and A. Santamaria, BE-ABP/HSS
-!     last modified: 30/10-2014
-!     
-!     COMMON for dynamic kicks (DYNK)
-!     always in main code
-!     
-!     See TWIKI for documentation
-!
-
-
-*     general-purpose variables
-      logical ldynk            ! dynamic kick requested, i.e. DYNK input bloc issued in the fort.3 file
-      logical ldynkdebug       ! print debug messages in main output
-      logical ldynkfileopen    ! Is dynksets.dat already open?
-      logical ldynkfiledisable ! Disable writing dynksets.dat?
-
-C     Store the FUN statements
-      integer maxfuncs_dynk, maxdata_dynk, maxstrlen_dynk
-      parameter (maxfuncs_dynk=100,maxdata_dynk=50000,maxstrlen_dynk=20)
-
-      integer funcs_dynk (maxfuncs_dynk,5) ! 1 row/FUN, cols are: 
-                                           ! (1) = function name in fort.3 (points within cexpr_dynk),
-                                           ! (2) = indicates function type
-                                           ! (3,4,5) = arguments (often pointing within other arrays {i|f|c}expr_dynk)
-      integer iexpr_dynk (maxdata_dynk)                  ! Data for DYNK FUNs
-      double precision fexpr_dynk (maxdata_dynk)         ! Data for DYNK FUNs
-      character(maxstrlen_dynk) cexpr_dynk(maxdata_dynk) ! Data for DYNK FUNs (\0 initialized in comdynk)
-      
-      integer nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk !Number of used positions in arrays
-            
-C     Store the SET statements
-      integer maxsets_dynk
-      parameter (maxsets_dynk=200)
-      integer sets_dynk(maxsets_dynk, 4) ! 1 row/SET, cols are:
-                                         ! (1) = function index (points within funcs_dynk)
-                                         ! (2) = first turn num. where it is active
-                                         ! (3) =  last turn num. where it is active
-                                         ! (4) = Turn shift - number added to turn before evaluating the FUN
-      character(maxstrlen_dynk) csets_dynk (maxsets_dynk,2) ! 1 row/SET (same ordering as sets_dynk), cols are:
-                                                            ! (1) element name
-                                                            ! (2) attribute name
-
-      integer nsets_dynk ! Number of used positions in arrays
-      
-      character(maxstrlen_dynk) csets_unique_dynk (maxsets_dynk,2) !Similar to csets_dynk,
-                                                                   ! but only one entry per elem/attr
-      double precision fsets_origvalue_dynk(maxsets_dynk) ! Store original value from dynk
-      integer nsets_unique_dynk ! Number of used positions in arrays
-
-!--Storing the right izu for multipoles in dynk
-      integer dynk_izuIndex
-      dimension dynk_izuIndex(nele)
-      
-!     fortran COMMON declaration follows padding requirements
-      common /dynkComGen/ ldynk, ldynkdebug,
-     &     ldynkfileopen, ldynkfiledisable
-
-      common /dynkComExpr/ funcs_dynk,
-     &     iexpr_dynk, fexpr_dynk, cexpr_dynk,
-     &     nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk
-
-      common /dynkComSet/ sets_dynk, csets_dynk, nsets_dynk
-      common /dynkComUniqueSet/ 
-     &     csets_unique_dynk, fsets_origvalue_dynk, nsets_unique_dynk
-     
-      common /dynkComReinitialize/ dynk_izuIndex
-
-!
-!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-!
 +cd timefct
 +if crlibm
           expt =  exp_rn(-dble(n)/tcnst35(i))
@@ -1477,14 +1166,14 @@ C     Store the SET statements
      &mout2,icext,icextal,aper,di0,dip0,ta,dma,dmap,dkq,dqq,de0,ded,dsi,&
      &dech,dsm0,itco,itcro,itqv,iout,qw0,iq,iqmod,kpa,iqmod6,bez,elbe,  &
      &bezb,ilin,nt,iprint,ntco,eui,euii,nlin,bezl,betam,pam,betac,pac,  &
-     &bclorb,nhmoni,nhcorr,nvmoni,nvcorr,ncororb,sigma0,iclo,           &
+     &bclorb,nhmoni,nhcorr,nvmoni,nvcorr,ncororb,apx,apz,sigma0,iclo,   &
      &ncorru,ncorrep,icomb0,icomb,ratio,ratioe,iratioe,                 &
      &icoe,ise,mesa,mp,m21,m22,m23,                                     &
      &ise1,ise2,ise3,isea,qxt,qzt,tam1,tam2,isub,nta,nte,ipt,totl,rtc,  &
      &rts,ire,ipr,irmod2,dtr,nre,nur,nch,nqc,npp,nrr,nu,dphix,dphiz,qx0,&
      &qz0,dres,dfft,cma1,cma2,nstart,nstop,iskip,iconv,imad,ipos,iav,   &
      &iwg,ivox,ivoz,ires,ifh,toptit,kwtype,itf,icr,idis,icow,istw,iffw, &
-     &nprint,ndafi,qwsk,betx,betz,                                      &
+     &nprint,ndafi,irip,irco,ramp,rfre,rzph,nrel,nrturn,qwsk,betx,betz, &
      &alfx,alfz,iskew,nskew,hmal,sixtit,commen,ithick,clo6,clop6,dki,   &
      &sigman,sigman2,sigmanq,clobeam,beamoff,parbe,track6d,ptnfac,      &
      &sigz,sige,partnum,parbe14,emitx,emity,emitz,gammar,nbeam,ibbc,    &
@@ -1496,7 +1185,7 @@ C     Store the SET statements
      &as,at,a2,al,sigm,dps,idz,dp1,itra,                                &
 +ei
      &x,y,bet0,alf0,clo,clop,cro,is,ichrom,nnumxv,xsi,zsi,smi,aai,      &
-     &bbi,ampt,tlim,tasm,preda,idial,nord,nvar,                         &
+     &bbi,rsmi,rfres,rzphs,ampt,tlim,tasm,preda,idial,nord,nvar,        &
      &nvar2,nsix,ncor,ipar,nordf,                                       &
      &nvarf,nord1,ndimf,idptr,inorm,imod1,imod2,                        &
      &icorr,nctype,namp,nmom,nmom1,nmom2,weig1,weig2,dpmax,coel,        &
@@ -1594,43 +1283,6 @@ C     Store the SET statements
 !     call dumpbin('abeamcou',2,22)
 !     call abend('after beam coupling                               ')
 +ei
-+cd multini
-!-- Initialize multipoles, combining settings from fort.2 with 
-!-- coefficients from MULT and random values from FLUC. 
-!-- Used in program maincr and from initialize_elements.
-      r0=ek(ix)
-      if(abs(r0).le.pieni) goto 150 ! label 150 - just after this code
-      nmz=nmu(ix)
-      if(nmz.eq.0) then
-         izu=izu+2*mmul
-         goto 150
-      endif
-      im=irm(ix)
-      r0a=one
-      do k=1,nmz
-         izu=izu+1
-!     hr05         aaiv(k,m,i)=ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k))/r0a
-         aaiv(k,m,i)=(ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k)))/r0a !hr05
-+if time
-!     hr05         aaiv35(k,m,i)=ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k))/r0a
-         aaiv35(k,m,i)=(ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k)))/r0a !hr05
-+ei
-         aai(i,k)=aaiv(k,m,i)
-         izu=izu+1
-!     hr05         bbiv(k,m,i)=ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k))/r0a
-         bbiv(k,m,i)=(ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k)))/r0a !hr05
-+if time
-!     hr05         bbiv35(k,m,i)=ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k))/r0a
-         bbiv35(k,m,i)=(ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k)))/r0a !hr05
-+ei
-         bbi(i,k)=bbiv(k,m,i)
- 
-         r0a=r0a*r0
-      enddo
-      
-      izu=izu+2*mmul-2*nmz
-!------------------------------------------------------------------------------------        
-
 +cd alignf
 +if .not.tilt
 *FOX  XL=X(1)-XS ;
@@ -6061,6 +5713,8 @@ C     Store the SET statements
               r2b(j)=two*(sigman2(2,imbb(i))-sigman2(1,imbb(i)))
 +cd beama1
               rb(j)=sqrt(r2b(j))
+              if(j.eq.1) then
+              endif
 !hr03         rkb(j)=strack(i)*pisqrt/rb(j)
               rkb(j)=(strack(i)*pisqrt)/rb(j)                            !hr03
 +cd beama2
@@ -6355,7 +6009,7 @@ C     Store the SET statements
             endif
           endif
           if(abs(dki(ix,2)).gt.pieni) then
-           if(abs(dki(ix,3)).gt.pieni) then
+            if(abs(dki(ix,3)).gt.pieni) then
 *FOX  DKIP=DKI(IX,2)/(ONE+DPDA) ;
 *FOX  Y(1)=Y(1)+(DKI(IX,2)/DKI(IX,3)*ZL-DPDA*C1E3)*
 *FOX  TILTS(I)*DKIP
@@ -7700,110 +7354,267 @@ cc2008
             sigmv(j)=sigmv(j)+stracki*(c1e3-rvv(j)*sqrt((c1e6+yv(1,j)   &!hr03
      &**2)+yv(2,j)**2))                                                  !hr03
 +ei
-+cd dumplines
-!         A.Mereghetti, D.Sinuela Pastor and P.Garcia Ortega, for the FLUKA Team
-!         last modified: 13-06-2014
-!         dump beam particles
-!         always in main code
-          if ( ldump(0) ) then
-!           dump at all SINGLE ELEMENTs
-            if ( ndumpt(0).eq.1 .or. mod(n,ndumpt(0)).eq.1 ) then
-              call dump_beam_population( n, i, ix, dumpunit(0),         &
-     &                              dumpfmt(0), ldumphighprec )
-            endif
-          endif
-          if ( ldump(ix) ) then
-!           dump at this precise SINGLE ELEMENT
-            if ( ndumpt(ix).eq.1 .or. mod(n,ndumpt(ix)).eq.1 ) then
-              call dump_beam_population( n, i, ix, dumpunit(ix),        &
-     &                             dumpfmt(ix), ldumphighprec )
-            endif
-          endif
-+cd statlines
-!         A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!         last modified: 17-07-2013
-!         dump statistics about beam population
-!         always in main code
-          if ( lstat(ix) ) then
-            if ( nstatt(ix).eq.1 .or. mod(n,nstatt(ix)).eq.1 )          &
-     &          call dump_statistics( n, i, ix, statunit(ix),           &
-     &                                lstathighprec )
-          endif
-+cd bmatlines
-!         A.Mereghetti, for the FLUKA Team
-!         last modified: 01-09-2014
-!         dump beam matrix
-!         always in main code
-          if ( lbmat(ix) ) then
-            if ( nbmatt(ix).eq.1 .or. mod(n,nbmatt(ix)).eq.1 )          &
-     &          call dump_beam_mtrix( n, i, ix, bmatunit(ix),           &
-     &                                lbmathighprec )
-          endif
 +cd lostpart
-!         A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!         last modified: 17-07-2013
-!         on-line aperture check
-!         always in main code
-          call lostpart(n, i, ix, llost, nthinerr )
-+if backtrk
-!         P.Garcia Ortega, for the FLUKA Team
-!         last modified: 11-06-2014
-!         store old infos for back-tracking at aperture check at downstream locations
-!         inserted in main code by the 'backtrk' compilation flag
-          if ( kape(ix).ne.0 ) then
-!	    Store old position of particles
-            do j=1,napx
-              xold(1,j) = xv(1,j)
-              xold(2,j) = xv(2,j)
-            end do
-!	    Store old s value
-            sold  =  dcum(i)
-!	    Store information of aperture
-	    kapold = kape(ix)
-	    do j=1,7
-	      apold(j) = ape(j,ix)
-	    end do
-	  end if
+          llost=.false.
+          do j=1,napx
+             llost=llost.or.                                            &
+     &abs(xv(1,j)).gt.aper(1).or.abs(xv(2,j)).gt.aper(2)
+          enddo
+          if (llost) then
+             kpz=abs(kp(ix))
+             if(kpz.eq.2) then
+                call lostpar3(i,ix,nthinerr)
+                if(nthinerr.ne.0) return
+             elseif(kpz.eq.3) then
+                call lostpar4(i,ix,nthinerr)
+                if(nthinerr.ne.0) return
+             else
+                call lostpar2(i,ix,nthinerr)
+                if(nthinerr.ne.0) return
+             endif
+          endif
++cd lost1a
+      ilostch=0
+      do 10 j=1,napx
+        if(abs(xv(1,j)).gt.aper(1).or.abs(xv(2,j)).gt.aper(2).or.       &
+!     &isnan(xv(1,j),xv(1,j)).or.isnan(xv(2,j),xv(2,j))) then
+     &myisnan(xv(1,j),xv(1,j)).or.myisnan(xv(2,j),xv(2,j))) then
+          ilostch=1
+          pstop(nlostp(j))=.true.
+        endif
+  10  continue
+      do 20 j=1,napx
+        if(pstop(nlostp(j))) then
+          aperv(nlostp(j),1)=aper(1)
+          aperv(nlostp(j),2)=aper(2)
++cd lost1b
+      ilostch=0
+      do 10 j=1,napx
+        if(abs(xv(1,j)).gt.apx(ix).or.abs(xv(2,j)).gt.apz(ix).or.       &
+!     &isnan(xv(1,j),xv(1,j)).or.isnan(xv(2,j),xv(2,j))) then
+     &myisnan(xv(1,j),xv(1,j)).or.myisnan(xv(2,j),xv(2,j))) then
+          ilostch=1
+          pstop(nlostp(j))=.true.
+        endif
+  10  continue
+      do 20 j=1,napx
+        if(pstop(nlostp(j))) then
+          aperv(nlostp(j),1)=apx(ix)
+          aperv(nlostp(j),2)=apz(ix)
++cd lost1c
+      ilostch=0
+      do 10 j=1,napx
+!hr03   if(xv(1,j)*xv(1,j)*ape(1,ix)+xv(2,j)*xv(2,j)*ape(2,ix).gt.      &
+        if(xv(1,j)**2*ape(1,ix)+xv(2,j)**2*ape(2,ix).gt.                &!hr03
+     &ape(3,ix).or.                                                     &
+!     &isnan(xv(1,j),xv(1,j)).or.isnan(xv(2,j),xv(2,j))) then
+     &myisnan(xv(1,j),xv(1,j)).or.myisnan(xv(2,j),xv(2,j))) then
+          ilostch=1
+          pstop(nlostp(j))=.true.
+        endif
+  10  continue
+      do 20 j=1,napx
+        if(pstop(nlostp(j))) then
+          aperv(nlostp(j),1)=apx(ix)
+          aperv(nlostp(j),2)=apz(ix)
++cd lost2a
+          iv(nlostp(j))=i
+          ixv(nlostp(j))=ix
++cd lost2
+          xvl(1,nlostp(j))=xv(1,j)
+          xvl(2,nlostp(j))=xv(2,j)
+          yvl(1,nlostp(j))=yv(1,j)
+          yvl(2,nlostp(j))=yv(2,j)
+          dpsvl(nlostp(j))=dpsv(j)
+          ejvl(nlostp(j))=ejv(j)
+          sigmvl(nlostp(j))=sigmv(j)
+          numxv(nlostp(j))=numx
+          nnumxv(nlostp(j))=numx
++cd lost3a
+          if(mod(nlostp(j),2).eq.one) then
++if cr
+            write(lout,10000) nlostp(j),nms(nlostp(j))*izu0,
 +ei
-!         stop tracking if no particle survives to this element
-          if(nthinerr.ne.0) return
-+cd backtrkinit
-
-!     A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 11-06-2014
-!     initialise variables for back-tracking particles
-!     inserted in main code by the 'backtrk' compilation flag
-!     . store 'old' position of particles
-      do j=1,napx
-        xold(1,j) = xv(1,j)
-        xold(2,j) = xv(2,j)
-      end do
-!     . store 'old' s value
-      sold = dcum(0)
-!     . store information of aperture
-!       force general aperture, i.e. RE with aper(1) and aper(2)
-!       assumption: tracked particles do not fall outside aperture
-!         limits in the first elements...
-      kapold = 2
-      do j=1,7
-         apold(j) = zero
-      end do
-      apold(1) = aper(1)
-      apold(2) = aper(2)
-      apold(3) = sqrt(2.)*aper(1)
-      apold(4) = sqrt(2.)*aper(2)
-      if ( ktrack(1).ne.1 ) then
-         if ( kape(ic(1)-nblo).ne.0 ) then
-!        the first entry of the lattice sequence is a 
-!           SINGLE ELEMENT, to which an aperture profile
-!           is assigned
-            kapold = kape(ic(1)-nblo)
-            do j=1,7
-               apold(j) = ape(j,ic(1)-nblo)
-            end do
-         endif
++if .not.cr
+            write(*,10000) nlostp(j),nms(nlostp(j))*izu0,               &
++ei
+     &dp0v(nlostp(j)),numxv(nlostp(j)),abs(xvl(1,nlostp(j))),           &
+     &aperv(nlostp(j),1),abs(xvl(2,nlostp(j))),                         &
+     &aperv(nlostp(j),2)
+          else
++if cr
+            write(lout,10000) nlostp(j),nms(nlostp(j)-1)*izu0,
++ei
++if .not.cr
+            write(*,10000) nlostp(j),nms(nlostp(j)-1)*izu0,             &
++ei
+     &dp0v(nlostp(j)-1),numxv(nlostp(j)),abs(xvl(1,nlostp(j))),         &
+     &aperv(nlostp(j),1),abs(xvl(2,nlostp(j))),                         &
+     &aperv(nlostp(j),2)
+          endif
++cd lost3b
+          if(mod(nlostp(j),2).eq.one) then
++if cr
+            write(lout,10000) nlostp(j),nms(nlostp(j))*izu0,
++ei
++if .not.cr
+            write(*,10000) nlostp(j),nms(nlostp(j))*izu0,               &
++ei
+     &dp0v(nlostp(j)),numxv(nlostp(j)),iv(nlostp(j)),                   &
+     &abs(xvl(1,nlostp(j))),aperv(nlostp(j),1),                         &
+     &abs(xvl(2,nlostp(j))),aperv(nlostp(j),2),                         &
+     &ixv(nlostp(j)),kz(ixv(nlostp(j))),bez(ixv(nlostp(j)))
+          else
++if cr
+            write(lout,10000) nlostp(j),nms(nlostp(j)-1)*izu0,
++ei
++if .not.cr
+            write(*,10000) nlostp(j),nms(nlostp(j)-1)*izu0,             &
++ei
+     &dp0v(nlostp(j)-1),numxv(nlostp(j)),iv(nlostp(j)),                 &
+     &abs(xvl(1,nlostp(j))),aperv(nlostp(j),1),                         &
+     &abs(xvl(2,nlostp(j))),aperv(nlostp(j),2),                         &
+     &ixv(nlostp(j)),kz(ixv(nlostp(j))),bez(ixv(nlostp(j)))
+          endif
++cd lost4
+        endif
+   20 continue
+      lnapx=napx
+      do 30 j=napx,1,-1
+        if(pstop(nlostp(j))) then
+          if(j.ne.lnapx) then
+            do 35 jj=j,lnapx-1
+              jj1=jj+1
+              nlostp(jj)=nlostp(jj1)
+              xv(1,jj)=xv(1,jj1)
+              xv(2,jj)=xv(2,jj1)
+              yv(1,jj)=yv(1,jj1)
+              yv(2,jj)=yv(2,jj1)
++if bnlelens
+!GRDRHIC
+!GRD-042008
+              namepart(jj)=namepart(jj1)
+!GRDRHIC
+!GRD-042008
++ei
+              dpsv(jj)=dpsv(jj1)
+              sigmv(jj)=sigmv(jj1)
+              ejfv(jj)=ejfv(jj1)
+              ejv(jj)=ejv(jj1)
+              rvv(jj)=rvv(jj1)
++if rvet
+              rvet(jj)=rvet(jj1)
++ei
+              oidpsv(jj)=oidpsv(jj1)
+              dpsv1(jj)=dpsv1(jj1)
+              clo6v(1,jj)=clo6v(1,jj1)
+              clo6v(2,jj)=clo6v(2,jj1)
+              clo6v(3,jj)=clo6v(3,jj1)
+              clop6v(1,jj)=clop6v(1,jj1)
+              clop6v(2,jj)=clop6v(2,jj1)
+              clop6v(3,jj)=clop6v(3,jj1)
+!--beam-beam element
+              di0xs(jj)=di0xs(jj1)
+              dip0xs(jj)=dip0xs(jj1)
+              di0zs(jj)=di0zs(jj1)
+              dip0zs(jj)=dip0zs(jj1)
+              do 210 ib2=1,6
+                do 210 ib3=1,6
+                  tasau(jj,ib2,ib3)=tasau(jj1,ib2,ib3)
+  210         continue
+   35       continue
+          endif
+          lnapx=lnapx-1
+        endif
+   30 continue
+      if(lnapx.eq.0) then
++if cr
+        write(lout,*)
++ei
++if .not.cr
+        write(*,*)
++ei
++if cr
+        write(lout,*)
++ei
++if .not.cr
+        write(*,*)
++ei
++if cr
+        write(lout,*) '***********************'
++ei
++if .not.cr
+        write(*,*) '***********************'
++ei
++if cr
+        write(lout,*) '** ALL PARTICLE LOST **'
++ei
++if .not.cr
+        write(*,*) '** ALL PARTICLE LOST **'
++ei
++if cr
+        write(lout,*) '**   PROGRAM STOPS   **'
++ei
++if .not.cr
+        write(*,*) '**   PROGRAM STOPS   **'
++ei
++if cr
+        write(lout,*) '***********************'
++ei
++if .not.cr
+        write(*,*) '***********************'
++ei
++if cr
+        write(lout,*)
++ei
++if .not.cr
+        write(*,*)
++ei
++if cr
+        write(lout,*)
++ei
++if .not.cr
+        write(*,*)
++ei
+        nthinerr=3001
+        nnuml=numl
+        return
       endif
-
+      if(ithick.eq.1.and.ilostch.eq.1) then
++if cr
++if debug
+!       write(93,*) 'ERIC lostpar??? calling synuthck!!!'
+!       endfile 93
+!       backspace 93
++ei
++ei
+        call synuthck
+      endif
+      napx=lnapx
+      return
++cd lost5a
+10000 format(t10,'TRACKING ENDED ABNORMALLY'/t10, 'PARTICLE ',i3,       &
+     &' RANDOM SEED ',i8,/ t10,' MOMENTUM DEVIATION ',g12.5,            &
+     &' LOST IN REVOLUTION ',i8,/ t10,'HORIZ:  AMPLITUDE = ',f15.3,     &
+     &'   APERTURE = ',f15.3/ t10,'VERT:   AMPLITUDE = ',f15.3,         &
+     &'   APERTURE = ',f15.3/)
+      end
++cd lost5b
+10000 format(t10,'TRACKING ENDED ABNORMALLY'/t10, 'PARTICLE ',i3,       &
+     &' RANDOM SEED ',i8, ' MOMENTUM DEVIATION ',g12.5/ t10,            &
+     &' LOST IN REVOLUTION ',i8,' AT ELEMENT ',i4/ t10,                 &
+     &'HORIZ:  AMPLITUDE = ',f15.3,'RE-APERTURE = ',f15.3/ t10,         &
+     &'VERT:   AMPLITUDE = ',f15.3,'RE-APERTURE = ',f15.3/ t10,         &
+     &'ELEMENT - LIST NUMBER ',i4,' TYP NUMBER ',i4,' NAME ',a16/)
+      end
++cd lost5c
+10000 format(t10,'TRACKING ENDED ABNORMALLY'/t10, 'PARTICLE ',i3,       &
+     &' RANDOM SEED ',i8, ' MOMENTUM DEVIATION ',g12.5/ t10,            &
+     &' LOST IN REVOLUTION ',i8,' AT ELEMENT ',i4/ t10,                 &
+     &'HORIZ:  AMPLITUDE = ',f15.3,'EL-APERTURE = ',f15.3/ t10,         &
+     &'VERT:   AMPLITUDE = ',f15.3,'EL-APERTURE = ',f15.3/ t10,         &
+     &'ELEMENT - LIST NUMBER ',i4,' TYP NUMBER ',i4,' NAME ',a16/)
+      end
 +cd umlalid
           iwrite=0
           if(nlin.eq.0) then
@@ -8252,22 +8063,23 @@ cc2008
 +cd trom06
             phi(l)=phi(l)+dphi/pie
           enddo
-
-!         A.Mereghetti, for the FLUKA Team
-!         last modified: 17-07-2013
-!         update nr
-          nr=nr+1
-
 +if .not.collimat.and..not.bnlelens
           call writelin(nr,bez(ix),etl,phi,t,ix)
 +ei
-+if collimat.or.bnlelens
++if collimat.and..not.bnlelens
           call writelin(nr,bez(ix),etl,phi,t,ix,k)
++ei
++if .not.collimat.and.bnlelens
+!GRDRHIC
+          call writelin(nr,bez(ix),etl,phi,t,ix,k)
++ei
++if collimat.and.bnlelens
+          call writelin(nr,bez(ix),etl,phi,t,ix,k)
+!GRDRHIC
 +ei
           if(ntco.ne.0) then
             if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
           endif
-          goto 500
         endif
 +cd trom10
         if(kzz.eq.22) then
@@ -9318,7 +9130,7 @@ cc2008
       open(35,file='fort.35',form='formatted',status='unknown')
 +ei
 +ei
-+if .not.bnlelens.and..not.fluka
++if .not.bnlelens
 +if boinc
       call boincrf('fort.59',filename)
       open(59,file=filename,form='unformatted',status='unknown')
@@ -9679,47 +9491,98 @@ cc2008
       open(100,file='arrays',form='unformatted')
 +ei
 +ei
-
-
-!     A.Mereghetti, D.Sinuela Pastor and P.G.Ortega, for the FLUKA Team
-!     last modified: 04-07-2014
-!     open unit where lostpart will dump lost particles
-!     allways in main code
-      open(999)
-
-+cd flukaclose
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     clean closure of communication with fluka and un-set mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      n = fluka_is_running()
-      if (n.eq.0) then
-        if ( .not. fluka_connected ) then
-!         temporarily connect to fluka, to properly terminate the run
-          n = fluka_connect()
-          if (n.eq.-1) then
-!           no hope to properly close the run
-            write(*,*) '[Fluka] unable to connect to fluka while'
-            write(*,*) '        closing the simulation: please,'
-            write(*,*) '        manually kill all its instances'
-            write(fluka_log_unit,*) '# unable to connect to fluka while'
-            write(fluka_log_unit,*) '#  closing the simulation: please,'
-            write(fluka_log_unit,*) '#  manually kill all its instances'
-            goto 1982
-          endif
-          write(*,*) '[Fluka] Successfully connected to Fluka server'
-          write(*,*) '[Fluka]     (only temporarily)'
-          write(fluka_log_unit,*)                                       &
-     &'# Successfully connected to Fluka server'
-          write(fluka_log_unit,*)                                       &
-     &'#     (only temporarily)'
-        endif
-        call fluka_end
-      endif
- 1982 call fluka_mod_end
-      call flush
-
++cd close
+!-----------------------------------------------------------------------
+!--CLOSE(DATA FILES
+      close(2)
+      close(3)
+      close(4)
+      close(7)
+      close(8)
+      close(9)
+      close(10)
+      close(11)
+      close(12)
+      close(13)
+      close(14)
+      close(15)
+      close(16)
+      close(17)
+      close(18)
+      close(19)
+      close(20)
+      close(21)
+      close(22)
+      close(23)
+      close(24)
+      close(25)
+      close(26)
+      close(27)
+      close(32)
+      close(33)
+      close(34)
++if time
+      close(35)
++ei
++if .not.bnlelens
+      close(59)
+      close(60)
+      close(61)
+      close(62)
+      close(63)
+      close(64)
+      close(65)
+      close(66)
+      close(67)
+      close(68)
+      close(69)
+      close(70)
+      close(71)
+      close(72)
+      close(73)
+      close(74)
+      close(75)
+      close(76)
+      close(77)
+      close(78)
+      close(79)
+      close(80)
+      close(81)
+      close(82)
+      close(83)
+      close(84)
+      close(85)
+      close(86)
+      close(87)
+      close(88)
+      close(89)
+      close(90)
++ei
+      close(98)
++if bnlelens
+!GRDRHIC
+!GRD-042008
++if .not.boinc 
+      close(51)
+      close(52)
+      close(53)
+      close(97)
++ei
+      close(54)
+!GRDRHIC
+!GRD-042008
++ei
++if hdf5
+      call CLOSEHDF5()
++ei
++if debug
+      close(99)
+      close(100)
+!Eric....and more to come
+      close(110)
+      close(111)
+! Missing +ei!!!
++ei
 +cd rvet0
 !hr03 e0f=sqrt(e0*e0-pma*pma)
       e0f=sqrt(e0**2-pma**2)                                             !hr03
@@ -9902,152 +9765,6 @@ cc2008
       integer i
       end
 +ei
-+dk close
-      subroutine closeUnits
-      implicit none
-+ca parpro
-+ca common
-+ca dbdump
-+ca dbstat
-+ca comdynk
-+ca combmat
-      integer i
-      logical lopen
-!-----------------------------------------------------------------------
-!--CLOSE(DATA FILES
-      close(2)
-      close(3)
-      close(4)
-      close(7)
-      close(8)
-      close(9)
-      close(10)
-      close(11)
-      close(12)
-      close(13)
-      close(14)
-      close(15)
-      close(16)
-      close(17)
-      close(18)
-      close(19)
-      close(20)
-      close(21)
-      close(22)
-      close(23)
-      close(24)
-      close(25)
-      close(26)
-      close(27)
-      close(32)
-      close(33)
-      close(34)
-+if time
-      close(35)
-+ei
-+if .not.bnlelens.and..not.fluka
-      close(59)
-      close(60)
-      close(61)
-      close(62)
-      close(63)
-      close(64)
-      close(65)
-      close(66)
-      close(67)
-      close(68)
-      close(69)
-      close(70)
-      close(71)
-      close(72)
-      close(73)
-      close(74)
-      close(75)
-      close(76)
-      close(77)
-      close(78)
-      close(79)
-      close(80)
-      close(81)
-      close(82)
-      close(83)
-      close(84)
-      close(85)
-      close(86)
-      close(87)
-      close(88)
-      close(89)
-      close(90)
-+ei
-      close(98)
-+if bnlelens
-!GRDRHIC
-!GRD-042008
-+if .not.boinc
-      close(51)
-      close(52)
-      close(53)
-      close(97)
-+ei
-      close(54)
-!GRDRHIC
-!GRD-042008
-+ei
-+if hdf5
-      call CLOSEHDF5()
-+ei
-+if debug
-      close(99)
-      close(100)
-!Eric....and more to come
-      close(110)
-      close(111)
-! Missing +ei!!!
-+ei
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 01-09-2014
-!     close units for dumping particle population or statistics or beam matrix
-!     always in main code
-      do i=0,il
-        if ( ldump(i) ) then
-!         the same file could be used by more than one SINGLE ELEMENT
-          inquire( unit=dumpunit(i), opened=lopen )
-          if ( lopen ) close(dumpunit(i))
-        endif
-      enddo
-      do i=1,il
-        if ( lstat(i) ) then
-!         the same file could be used by more than one SINGLE ELEMENT
-          inquire( unit=statunit(i), opened=lopen )
-          if ( lopen ) close(statunit(i))
-        endif
-      enddo
-      do i=1,il
-        if ( lbmat(i) ) then
-!         the same file could be used by more than one SINGLE ELEMENT
-          inquire( unit=bmatunit(i), opened=lopen )
-          if ( lopen ) close(bmatunit(i))
-        endif
-      enddo
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 02-09-2014
-!     close units for logging dynks
-!     always in main code
-      if (ldynkfileopen) then
-         close(665)
-      endif
-
-!     A.Mereghetti, D.Sinuela Pastor and P.G.Ortega, for the FLUKA Team
-!     last modified: 04-07-2014
-!     close unit where lostpart has dumped lost particles
-!     always in main code
-      close(999)
-
-      return
-      end subroutine
-
 +dk cor_ord
       subroutine coruord
 !-----------------------------------------------------------------------
@@ -10266,7 +9983,7 @@ cc2008
 +if .not.cr
           write(*,10040) ifail
 +ei
-          call closeUnits
++ca close
 +if cr
       call abend('                                                  ')
 +ei
@@ -10565,7 +10282,7 @@ cc2008
 +if .not.cr
           write(*,10000)
 +ei
-          call closeUnits
++ca close
 +if cr
       call abend('Problem with data in fort.23')
 +ei
@@ -11400,7 +11117,7 @@ cc2008
 +if .not.cr
           write(*,10040) ifail
 +ei
-          call closeUnits
++ca close
 +if cr
       call abend('                                                  ')
 +ei
@@ -11697,7 +11414,7 @@ cc2008
 +if .not.cr
           write(*,10000)
 +ei
-          call closeUnits
++ca close
 +if cr
       call abend('                                                  ')
 +ei
@@ -11724,7 +11441,7 @@ cc2008
 +if .not.cr
           write(*,10000)
 +ei
-          call closeUnits
++ca close
 +if cr
       call abend('                                                  ')
 +ei
@@ -13105,15 +12822,6 @@ cc2008
 !-----------------------------------------------------------------------
 !  READS INPUT DATA FROM FILE FORT.3 AND/OR FORT.2
 !-----------------------------------------------------------------------
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     import mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      use mod_fluka
-
-+ei
       implicit none
 +if cr
 +ca crcoall
@@ -13121,7 +12829,7 @@ cc2008
 +if crlibm
 +ca crlibco
 +ei
-      integer i,i1,i2,i3,ia,icc,ichrom0,iclr,ico,icy,idi,iexnum,iexread,&
+      integer i,i1,i2,ia,icc,ichrom0,iclr,ico,icy,idi,iexnum,iexread,   &
      &ifiend16,ifiend8,ii,il1,ilin0,im,imo,imod,imtr0,irecuin,iw,iw0,ix,&
      &izu,j,j0,j1,j2,jj,k,k0,k10,k11,ka,ke,ki,kk,kpz,kzz,l,l1,l2,l3,l4, &
      &ll,m,mblozz,mout,mout1,mout3,mout4,nac,nbidu,ncy2,ndum,nfb,nft
@@ -13129,15 +12837,15 @@ cc2008
       integer ifiend35
       double precision tcnst
 +ei
-      double precision ak0d,akad,alc,alignx,alignz,ap11,ap22,ap33,ap44, &
-     &apang,ofxx,ofzz,bk0d,bkad,cosy,dummy,emitnx,emitny,extaux,halc,   &
-     &halc2,halc3,harm,phag,pmat,qbet,qigam,r0,r0a,ram,rdev,rfr,rmean,  &
-     &rph,rsqsum,rsum,rv,tilt,u0,xang,xstr,xpl0,xplane,xrms0,zpl0,zrms0
+      double precision ak0d,akad,alc,alignx,alignz,apxx,apzz,bk0d,bkad, &
+     &cosy,dummy,emitnx,emitny,extaux,halc,halc2,halc3,harm,phag,pmat,  &
+     &qbet,qigam,r0,r0a,ram,rdev,rfr,rmean,rph,rsqsum,rsum,rv,tilt,u0,  &
+     &xang,xstr,xpl0,xplane,xrms0,zpl0,zrms0
       character*16 sing,stru,prin,trac,diff,sync,ende,bloc,comm
       character*16 fluc,chro,tune,iter,limi,orbi,deco
-      character*16 beze,bez0,go,rect,elli,reel,ratr,octa,comb,sear,subr
-      character*16 free,geom,cavi,disp,reso,bezext
-      character*16 idat,idat2,next,mult,line,init,ic0,imn,icel,irel
+      character*16 beze,bez0,go,rect,elli,comb,sear,subr,reso,bezext
+      character*16 free,geom,cavi,disp
+      character*16 idat,next,mult,line,init,ic0,imn,icel,irel
       character*16 iss,iqq,iele,ilm,ilm0,idum,corr,norm
       character*16 kl,kr,orga,post,ripp,beam,trom
       character*16 coll
@@ -13182,13 +12890,6 @@ cc2008
 +if bnlelens
 +ca rhicelens
 +ei
-+ca dbreaddis
-+ca dbdump
-+ca dbstat
-+ca combmat
-+ca comdynk
-
-      double precision tmpamplfact, tmplen
       dimension icel(ncom,20),iss(2),iqq(5)
       dimension beze(nblo,nelb),ilm(nelb),ilm0(40),bez0(nele),ic0(10)
       dimension extaux(40),bezext(nblz)
@@ -13199,43 +12900,10 @@ cc2008
       data limi,orbi,bloc,init,go,sear,subr,reso,disp,post,ripp,deco    &
      &/'LIMI','ORBI','BLOC','INIT','GO','SEAR','SUBR',                  &
      &'RESO','DISP','POST','RIPP','DECO'/
-      data rect,elli,reel,ratr,octa,comb,free,geom,cavi,beam,trom       &
-     &/'RE','EL','RL','RT','OC','COMB','FREE','GEOM','CAV','BEAM',      &
-     &'TROM'/
+      data rect,elli,comb,free,geom,cavi,beam,trom                      &
+     &/'RE','EL','COMB','FREE','GEOM','CAV','BEAM','TROM'/
       data idum,kl,kr,orga,norm,corr/' ','(',')','ORGA','NORM','CORR'/
-      data coll /'COLL'/
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 01-09-2014
-!     brand new input blocks
-!     always in main code
-!     - coupling:
-      character*16 fluk
-      data fluk /'FLUK'/
-!     - read particle distribution:
-      character*16 dist
-      data dist /'DIST'/
-!     - dump beam population:
-      character*16 dump
-      data dump /'DUMP'/
-!     - compute and dump statistics about the beam population:
-      character*16 stat
-      data stat /'STAT'/
-!     - compute and dump beam matrix
-      character*16 bmat
-      data bmat /'BMAT'/
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 17-07-2013
-!     brand new input block for dynamic kicks
-!     always in main code
-      character*16 dynk
-      data dynk /'DYNK'/
-
-+ca   comgetfields
-
-      logical lapefound
-      logical lerr1
+      data coll/'COLL'/
 +ca save
 !-----------------------------------------------------------------------
       if(mmul.lt.10.or.mmul.gt.20) call prror(85)
@@ -13374,6 +13042,8 @@ cc2008
       irmod2=0
       iorg=0
       ise=0
+      irip=0
+      irco=0
       iskew=0
       preda=c1m38
    90 read(3,10010,end=1530,iostat=ierro) idat,ihead
@@ -13467,35 +13137,12 @@ cc2008
 !GRD
       if(idat.eq.coll) goto 1285
 !GRD
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     brand new input blocks
-!     always in main code
-!     - coupling:
-      if(idat.eq.fluk) goto 1800
-!     - read particle distribution:
-      if(idat.eq.dist) goto 1900
-!     - dump beam population:
-      if(idat.eq.dump) goto 2000
-!     - compute and dump statistics about the beam population:
-      if(idat.eq.stat) goto 2100
-!     - compute and dump beam matrix
-      if(idat.eq.bmat) goto 2300
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 17-07-2013
-!     brand new input block for dynamic kicks
-!     always in main code
-      if(idat.eq.dynk) goto 2200
-
       if(idat.eq.next) goto 110
       if(idat.eq.ende) goto 771
       call prror(15)
 !-----------------------------------------------------------------------
 !  DATENBLOCK SINGLE ELEMENTS
 !  ELLEMENTLISTE
-!  imod = 1 if geometry in fort.3 (FREE), imod = 3 if in fort.2 (GEOM)
 !-----------------------------------------------------------------------
   120 i=1
   130 if(imod.eq.1) then
@@ -13602,6 +13249,24 @@ cc2008
         ed(i)=ed(i)/two
         ek(i)=ek(i)/two
       endif
+!--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
+      if((kz(i).eq.4.or.kz(i).eq.5).and.abs(el(i)).gt.pieni)            &
+     &ed(i)=-1d0*ed(i)                                                   !hr05
+!hr05&ed(i)=-ed(i)
+!--THIN LENS
+      if(kz(i).eq.11.and.abs(el(i)+one).le.pieni) then
+        dki(i,1) = ed(i)
+        dki(i,3) = ek(i)
+        ed(i) = one
+        ek(i) = one
+        el(i) = zero
+      else if(kz(i).eq.11.and.abs(el(i)+two).le.pieni) then
+        dki(i,2) = ed(i)
+        dki(i,3) = ek(i)
+        ed(i) = one
+        ek(i) = one
+        el(i) = zero
+      endif
 !--CAVITIES
       if(abs(kz(i)).eq.12) then
         if(abs(ed(i)).gt.pieni.and.abs(ek(i)).gt.pieni) then
@@ -13609,13 +13274,14 @@ cc2008
           itionc(i)=kz(i)/abs(kz(i))
           kp(i)=6
         endif
-        ! More in initialize_element()
+        phasc(i)=el(i)
+        el(i)=zero
       endif
 !--WIRE
       if(abs(kz(i)).eq.15) then
         if(abs(ed(i)*el(i)).le.pieni.or.el(i).le.pieni                  &
      &.or.ek(i).le.pieni) then
-          kz(i)=0
+           kz(i)=0
 !hr05      ed(i)=0
            ed(i)=0d0                                                     !hr05
 !hr05      ek(i)=0
@@ -13628,15 +13294,71 @@ cc2008
            el(i)=0d0                                                     !hr05
         endif
       endif
-!----------------------------------------
-! Handled by initialize_element subroutine:
-!-----------------------------------------
-!--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
-!--THIN LENS
-!--CAVITIES (12/-12) (set phasc)
-!--CRABCAVITY (23/-23) / CC multipoles order 2/3/4 (+/- 23/26/27/28)
-      call initialize_element(i,.true.)
-
+!--CRABCAVITY
+      if(abs(kz(i)).eq.23) then
+        if(abs(ed(i)).le.pieni) then
+           kz(i)=0
+!hr05      ed(i)=0
+           ed(i)=0d0                                                     !hr05
+!hr05      ek(i)=0
+           ek(i)=0d0                                                     !hr05
+!hr05      el(i)=0
+           el(i)=0d0                                                     !hr05
+        else
+           crabph(i)=el(i)
+!hr05      el(i)=0
+           el(i)=0d0                                                     !hr05
+        endif
+      endif
+! JBG RF CC Multipoles
+!--CC Mult kick order 2
+      if(abs(kz(i)).eq.26) then
+        if(abs(ed(i)).le.pieni) then
+           kz(i)=0
+!hr05      ed(i)=0
+           ed(i)=0d0                                                     !hr05
+!hr05      ek(i)=0
+           ek(i)=0d0                                                     !hr05
+!hr05      el(i)=0
+           el(i)=0d0                                                     !hr05
+        else
+           crabph2(i)=el(i)
+!hr05      el(i)=0
+           el(i)=0d0                                                     !hr05
+        endif
+      endif
+!--CC Mult kick order 3
+      if(abs(kz(i)).eq.27) then
+        if(abs(ed(i)).le.pieni) then
+           kz(i)=0
+!hr05      ed(i)=0
+           ed(i)=0d0                                                     !hr05
+!hr05      ek(i)=0
+           ek(i)=0d0                                                     !hr05
+!hr05      el(i)=0
+           el(i)=0d0                                                     !hr05
+        else
+           crabph3(i)=el(i)
+!hr05      el(i)=0
+           el(i)=0d0                                                     !hr05
+        endif
+      endif
+!--CC Mult kick order 4
+      if(abs(kz(i)).eq.28) then
+        if(abs(ed(i)).le.pieni) then
+           kz(i)=0
+!hr05      ed(i)=0
+           ed(i)=0d0                                                     !hr05
+!hr05      ek(i)=0
+           ek(i)=0d0                                                     !hr05
+!hr05      el(i)=0
+           el(i)=0d0                                                     !hr05
+        else
+           crabph4(i)=el(i)
+!hr05      el(i)=0
+           el(i)=0d0                                                     !hr05
+        endif
+      endif
 !--ACDIPOLE
       if(abs(kz(i)).eq.16) then
         if(abs(ed(i)).le.pieni) then
@@ -13760,7 +13482,6 @@ cc2008
       goto 170
 !-----------------------------------------------------------------------
 !  BLOCK DEFINITIONS
-!  imod = 1 if geometry in fort.3 (FREE), imod = 3 if in fort.2 (GEOM)
 !-----------------------------------------------------------------------
   190 if(imod.eq.1) then
   200   read(3,10020,end=1530,iostat=ierro) ch
@@ -13834,7 +13555,6 @@ cc2008
       goto 220
 !-----------------------------------------------------------------------
 !  STRUCTURE INPUT
-!  imod = 1 if geometry in fort.3 (FREE), imod = 3 if in fort.2 (GEOM)
 !-----------------------------------------------------------------------
   320 i=0
   330 do 340 k=1,40
@@ -13855,7 +13575,6 @@ cc2008
       endif
       if(ch(:4).eq.next) goto 110
       i2=1
-      ! Look for repetition with syntax N( ... )
       do 420 ii=1,80
         if(ch(ii:ii).eq.kl) then
           if(ii.gt.1) then
@@ -15082,7 +14801,6 @@ cc2008
       if(ierro.gt.0) call prror(58)
       lineno3=lineno3+1
       if(ch(1:1).eq.'/') goto 740
-      ! Get first data line: name, R_0, \delta_0
       call intepr(1,1,ch,ch1)
 +if fio
 +if crlibm
@@ -15114,14 +14832,11 @@ cc2008
       endif
 +ei
 +ei
-      ! Renaming variables?
       i=1
       r0a=one
       im=im+1
       benkc(im)=benki
       r00(im)=r0
-      ! Find single element which matches the name, set its
-      ! irm from the MULT block counter im.
       do 750 j=1,il
       if(imn.eq.bez(j)) then
         irm(j)=im
@@ -15140,7 +14855,6 @@ cc2008
 +if .not.cr
       write(*,10210) imn,r0,benki
 +ei
-      ! Read data lines: B_n rms-B_n A_n rms-A_n
   770 bk0d=zero
       bkad=zero
       ak0d=zero
@@ -15185,8 +14899,6 @@ cc2008
       endif
 +ei
 +ei
-      ! Set nmu for the current single element (j)
-      ! to the currently highest multipole seen (i)
       if(abs(bk0d).gt.pieni.or.abs(bkad).gt.pieni                       &
      &.or.abs(ak0d).gt.pieni.or.abs(akad).gt.pieni) nmu(j)=i
 +if cr
@@ -15206,7 +14918,7 @@ cc2008
       i=i+1
       r0a=r0a*r0
       if(i.gt.mmul+1) call prror(105)
-      if(ch(:4).ne.next) goto 770 ! loop
+      if(ch(:4).ne.next) goto 770
 +if cr
       write(lout,10380)
 +ei
@@ -15222,7 +14934,6 @@ cc2008
       if(ierro.gt.0) call prror(58)
       lineno3=lineno3+1
       if(ch(1:1).eq.'/') goto 790
-      ! Read izu0, mmac, mout, mcut
       ch1(:nchars+3)=ch(:nchars)//' / '
 +if fio
 +if crlibm
@@ -15241,7 +14952,6 @@ cc2008
 +if vvector
       if(mmac.gt.nmac) call prror(55)
 +ei
-      !Generate normal distributed random numbers into zfz
       call recuin(izu0,irecuin)
       call ranecu(zfz,nzfz,mcut)
       rsum=zero
@@ -15279,8 +14989,6 @@ cc2008
 +if .not.cr
       write(*,10130)
 +ei
-      ! Set flags mout1, mout2, mount3, mout4 depending on mout
-      ! Enables/disables different functionality
       if(mout.ge.8) mout4=1
       if(mout.eq.7.or.mout.eq.15) then
         mout1=1
@@ -15302,8 +15010,6 @@ cc2008
       else if(mout.eq.1.or.mout.eq.9) then
         mout1=1
       endif
-      
-      ! Reads from fort.16 IF mout1==1
       if(mout1.eq.1) then
 +if cr
         write(lout,*)
@@ -15324,13 +15030,12 @@ cc2008
 +if .not.cr
         write(*,*)
 +ei
-        iexread=0 ! Reading regular multipoles(1) or skew components (2)
+        iexread=0
         ifiend16=0
         iexnum=0
         read(16,10020,end=861)
         rewind 16
-
-        do 860 i=1,mper*mbloz ! Loop over all structure elements
+        do 860 i=1,mper*mbloz
           ix=ic(i)
           if(ix.gt.nblo) then
             ix=ix-nblo
@@ -15343,7 +15048,7 @@ cc2008
               else
                 goto 820
               endif
-              call intepr(3,1,ch,ch1) ! Read the name of element
+              call intepr(3,1,ch,ch1)
 ! ilm0 are character strings, should be OK
               read(ch1,*) ilm0(1)
               iexnum=iexnum+1
@@ -15372,8 +15077,6 @@ cc2008
      &extaux(18)
               lineno16=lineno16+1
               read(16,*,end=870,iostat=ierro) extaux(19),extaux(20)
-
-              
               lineno16=lineno16+1
               read(16,*,end=870,iostat=ierro) extaux(21),extaux(22),    &
      &extaux(23)
@@ -15516,7 +15219,7 @@ cc2008
                 if(bez(ix).eq.bezext(j)) call prror(80)
   830         continue
   840         continue
-            endif ! closing if(iexread.eq.0) then
+            endif
             if(ilm0(1).eq.bez(ix)) then
 +if debug
 !             call warr('ilm0(1)',0d0,1,i,0,0)
@@ -16294,136 +15997,33 @@ cc2008
       goto 110
 !-----------------------------------------------------------------------
 !  APERTURE LIMITATIONS
-!  A.Mereghetti, P.Garcia Ortega and D.Sinuela Pastor, for the FLUKA Team
-!  last modified: 04-07-2014
-!  original LIMI block extended to deal with RectEllipse, Octagon and
-!     RaceTrack aperture types, and with offset/tilting of profile
 !-----------------------------------------------------------------------
-  950 read(3,10020,end=1530,iostat=ierro) ch
++if cr
+  950 write(lout,10320)
++ei
++if .not.cr
+  950 write(*,10320)
++ei
+  960 read(3,10020,end=1530,iostat=ierro) ch
       if(ierro.gt.0) call prror(58)
       lineno3=lineno3+1
-      if(ch(1:1).eq.'/') goto 950
-
-!  P.G.Ortega, 	04-07-2014, flag for dumping the aperture model
-      if(ch(:4).eq.prin) then
-	call intepr(5,1,ch,ch1)
-	read(ch1,*) idat, aperunit, aper_filename
-	ldmpaper  = .true.
-	goto 950
-      endif
-
-!  P.G.Ortega, 	14-08-2014, flag for saving particles at aperture check
-      if(ch(:4).eq.'SAVE') then
-	apflag  = .true.
-	goto 950
-      endif
-	
-      if(ch(:4).eq.next) then
-        if ( limifound ) then
-+if cr
-          write(lout,10320)
-+ei
-+if .not.cr
-          write(*,10320)
-+ei
-!         dump all elements found:
-          do ii=1,il
-            if ( kape(ii).eq.2 ) then
-              irel=rect
-            elseif ( kape(ii).eq.3 ) then
-              irel=elli
-            elseif ( kape(ii).eq.4 ) then
-              irel=reel
-            elseif ( kape(ii).eq.5 ) then
-              irel=octa
-            elseif ( kape(ii).eq.6 ) then
-              irel=ratr
-            endif
-
-	    if ( kape(ii) .ne. 0 ) then
-+if cr
-              write(lout,10330)
-+ei
-+if .not.cr
-              write(*,10330)
-+ei
-     &           bez(ii), irel, ape(1,ii), ape(2,ii), ape(3,ii),        &
-     &               ape(4,ii), ape(5,ii), ape(6,ii), ape(7,ii)
-	    endif
-          enddo
-+if backtrk
-!         A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!         last modified: 12-06-2014
-!         echo precision for back-tracking, when computing locations of lost
-!            particles
-!         inserted in main code by the 'backtrk' compilation flag
-          write(*,*)''
-          write(*,*)'       back-tracking at aperture LIMIs is on'
-          write(*,*)'            with precision [m]:',bktpre
-          write(*,*)''
-+ei
-        else
-+if cr
-          write(lout,                                                   &
-+ei
-+if .not.cr
-          write(*,                                                      &
-+ei
-     &        '(t10,"NO SINGLE ELEMENT IS ASSIGNED AN APETURE MODEL!")')
-        endif
-        goto 110
-      endif
-      ap11=zero
-      ap22=zero
-      ap33=zero
-      ap44=zero
-      apang=zero
-      ofxx=zero
-      ofzz=zero
-
-+if .not.backtrk
-      if(ch(:4).eq.'PREC') then
-        write(*,*)
-        write(*,*) 'WARNING: PREC statement active only in case'
-        write(*,*) '  backtrc pre-processing is on; ignoring...'
-        write(*,*)
-        goto 950
-      endif
-+ei
-+if backtrk
-!     A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 12-06-2014
-!     set precision for back-tracking, when computing locations of lost
-!         particles
-!     inserted in main code by the 'backtrk' compilation flag
-      if(ch(:4).eq.'PREC') then
-	call intepr(1,1,ch,ch1)
-	read(ch1,*) idat, tmplen
-	if ( tmplen.le.zero ) then
-	   write(*,*) 'WARNING: Wrong precision value: ', tmplen
-           write(*,*) '  in LIMI input block, ignoring...'
-	   write(*,*) '  Using default [m]: ', bktpre
-	else
-           bktpre = tmplen
-	endif
-	goto 950
-      endif
-+ei
+      if(ch(1:1).eq.'/') goto 960
+      apxx=zero
+      apzz=zero
       call intepr(8,1,ch,ch1)
 +if fio
-+if crlibm 
++if crlibm
       call enable_xp()
 +ei
       read(ch1,*,round='nearest')                                       &
-     & idat,irel,ap11,ap22,ap33,ap44,apang,ofxx,ofzz
+     & idat,irel,apxx,apzz
 +if crlibm
       call disable_xp()
 +ei
 +ei
-
 +if .not.fio
 +if .not.crlibm
-      read(ch1,*) idat,irel,ap11,ap22,ap33,ap44,apang,ofxx,ofzz
+      read(ch1,*) idat,irel,apxx,apzz
 +ei
 +if crlibm
       call splitfld(errno,3,lineno3,nofields,nf,ch1,fields)
@@ -16436,81 +16036,40 @@ cc2008
         nf=nf-1
       endif
       if (nf.gt.0) then
-        ap11=fround(errno,fields,3)
+        apxx=fround(errno,fields,3)
         nf=nf-1
       endif
       if (nf.gt.0) then
-        ap22=fround(errno,fields,4)
+        apzz=fround(errno,fields,4)
           nf=nf-1
       endif
-      if (nf.gt.0) then
-        ap33=fround(errno,fields,5)
-        nf=nf-1
-      endif
-      if (nf.gt.0) then
-        ap44=fround(errno,fields,6)
-        nf=nf-1
-      endif
-      if (nf.gt.0) then
-        apang=fround(errno,fields,7)
-        nf=nf-1
-      endif
-      if (nf.gt.0) then
-        ofxx=fround(errno,fields,8)
-        nf=nf-1
-      endif
-      if (nf.gt.0) then
-        ofzz=fround(errno,fields,9)
-        nf=nf-1
-      endif
-
 +ei
 +ei
-      lapefound=.false.
       do 970 j=1,il
       if(idat.ne.bez(j)) goto 970
-      lapefound=.true.
-      ape(1,j)=ap11
-      ape(2,j)=ap22
-      ape(3,j)=ap33
-      ape(4,j)=ap44
-      ape(5,j)=apang
-      ape(6,j)=ofxx
-      ape(7,j)=ofzz
-      if(irel.eq.rect) then !Rectangle
-	kape(j)=2
-!       get ready for a RL-equinvalent description
-        ape(3,j)=sqrt(2.)*ape(1,j)
-        ape(4,j)=sqrt(2.)*ape(2,j)
-      elseif(irel.eq.elli) then !Ellipse
-        kape(j)=3
-!       get ready for a RL-equinvalent description
-        ape(3,j)=ape(1,j)
-        ape(4,j)=ape(2,j)
-      else if(irel.eq.reel) then !Rectellipse
-        kape(j)=4
-      else if(irel.eq.octa) then !Octagon  
-	kape(j)=5
-      else if(irel.eq.ratr) then !Racetrack
-	kape(j)=6
-      else
-        write(*,*) 'Aperture profile not identified for element ', idat
-        write(*,*) '  value:', irel
-        call prror(-1)
+      kp(j)=1
+      if(irel.eq.rect) kp(j)=2
+      apx(j)=apxx
+      apz(j)=apzz
+      if(irel.eq.rect) then
+        kp(j)=3
+!hr05   ape(1,j)=apzz*apzz
+        ape(1,j)=apzz**2                                                 !hr05
+!hr05   ape(2,j)=apxx*apxx
+        ape(2,j)=apxx**2                                                 !hr05
+!hr05   ape(3,j)=apxx*apxx*apzz*apzz
+        ape(3,j)=apxx**2*apzz**2                                         !hr05
       endif
-      if (ape(5,j).ne.zero.or.ape(6,j).ne.zero.or.ape(7,j).ne.zero) then
-         lapeofftlt(j) = .true.
-      endif
-      limifound=.true.
++if cr
+      write(lout,10330) bez(j),irel,apxx,apzz
++ei
++if .not.cr
+      write(*,10330) bez(j),irel,apxx,apzz
++ei
   970 continue
-
-      if(.not. lapefound) then
-        write(*,*)
-        write(*,*) 'WARNING: Unidentified element ', idat
-        write(*,*) '  in LIMI input block, ignoring...'
-        write(*,*)
-      endif
-      goto 950
+! Eric temporary fix for BUG???
+!     if(idat.ne.next) goto 960
+      goto 110
 !-----------------------------------------------------------------------
 !  ORBIT CORRECTION
 !-----------------------------------------------------------------------
@@ -17168,21 +16727,62 @@ cc2008
 !-----------------------------------------------------------------------
 !  POWER SUPPLY RIPPLE
 !-----------------------------------------------------------------------
- 1290 continue
-      write(*,*)
-      write(*,*) "     old RIPP module is not supported anymore"
-      write(*,*) "     ignoring all concerned lines"
-      write(*,*)
-
+ 1290 irip=1
  1300 read(3,10020,end=1530,iostat=ierro) ch
       if(ierro.gt.0) call prror(58)
-
-      write(*,*) 'ignoring line:'
-      write(*,*) ch
-
       lineno3=lineno3+1
       if(ch(1:1).eq.'/') goto 1300
       if(ch(:4).eq.next) goto 110
+      call intepr(1,1,ch,ch1)
+      irco=irco+1
+      if(irco.gt.nele) call prror(51)
++if fio
++if crlibm
+      call enable_xp()
++ei
+      read(ch1,*,round='nearest')                                       &
+     & idat,ram,rfr,rph,nrturn
++if crlibm
+      call disable_xp()
++ei
++ei
++if .not.fio
++if .not.crlibm
+      read(ch1,*) idat,ram,rfr,rph,nrturn
++ei
++if crlibm
+      call splitfld(errno,3,lineno3,nofields,nf,ch1,fields)
+      if (nf.gt.0) then
+        read(fields(1),*) idat
+        nf=nf-1
+      endif
+      if (nf.gt.0) then
+        ram=fround(errno,fields,2)
+        nf=nf-1
+      endif
+      if (nf.gt.0) then
+        rfr=fround(errno,fields,3)
+        nf=nf-1
+      endif
+      if (nf.gt.0) then
+        rph=fround(errno,fields,4)
+        nf=nf-1
+      endif
+      if (nf.gt.0) then
+        read(fields(5),*) nrturn
+        nf=nf-1
+      endif
++ei
++ei
+      do 1310 j=1,il
+      if(idat.eq.bez(j)) then
+        nrel(irco)=j
+        ramp(j)=ram
+        rfre(j)=rfr
+        rzph(j)=rph
+        goto 1300
+      endif
+ 1310 continue
       goto 1300
 !-----------------------------------------------------------------------
 !  DECOUPLING ROUTINE
@@ -17861,9 +17461,6 @@ cc2008
       endif
 +ei
 +ei
-+if nagfor
-      call disable_xp()
-+ei
       if(i.lt.0) i=0
       do 1620 j=1,il
       if(idat.eq.bez(j).and.kz(j).eq.20) then
@@ -18003,596 +17600,6 @@ cc2008
         if(j1.lt.6) goto 1740
       enddo
       goto 1700
-!-----------------------------------------------------------------------
-!  COUPLING WITH FLUKA
-!  A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!  last modified: 17-07-2013
-!-----------------------------------------------------------------------
- 1800 read(3,10020,end=1530,iostat=ierro) ch
-      if(ierro.gt.0) call prror(58)
-+if .not.fluka
-
-!     inserted in main code if the 'fluka' compilation flag is NOT issued
-
-      write(*,*)
-      write(*,*) "     FLUKA coupling not supported in this version"
-      write(*,*) "     please recompile with proper flags"
-      write(*,*)
-      call prror(-1)
-
-+ei
-+if fluka
-
-!     inserted in main code by the 'fluka' compilation flag
-
-      if(ch(1:1).eq.'/') goto 1800
-      if(ch(:4).eq.next) then
-        write(*,10520) fluk
-        if ( fluka_enable ) then
-!         dump all elements found:
-          do ii=1,il
-             if(fluka_type(ii).ne.FLUKA_NONE) then
-               write(*,10510) bez(ii), fluka_type(ii),                  &
-     &                        fluka_geo_index(ii),fluka_synch_length(ii)
-             endif
-          enddo
-          write(*,*) ''
-          write(*,*) '        keys to FLUKA types:'
-          write(*,*) FLUKA_ELEMENT,' --> simple element'
-          write(*,*) FLUKA_ENTRY,' --> entrance point'
-          write(*,*) FLUKA_EXIT,' --> exit point'
-          write(*,*) ''
-          if ( fluka_debug  ) write(*,*) "        --> DEBUG enabled!"
-        else
-          write(*,*) ''
-          write(*,*) ' !! no element flagged for coupling !!'
-          write(*,*) '    --> disabling coupling flags/labelling'
-          write(*,*) ''
-          fluka_enable = .false.
-          fluka_debug  = .false.
-          do ii=1,il
-             fluka_type(ii) = FLUKA_NONE
-          enddo
-        endif
-        goto 110
-      endif
-
-      lineno3=lineno3+1
-      ch1(:83)=ch(:80)//' / '
-      if(ch1(:4).eq.'DEBU') then
-        fluka_debug = .true.
-        goto 1800
-      elseif(ch1(:4).eq.'LOGU') then
-        read(ch1,*) idat, ii
-        if ( ii.gt.0 ) then
-          fluka_log_unit = ii
-        else
-          write(*,*) ' no valid unit for logging coupling messages'
-          write(*,*) '   in block ',fluk
-          write(*,*) '   parsed line:'
-          write(*,*) ch(:80)
-          write(*,*) ''
-          call prror(-1)
-        endif
-      endif
-
-!     parse line:
-      read(ch1,*) idat, idat2, ii, tmplen
-
-!     1. find idat (ie name of entrance element) in the list of SINGLE ELEMENTs:
-      do i1=1,il
-         if(bez(i1).eq.idat) goto 1801
-      enddo
-!     failing research:
-      write(*,*) ''
-      write(*,*) ' Un-identified SINGLE ELEMENT ', idat
-      write(*,*) '   in block ',fluk
-      write(*,*) '   parsed line:'
-      write(*,*) ch(:80)
-      write(*,*) ''
-      call prror(-1)
-
-!     2. find idat2 (ie name of exit element) in the list of SINGLE ELEMENTs:
- 1801 do i2=1,il
-         if(bez(i2).eq.idat2) goto 1802
-      enddo
-!     failing research:
-      write(*,*) ''
-      write(*,*) ' Un-identified SINGLE ELEMENT ', idat2
-      write(*,*) '   in block ',fluk
-      write(*,*) '   parsed line:'
-      write(*,*) ch(:80)
-      write(*,*) ''
-      call prror(-1)
-
- 1802 continue
-
-!     3. check that the current markers have not been already flagged
-      if ( fluka_type(i1).ne.FLUKA_NONE ) then
-        write(*,*) ''
-        write(*,*) ' SINGLE ELEMENT ', bez(i1)
-        write(*,*) '   in block ',fluk
-        write(*,*) '   was alredy labelled as fluka marker:'
-        write(*,*) '     you cannot overwrite'
-        write(*,*) '   parsed line:'
-        write(*,*) ch(:80)
-        write(*,*) ''
-        call prror(-1)
-      endif
-      if ( fluka_type(i2).ne.FLUKA_NONE ) then
-        write(*,*) ''
-        write(*,*) ' SINGLE ELEMENT ', bez(i2)
-        write(*,*) '   in block ',fluk
-        write(*,*) '   was alredy labelled as fluka marker:'
-        write(*,*) '     you cannot overwrite'
-        write(*,*) '   parsed line:'
-        write(*,*) ch(:80)
-        write(*,*) ''
-        call prror(-1)
-      endif
-
-!     4. disentangle between just a simple element or an interval of elements
-!        in the accelerator structure, labelled as Fluka insertion:
-      if ( i1.eq.i2 ) then
-        fluka_type(i1) = FLUKA_ELEMENT
-        fluka_geo_index(i1)  = ii
-        fluka_synch_length(i1) = tmplen
-        write(fluka_log_unit,*)
-     &'# Found         Fluka element as SING EL num',i1
-      else
-        fluka_type(i1) = FLUKA_ENTRY
-        fluka_geo_index(i1)  = ii
-        fluka_type(i2) = FLUKA_EXIT
-        fluka_geo_index(i2)  = ii
-        fluka_synch_length(i2) = tmplen
-        write(fluka_log_unit,*)
-     &'# Found entrance Fluka element as SING EL num',i1
-        write(fluka_log_unit,*)
-     &'# Found exit     Fluka element as SING EL num',i2
-      endif
-!     wait to find at least one FLUKA insertion before actually enabling
-!       the coupling
-      if(.not.fluka_enable) fluka_enable = .true.
-
-+ei
-      goto 1800
-
-!-----------------------------------------------------------------------
-!  READ INITIAL DISTRIBUTION
-!  A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!  last modified: 17-07-2013
-!  always in main code
-!-----------------------------------------------------------------------
- 1900 read(3,10020,end=1530,iostat=ierro) ch
-      if(ierro.gt.0) call prror(58)
-
-      if(ch(1:1).eq.'/') goto 1900
-      if(ch(:4).eq.next) goto 110
-
-      lineno3=lineno3+1
-      ch1(:83)=ch(:80)//' / '
-
-!     keywords:
-      if(ch1(:4).eq.'ECHO') then
-        dist_echo = .true.
-      elseif(ch1(:4).eq.'RDUN') then
-        read(ch1,*) idat, dist_read_unit
-      elseif(ch1(:4).eq.'ECUN') then
-        read(ch1,*) idat, dist_echo_unit
-      elseif(ch1(:4).eq.'READ') then
-        read(ch1,*) idat, dist_filename
-        if(.not.dist_enable) dist_enable = .true.
-      endif
-
-      goto 1900
-
-!-----------------------------------------------------------------------
-!  DUMP BEAM POPULATION
-!  A.Mereghetti, D.Sinuela Pastor and P.Garcia Ortega, for the FLUKA Team
-!  last modified: 13-06-2014
-!  always in main code
-!-----------------------------------------------------------------------
- 2000 read(3,10020,end=1530,iostat=ierro) ch
-      if(ierro.gt.0) call prror(58)
-
-      if(ch(1:1).eq.'/') goto 2000
-      if(ch(:4).eq.next) then
-        write(*,10460) dump
-!       dump all elements found:
-        if ( ldump(0) ) then
-           write(*,'(t10,a50)') ' required dump at ALL SINGLE ELEMENTs'
-           write(*,10470) 'ALL', ndumpt(0), dumpunit(0), dumpfmt(0)
-        endif
-        write(*,*) ''
-        write(*,*) '          The last column states the format'
-        write(*,*) '               of the output file (see Twiki page):'
-        write(*,*) '          ==0 -> regular output (default)'
-        write(*,*) '          ==1 -> special one, for post-processing'
-        write(*,*) '                 with LHC Coll Team tools'
-        write(*,*) '          ==2 -> as 1, but add z as column 6'
-
-        do ii=1,il
-          if(ldump(ii)) then
-            write(*,10470) bez(ii), ndumpt(ii), dumpunit(ii),dumpfmt(ii)
-!           At which structure indices is this single element found? (Sanity check)
-            kk = 0
-            do jj=1,mper*mbloz      ! Loop over all structure elements
-              if ( ic(jj)-nblo .eq. ii ) then
-                write (ch1,*) jj    ! internal write for left-adjusting
-                write (*,10472) " -> Found as structure element no. " 
-     &               // trim(adjustl(ch1))
-                kk = kk + 1
-              end if
-            end do
-            if (kk .eq. 0) then
-               write (*,10472) " !! Warning: No structure elements "
-     &              // "found for '" // bez(ii) // "'!"
-               write (*,10472) " !! This element is probably only found"
-     &              // " in a BLOC, or it is not used at all."
-               write (*,10472) " !! Please fix your DUMP block"
-     &              // " in fort.3"
-               call prror(-1)
-            endif
-          endif
-        enddo
-        if ( ldumphighprec ) then
-          write(*,*) ''
-          write(*,*) '        --> requested high precision dumping!'
-        endif
-        goto 110
-      endif
-
-!     initialise reading variables, to avoid storing non sense values
-      idat = ' '
-      i1 = 0
-      i2 = 0
-      i3 = 0
-
-      lineno3=lineno3+1
-      ch1(:83)=ch(:80)//' / '
-
-      if(ch1(:4).eq.'HIGH') then
-        ldumphighprec = .true.
-        goto 2000
-      endif
-
-!     requested element
-      read(ch1,*) idat, i1, i2, i3
-!     find it in the list of SINGLE ELEMENTs:
-      do j=1,il
-         if(bez(j).eq.idat) goto 2001
-      enddo
-      if ( idat(:3).eq.'ALL' ) then 
-         j=0
-         goto 2001
-      endif
-!     search failed:
-      write(*,*) ''
-      write(*,*) " Un-identified SINGLE ELEMENT '", idat, "'"
-      write(*,*) '   in block ',dump, '(fort.3)'
-      write(*,*) '   parsed line:'
-      write(*,*) ch(:80)
-      write(*,*) ''
-      call prror(-1)
-
-!     element found:
- 2001 ldump(j) = .true.
-      ndumpt(j) = i1
-      if (ndumpt(j).le.0) ndumpt(j)=1
-      dumpunit(j) = i2
-      dumpfmt(j)  = i3
-!     go to next line
-      goto 2000
-
-!-----------------------------------------------------------------------
-!  STATISTICS ABOUT BEAM POPULATION
-!  A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!  last modified: 17-07-2013
-!  always in main code
-!-----------------------------------------------------------------------
- 2100 read(3,10020,end=1530,iostat=ierro) ch
-      if(ierro.gt.0) call prror(58)
-
-      if(ch(1:1).eq.'/') goto 2100
-      if(ch(:4).eq.next) then
-        write(*,10460) stat
-!       dump all elements found:
-        do ii=1,il
-          if(lstat(ii)) then
-            write(*,10470) bez(ii), nstatt(ii), statunit(ii)
-!           At which structure indices is this single element found? (Sanity check)
-            kk = 0
-            do jj=1,mper*mbloz      ! Loop over all structure elements
-              if ( ic(jj)-nblo .eq. ii ) then
-                write (ch1,*) jj    ! internal write for left-adjusting
-                write (*,10472) " -> Found as structure element no. " 
-     &               // trim(adjustl(ch1))
-                kk = kk + 1
-              end if
-            end do
-            if (kk .eq. 0) then
-               write (*,10472) " !! Warning: No structure elements "
-     &              // "found for '" // bez(ii) // "'!"
-               write (*,10472) " !! This element is probably only found"
-     &              // " in a BLOC, or it is not used at all."
-               write (*,10472) " !! Please fix your STAT block"
-     &              // " in fort.3"
-               call prror(-1)
-            endif
-          endif
-        enddo
-        if ( lstathighprec ) then
-           write(*,*) ''
-           write(*,*) '        --> requested high precision dumping!'
-        endif
-        goto 110
-      endif
-
-      lineno3=lineno3+1
-      ch1(:83)=ch(:80)//' / '
-
-      if(ch1(:4).eq.'HIGH') then
-        lstathighprec = .true.
-        goto 2100
-      endif
-
-!     requested element
-      read(ch1,*) idat, i1, i2
-!     find it in the list of SINGLE ELEMENTs:
-      do j=1,il
-         if(bez(j).eq.idat) goto 2101
-      enddo
-!     search failed:
-      write(*,*) ''
-      write(*,*) " Un-identified SINGLE ELEMENT '", idat, "'"
-      write(*,*) '   in block ',stat, "(fort.3)"
-      write(*,*) '   parsed line:'
-      write(*,*) ch(:80)
-      write(*,*) ''
-      call prror(-1)
-
-!     element found:
- 2101 lstat(j) = .true.
-      nstatt(j) = i1
-      if (nstatt(j).le.0) nstatt(j)=1
-      statunit(j) = i2
-!     go to next line
-      goto 2100
-
-!-----------------------------------------------------------------------
-!  DYNAMIC KICKS
-!  A.Mereghetti, for the FLUKA Team
-!  K.Sjobak & A. Santamaria, BE-ABP/HSS
-!  last modified: 21-01-2014
-!  always in main code
-!-----------------------------------------------------------------------
- 2200 read(3,10020,end=1530,iostat=ierro) ch
-      if(ierro.gt.0) call prror(51)
-
-      if(ch(1:1).eq.'/') goto 2200 ! skip comment line
-
-      ! Which type of block? Look at start of string (no leading blanks allowed)
-
-      if (ch(:4).eq."DEBU") then
-         ldynkdebug = .true.
-+if cr
-         write (lout,*)
-+ei
-+if .not.cr
-         write (*,*)
-+ei
-     &        "DYNK> DYNK block debugging is ON"
-         goto 2200 !loop DYNK
-         
-      else if (ch(:6).eq."NOFILE") then
-         ldynkfiledisable = .true.
-+if cr
-         write (lout,*)
-+ei
-+if .not.cr
-         write (*,*)
-+ei
-     &        "DYNK> Disabled writing dynksets.dat"
-         goto 2200 !loop DYNK
-         
-      else if (ch(:3).eq."FUN") then
-         call getfields_split( ch, getfields_fields, getfields_lfields,
-     &        getfields_nfields, getfields_lerr )
-         if ( getfields_lerr ) call prror(51)
-         if (ldynkdebug) then
-+if cr
-            write (lout,*)
-+ei
-+if .not.cr
-            write (*,*)
-+ei
-     &           "DYNKDEBUG> Got a FUN block, len=", 
-     &           len(ch), ": '", ch, "'"
-            do ii=1,getfields_nfields
-+if cr
-               write (lout,*)
-+ei
-+if .not.cr
-               write (*,*)
-+ei
-     &              "DYNKDEBUG> Field(",ii,") ='",
-     &              getfields_fields(ii)(1:getfields_lfields(ii)),"'"
-            enddo
-         endif
-         call dynk_parseFUN(getfields_fields,
-     &        getfields_lfields, getfields_nfields)
-         goto 2200 !loop DYNK
-
-      else if (ch(:3).eq."SET") then
-         call getfields_split( ch, getfields_fields, getfields_lfields,
-     &        getfields_nfields, getfields_lerr )
-         if ( getfields_lerr ) call prror(51)
-         if (ldynkdebug) then
-+if cr
-            write (lout,*)
-+ei
-+if .not.cr
-            write (*,*)
-+ei
-     &           "DYNKDEBUG> Got a SET block, len=", 
-     &           len(ch), ": '", ch, "'"
-            do ii=1,getfields_nfields
-+if cr
-               write (lout,*)
-+ei
-+if .not.cr
-               write (*,*)
-+ei
-     &              "DYNKDEBUG> Field(",ii,") ='",
-     &              getfields_fields(ii)(1:getfields_lfields(ii)),"'"
-            enddo
-         endif
-         call dynk_parseSET(getfields_fields,
-     &        getfields_lfields, getfields_nfields)
-         goto 2200 !loop DYNK
-
-      else if (ch(:4).eq.next) then
-         if (ldynkdebug) then
-+if cr
-            write (lout,*)
-+ei
-+if .not.cr
-            write (*,*)
-+ei
-     &           "DYNKDEBUG> Finished parsing DYNK block"
-            call dynk_dumpdata
-         endif
-         if (ldynk) then
-+if cr
-            write (lout,*)
-            write (lout,*) "******************************************"
-            write (lout,*) "** More than one DYNK block encountered **"
-            write (lout,*) "******************************************"
-+ei
-+if .not.cr
-            write (*,*)
-            write (*,*) "******************************************"
-            write (*,*) "** More than one DYNK block encountered **"
-            write (*,*) "******************************************"
-+ei
-            call prror(51)
-         else
-            ldynk = .true.
-         endif
-         call dynk_inputsanitycheck
-         goto 110 ! loop BLOCK
-
-      else
-+if cr
-         write (lout,*) 
-         write (lout,*) "*******************************************"
-         write (lout,*) "ERROR while parsing DYNK block in fort.3"
-         write (lout,*) 
-     &        "Expected keywords FUN, SET, DEBU, NOFILE or NEXT"
-         write (lout,*) "Got ch:"
-         write (lout,*) "'"//ch//"'"
-         write (lout,*) "*******************************************"
-+ei
-+if .not.cr
-         write (*,*) 
-         write (*,*) "*******************************************"
-         write (*,*) "ERROR while parsing DYNK block in fort.3"
-         write (*,*) "Expected keywords FUN, SET, DEBU, NOFILE or NEXT"
-         write (*,*) "Got ch:"
-         write (*,*) "'"//ch//"'"
-         write (*,*) "*******************************************"
-+ei
-         call prror(51)
-      endif
-      ! Should never arrive here
-+if .not.cr
-      write (*,*) "*****************************"
-      write (*,*) "*LOGIC ERROR IN PARSING DYNK*"
-      write (*,*) "*****************************"
-+ei
-+if cr
-      write (lout,*) "*****************************"
-      write (lout,*) "*LOGIC ERROR IN PARSING DYNK*"
-      write (lout,*) "*****************************"
-+ei
-      call prror(51)
-
-!-----------------------------------------------------------------------
-!  BEAM MATRIX
-!  A.Mereghetti, for the FLUKA Team
-!  last modified: 01-09-2014
-!  always in main code
-!-----------------------------------------------------------------------
- 2300 read(3,10020,end=1530,iostat=ierro) ch
-      if(ierro.gt.0) call prror(58)
-
-      if(ch(1:1).eq.'/') goto 2300
-      if(ch(:4).eq.next) then
-        write(*,10460) bmat
-!       dump all elements found:
-        do ii=1,il
-          if(lbmat(ii)) then
-            write(*,10470) bez(ii), nbmatt(ii), bmatunit(ii)
-!           At which structure indices is this single element found? (Sanity check)
-            kk = 0
-            do jj=1,mper*mbloz      ! Loop over all structure elements
-              if ( ic(jj)-nblo .eq. ii ) then
-                write (ch1,*) jj    ! internal write for left-adjusting
-                write (*,10472) " -> Found as structure element no. " 
-     &               // trim(adjustl(ch1))
-                kk = kk + 1
-              end if
-            end do
-            if (kk .eq. 0) then
-               write (*,10472) " !! Warning: No structure elements "
-     &              // "found for '" // bez(ii) // "'!"
-               write (*,10472) " !! This element is probably only found"
-     &              // " in a BLOC, or it is not used at all."
-               write (*,10472) " !! Please fix your BMAT block"
-     &              // " in fort.3"
-               call prror(-1)
-            endif
-
-          endif
-        enddo
-        if ( lbmathighprec ) then
-           write(*,*) ''
-           write(*,*) '        --> requested high precision dumping!'
-        endif
-        goto 110
-      endif
-
-      lineno3=lineno3+1
-      ch1(:83)=ch(:80)//' / '
-
-      if(ch1(:4).eq.'HIGH') then
-        lbmathighprec = .true.
-        goto 2300
-      endif
-
-!     requested element
-      read(ch1,*) idat, i1, i2
-!     find it in the list of SINGLE ELEMENTs:
-      do j=1,il
-         if(bez(j).eq.idat) goto 2301
-      enddo
-!     failing research:
-      write(*,*) ''
-      write(*,*) " Un-identified SINGLE ELEMENT '", idat, "'"
-      write(*,*) '   in block ',bmat, "(fort.3)"
-      write(*,*) '   parsed line:'
-      write(*,*) ch(:80)
-      write(*,*) ''
-      call prror(-1)
-
-!     element found:
- 2301 lbmat(j) = .true.
-      nbmatt(j) = i1
-      if (nbmatt(j).le.0) nbmatt(j)=1
-      bmatunit(j) = i2
-!     go to next line
-      goto 2300
-
 !-----------------------------------------------------------------------
   771 if(napx.ge.1) then
         if(e0.lt.pieni.or.e0.le.pma) call prror(27)
@@ -18886,6 +17893,22 @@ cc2008
 +if .not.cr
       write(*,10170) itcro,dsm0,dech,de0,ded,dsi
 +ei
+      if(irip.eq.1) then
++if cr
+      write(lout,10230)
++ei
++if .not.cr
+      write(*,10230)
++ei
+      do 1510 i=1,irco
+        j=nrel(i)
++if cr
+ 1510 write(lout,10240) bez(j),ramp(j),rfre(j),rzph(j),nrturn
++ei
++if .not.cr
+ 1510 write(*,10240) bez(j),ramp(j),rfre(j),rzph(j),nrturn
++ei
+      endif
 +if cr
       write(lout,10130)
 +ei
@@ -18912,7 +17935,6 @@ cc2008
 !hr05 if(2*mmac*imc*napx.gt.npart) call prror(54)
       if(((2*mmac)*imc)*napx.gt.npart) call prror(54)                    !hr05
 +ei
-
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
       return
@@ -19017,6 +18039,9 @@ cc2008
 10200 format(t10,'PROGRAM MODE : FREE FORMAT INPUT --READ FROM ',       &
      &'EXTRA GEOMETRY STRENGTH FILE--')
 10220 format(t10,i4,2(' ',d15.8),5x,2(' ',d15.8))
+10230 format(//131('-')//t10,'DATA BLOCK RIPPLE OF POWER SUPPLIES'//    &
+     &t10,'ELEMENT',6x,'AMPLITUDE',9x,'FREQUENCY' ,9x,'STARTPHASE',9x,  &
+     &'INI. TURNNUMBER'/t10,62('-')/)
 10250 format(t10,'NUMBER OF DIFFERENT BLOCKS',t50,i3/ t10,              &
      &'BLOCKS PER PERIOD',t49,i5//)
 10290 format(t10,'MORE THAN ',i5,' COMBINATIONS SPECIFIED'/)
@@ -19024,8 +18049,7 @@ cc2008
      &'  THE FOLLOWING ELEMENTS ARE RELATED IN STRENGTHS--->'/ t10,     &
      &'ELEMENT RELATED TO ELEMENT BY THE RATIO'/)
 10320 format(//131('-')//t10,'DATA BLOCK APERTURE LIMITATIONS'/ /t10,   &
-     &'NAME',16x,'TYP',5x,'APER_1',7x,'APER_2',8x,'APER_3',7x,          &
-     &'APER_4',7x,'ANGLE',8x,'X_OFFSET',5x,'Y_OFFSET'/)
+     &'TYP',t20,'FORM',t30,'APERT-H',t40,'APERT-V')
 10340 format(t10,'NO CAVITIES SPECIFIED'/)
 10350 format(//131('-')//t10,'DATA BLOCK ORGANISATION OF RANDOM NUMBERS'&
      &/5x,'|          |      OWN RANDOM NUMBERS      |      SAME RAN' , &
@@ -19042,12 +18066,7 @@ cc2008
      &'OO   NORMAL FORMS   OO', /t10,2('O'),18x,2('O')/t10,22('O'))
 10430 format(/5x,'No cut on random distribution'//)
 10440 format(/5x,'Random distribution has been cut to: ',i4,' sigma.'//)
-10460 format(//131('-')//t10,'DATA BLOCK ',a4,' INFOs'/ /t10,           &
-     &'NAME',16x,'EVERY # TURNs',2x,'LOGICAL UNIT')
-10500 format(//131('-')//t10,'SUMMARY OF DATA BLOCK ',a4,' INFOs')
-10520 format(//131('-')//t10,'DATA BLOCK ',a4,' INFOs'/ /t10,           &
-     &'NAME',20x,'TYPE',5x,'INSERTION POINT',4x,'SYNCH LENGTH [m]')
-10070 format(1x,i4,1x,a16,1x,i3,1x,d16.10,1x,d16.10,1x,d16.10,1x,d13.7, &
+10070 format(1x,i3,1x,a16,1x,i3,1x,d16.10,1x,d16.10,1x,d16.10,1x,d13.7, &
      &1x,d12.6,1x,d13.7,1x,d12.6)
 10210 format(t10,'DATA BLOCK MULTIPOLE COEFFICIENTS'/ t10,              &
      &'MULTIPOLE                    ',a16/t10,'RADIUS IN MM            '&
@@ -19055,27 +18074,20 @@ cc2008
      &x,'      SKEW '// t10,'      MEAN            RMS-VALUE     ',     &
      &'       MEAN            RMS-VALUE'/)
 10240 format(t10,a16,3(2x,d16.10),2x,i10)
-10260 format(t4,i4,1x,a16,1x,i2,1x,6(1x,a16))
+10260 format(t4,i3,1x,a16,1x,i2,1x,6(1x,a16))
 10270 format(t28,6(1x,a16))
 10280 format(t3,i6,1x,5(a16,1x))
 10310 format(t10,a16,10x,a16,6x,f20.15)
-10330 format(t10,a16,4x,a2,7(1x,f12.4))
+10330 format(t8,a16,t18,a2,t30,f8.2,t40,f8.2)
 10360 format(5x,'| ELEMENT  |           ',a16,'           |           ',&
      &'    |               |               |               |')
 10390 format(5x,'| ELEMENTS |                              |    ',a16,  &
      &'   |    ',a16,'   |               |               |')
 10400 format(5x,'| ELEMENTS |                              |          ' &
      &,'     |               |    ',a16,'   |    ',a16,'   |')
-10470 format(t10,a16,4x,i13,2x,i12,2x,i12)
-10472 format(t10,a)
-10490 format(t10,a16,4x,a40,2x,1pe16.9)
-10510 format(t10,a16,4x,i8,12x,i8,4x,1pe16.9)
 10700 format(t10,'DATA BLOCK TROMBONE ELEMENT'/                         &
      &t10,'TROMBONE #      NAME'/)
 10710 format(t22,i4,5x,a16)
-10890 format(1x,'--> function ',i2,' of combo # ',i4,' of element',a16, &
-     &'does not exist!')
-10891 format(1x,'--> single element ',a16,' is a thick lens one!')
       end
 +if iibm
       subroutine xuflow (i)
@@ -19268,357 +18280,6 @@ cc2008
       ch1(i2:i3)=ch(i1:nchars)//' / '
       return
       end
-
-      subroutine getfields_split( tmpline, getfields_fields,
-     &         getfields_lfields, getfields_nfields, getfields_lerr)
-!
-!-----------------------------------------------------------------------
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 27-08-2014
-!     parse a line and split it into its fields
-!       fields are returned as 0-terminated and padded string
-!     always in main code
-!-----------------------------------------------------------------------
-!
-      implicit none
-+ca   comgetfields
-      
-      character tmpline*( getfields_l_max_string )
-
-      intent(in) tmpline
-      intent(out) getfields_fields, getfields_lfields,
-     &     getfields_nfields, getfields_lerr
-      
-*     runtime variables
-      integer ii, jj
-      logical lchar
-      integer lenstr, istart
-
-*     initialise output variables
-      getfields_lerr = .false.
-      getfields_nfields=0
-      do ii=1,getfields_n_max_fields
-         do jj=1,getfields_l_max_string
-            getfields_fields(ii)(jj:jj) = char(0) ! ZERO terminate/pad
-         enddo
-         getfields_lfields(ii)=0
-      enddo
-
-*     parse the line
-      lchar = .false.
-      do ii=1, getfields_l_max_string
-         if ( tmpline(ii:ii) .eq. ' ' ) then
-*           blank char
-            if ( lchar ) then
-*              end of a string: record it
-               getfields_lfields(getfields_nfields)          = lenstr
-               getfields_fields (getfields_nfields)
-     &              (1:getfields_lfields(getfields_nfields)) =
-     &              tmpline(istart:
-     &               istart+getfields_lfields(getfields_nfields))
-               lchar = .false.
-            endif
-         else
-*           non-blank char
-            if ( .not. lchar ) then
-*              a new what starts
-               getfields_nfields = getfields_nfields +1
-               if ( getfields_nfields.gt.getfields_n_max_fields ) then
-                  write (*,*) ' error! too many fields in line:'
-                  write (*,*) tmpline
-                  write (*,*) ' please increase getfields_n_max_fields'
-                  getfields_lerr = .true.
-                  goto 1982
-               endif
-               istart = ii
-               lchar = .true.
-               lenstr = 0
-            endif
-            lenstr = lenstr+1
-         endif
-      enddo
-
- 1982 return
-
-      end subroutine
-      
-      subroutine initialize_element(ix,lfirst)
-!
-!-----------------------------------------------------------------------
-!     K.Sjobak & A.Santamaria, BE-ABP/HSS
-!     last modified: 16-12-2014
-!     Initialize a lattice element with index elIdx,
-!     such as done when reading fort.2 (GEOM) and in DYNK.
-!     
-!     Never delete an element from the lattice, even if it is not making a kick.
-!     If the element is not recognized, do nothing (for now).
-!-----------------------------------------------------------------------
-!
-      implicit none
-      
-      integer, intent(in) :: ix
-      logical, intent(in) :: lfirst
-
-      integer im, izu, k, m, nmz, r0, r0a !needed to use multini
-
-+ca parpro !needed for common
-+ca parnum !zero
-+ca common
-+ca commonmn
-+ca commontr
-+ca commonxz
-+ca comdynk
-      
-      !Set the element to true when initialized - some elements need to be present in fort.2 and then later changed
-      logical, save :: lisinit(nele) = .false.
-      integer i
-
-!--Nonlinear Elements
-      if(kz(ix).eq.1) then
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                 sm(ix)=ed(ix)             ! Also done in envar() which is called from clorb()
-                 smiv(1,i)=sm(ix)+smizf(i) ! Also done in program maincr
-                 smi(i)=smiv(1,i)          ! Also done in program maincr
-+ca stra01                                 ! Also done in trauthin()/trauthick()
-               endif
-            enddo
-         endif 
-
-      elseif(kz(ix).eq.2) then
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                 sm(ix)=ed(ix)
-                 smiv(1,i)=sm(ix)+smizf(i)
-                 smi(i)=smiv(1,i)
-+ca stra02
-               endif
-            enddo
-         endif 
-      elseif(kz(ix).eq.3) then
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                 sm(ix)=ed(ix)
-                 smiv(1,i)=sm(ix)+smizf(i)
-                 smi(i)=smiv(1,i)
-+ca stra03
-               endif
-            enddo
-         endif 
-
-      elseif((kz(ix).eq.4).and.
-     &   abs(el(ix)).gt.pieni) then
-         ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                 sm(ix)=ed(ix)
-                 smiv(1,i)=sm(ix)+smizf(i)
-                 smi(i)=smiv(1,i)
-+ca stra04
-               endif
-            enddo
-         endif 
-
-      elseif((kz(ix).eq.5).and.
-     &   abs(el(ix)).gt.pieni) then
-         ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                 sm(ix)=ed(ix)
-                 smiv(1,i)=sm(ix)+smizf(i)
-                 smi(i)=smiv(1,i)
-+ca stra05
-               endif
-            enddo
-         endif   
-
-      elseif(kz(ix).eq.6) then
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                 sm(ix)=ed(ix)
-                 smiv(1,i)=sm(ix)+smizf(i)
-                 smi(i)=smiv(1,i)
-+ca stra06
-               endif
-            enddo
-         endif  
-
-      elseif(kz(ix).eq.7) then
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                 sm(ix)=ed(ix)
-                 smiv(1,i)=sm(ix)+smizf(i)
-                 smi(i)=smiv(1,i)
-+ca stra07
-               endif
-            enddo
-         endif         
-
-      elseif(kz(ix).eq.8) then
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                 sm(ix)=ed(ix)
-                 smiv(1,i)=sm(ix)+smizf(i)
-                 smi(i)=smiv(1,i)
-+ca stra08
-               endif
-            enddo
-         endif 
-
-      elseif(kz(ix).eq.9) then
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                 sm(ix)=ed(ix)
-                 smiv(1,i)=sm(ix)+smizf(i)
-                 smi(i)=smiv(1,i)
-+ca stra09
-               endif
-            enddo
-         endif 
-
-      elseif(kz(ix).eq.10) then
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                 sm(ix)=ed(ix)
-                 smiv(1,i)=sm(ix)+smizf(i)
-                 smi(i)=smiv(1,i)
-+ca stra10
-               endif
-            enddo
-         endif 
-
-!--Multipoles
-      elseif(kz(ix).eq.11) then
-         ! Special case, moved from daten():
-         if (abs(el(ix)+one).le.pieni) then
-            dki(ix,1) = ed(ix)
-            dki(ix,3) = ek(ix)
-            ed(ix) = one
-            ek(ix) = one
-            el(ix) = zero
-         else if(abs(el(ix)+two).le.pieni) then
-            dki(ix,2) = ed(ix)
-            dki(ix,3) = ek(ix)
-            ed(ix) = one
-            ek(ix) = one
-            el(ix) = zero
-         endif
-         
-         !All multipoles:
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                  !--Initialize smiv as usual
-                  sm(ix)=ed(ix)
-                  smiv(m,i)=sm(ix)+smizf(i) 
-                  smi(i)=smiv(m,i)
-
-                  !--Using the right izu & setting aaiv, bbiv (see multini)
-                  izu = dynk_izuIndex(ix)
-+ca multini !Also in program maincr()
- 150              continue ! needs to be after a multini block
-
-                  ! From trauthin() -- TODO: Check that it matches TRAUTHICK
-                  r0=ek(ix)
-                  nmz=nmu(ix)
-                  if(abs(r0).le.pieni.or.nmz.eq.0) then
-                     if(abs(dki(ix,1)).le.pieni .and. 
-     &                    abs(dki(ix,2)).le.pieni) then
-                        ktrack(i)=31
-                     else if(abs(dki(ix,1)).gt.pieni .and.
-     &                       abs(dki(ix,2)).le.pieni) then
-                        if(abs(dki(ix,3)).gt.pieni) then
-                           ktrack(i)=33
-+ca stra11
-                        else
-                           ktrack(i)=35
-+ca stra12
-                        endif
-                     else if(abs(dki(ix,1)).le.pieni .and. 
-     &                       abs(dki(ix,2)).gt.pieni) then
-                        if(abs(dki(ix,3)).gt.pieni) then
-                           ktrack(i)=37
-+ca stra13
-                        else
-                            ktrack(i)=39
-+ca stra14
-                        endif
-                     endif
-                  else
-                     if(abs(dki(ix,1)).le.pieni .and. 
-     &                    abs(dki(ix,2)).le.pieni) then
-                        ktrack(i)=32
-                     else if(abs(dki(ix,1)).gt.pieni .and. 
-     &                       abs(dki(ix,2)).le.pieni) then
-                        if(abs(dki(ix,3)).gt.pieni) then
-                           ktrack(i)=34
-+ca stra11
-                        else
-                           ktrack(i)=36
-+ca stra12
-                        endif
-                     else if(abs(dki(ix,1)).le.pieni .and. 
-     &                       abs(dki(ix,2)).gt.pieni) then
-                        if(abs(dki(ix,3)).gt.pieni) then
-                           ktrack(i)=38
-+ca stra13
-                        else
-                           ktrack(i)=40
-+ca stra14
-                        endif
-                     endif
-                  endif
-               endif
-            enddo
-         endif
-!--Cavities (BROKEN)
-      elseif(abs(kz(ix)).eq.12) then !Some 1st time initialization in daten()
-c$$$         ! TODO: If we try to change a cavity with DYNK, we will always get the ELSE -> prror(-1)
-c$$$         ! Oops...
-c$$$         if (lfirst) then
-c$$$            lisinit(ix)=.true.
-c$$$         elseif ( .not. lisinit(ix) ) then !not lfirst and not lisinit
-c$$$            call prror(-1)
-c$$$         else !not lfirst
-c$$$            call prror(-1)
-c$$$         endif
-         ! Moved from daten:
-         phasc(ix)=el(ix)
-         el(ix)=zero
-!--Crab Cavities
-      elseif(abs(kz(ix)).eq.23) then
-         !Moved from daten()
-         crabph(ix)=el(ix)
-         el(ix)=0d0
-!--CC Mult kick order 2
-      elseif(abs(kz(ix)).eq.26) then
-         !Moved from daten()
-         crabph2(ix)=el(ix)
-         el(ix)=0d0
-!--CC Mult kick order 3
-      elseif(abs(kz(ix)).eq.27) then
-         !Moved from daten()
-         crabph3(ix)=el(ix)
-         el(ix)=0d0
-!--CC Mult kick order 4
-      else if(abs(kz(ix)).eq.28) then
-         !Moved from daten()
-         crabph4(ix)=el(ix)
-         el(ix)=0d0
-      endif
-      
-      end subroutine
-      
 +if crlibm
       subroutine splitfld(errno,nunit,lineno,nfields,nf,chars,fields)
       implicit none
@@ -20150,8 +18811,6 @@ C Should get me a NaN
 !hr05   r(j) = real(iz)*4.656613e-10
         r(j) = dble(iz)*4.656613d-10                                     !hr05
    20 continue
-
-C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sigmas):
 +if crlibm
 !hr05 rvec0 = ((-two*log_rn(r(1)))**half)*cos_rn(two*pi*r(2))
 !     rvec0 = (((-1d0*two)*log_rn(r(1)))**half)*cos_rn((two*pi)*r(2))    !hr05
@@ -24293,9 +22952,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca rhicelens
 +ei
-+if bnlelens
-+ca rhicelens
-+ei
 +ca save
 !-----------------------------------------------------------------------
 *FOX  B D ;
@@ -24768,16 +23424,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       end
 +dk maincr
       program maincr
-
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     import mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      use mod_fluka
-
-+ei
       implicit none
 +if cr
 +ca crcoall
@@ -24802,14 +23448,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !  COLLIMATION UPGRADE, JUNE 2005
 !
 !  G. ROBERT-DEMOLAIZE, S. REDAELLI
-!
-!  UPGRADED FOR COUPLING TO FLUKA, JULY 2013
-!
-!  A. MEREGHETTI, D. SINUELA PASTOR
-!
-!  FURTHER UPGRADE FOR COUPLING TO FLUKA, MAY-JUNE 2014
-!
-!  A. MEREGHETTI, P. GARCIA ORTEGA
 !
 !-----------------------------------------------------------------------
 !  SIXTRACR CHECKPOINT/RESTART and CRLIBM (ENS Lyon)
@@ -24866,11 +23504,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if cr
 +ca crco
 +ei
-+ca dbreaddis
-+ca dbdump
-+ca dbstat
-+ca combmat
-+ca comdynk
       integer i,itiono,i1,i2,i3,ia,ia2,iar,iation,ib,ib0,ib1,ib2,ib3,id,&
      &idate,ie,ig,ii,ikk,im,imonth,iposc,irecuin,itime,ix,izu,j,j2,jj,  &
      &jm,k,kpz,kzz,l,lkk,ll,m,mkk,ncorruo,ncrr,nd,nd2,ndafi2,           &
@@ -24910,20 +23543,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
 ! fixes for CPU time (for all versions, not just crlibm).
       real pretime,posttime,tottime
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     status of connection
-!     inserted in main code by the 'fluka' compilation flag
-      integer n
-
-+ei
 +if debug
 !     integer umcalls,dapcalls,dokcalls,dumpl
 !     common /mycalls/ umcalls,dapcalls,dokcalls,dumpl
 +ei
-      logical lopen
       dimension cmonth(12)
       data (cmonth(i),i=1,12)/' January ',' February ','  March   ',    &
      &'  April   ','   May    ','   June   ','   July   ',' August  ',  &
@@ -24976,9 +23599,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
 +if boinc
  611  continue
-+ei
-+if debug
-                   !call system('../crmain  >> crlog')
 +ei
       lout=92
 !--   Very first get rid of any previous partial output
@@ -25267,6 +23887,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         xsi(i)=zero
         zsi(i)=zero
         smi(i)=zero
+        rsmi(i)=zero
+        rfres(i)=zero
+        rzphs(i)=zero
    10 continue
       do 20 i=1,mmul
         cr(i)=zero
@@ -25285,22 +23908,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         xv(2,i)=zero
         yv(1,i)=zero
         yv(2,i)=zero
-!       P.Garcia Ortega, for the FLUKA Team
-!       last modified: 14-08-2014
-!       additional variables for aperture check, to keep track of lost
-!	particles if they are not killed
-	plost(i)=0
-!       flag to kill/let live particles at aperture check
-	apflag=.false.
-+if backtrk
-!       A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!       last modified: 12-06-2014
-!       additional variables for back-tracking, when computing locations of
-!          lost particles
-!       inserted in main code by the 'backtrk' compilation flag
-	xold(1,i)=zero
-	xold(2,i)=zero
-+ei
         dam(i)=zero
         ekkv(i)=zero
         sigmv(i)=zero
@@ -25406,15 +24013,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       pisqrt=sqrt(pi)
 !hr05 rad=pi/180
       rad=pi/180d0                                                       !hr05
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     initialise fluka module
-!     inserted in main code by the 'fluka' compilation flag
-      call fluka_mod_init(npart, nele, clight)
-
-+ei
       call daten
 +if debug
 !     call dumpbin('adaten',999,9999)
@@ -25453,7 +24051,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
         goto 550
       endif
-+if .not.fluka
 !--SETTING UP THE PLOTTING
       if(ipos.eq.1.and.                                                 &
      &(idis.ne.0.or.icow.ne.0.or.istw.ne.0.or.iffw.ne.0)) then
@@ -25482,7 +24079,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         call sumpos
         goto 520
       endif
-+ei
       do 90 i=1,20
         fake(1,i)=zero
    90 fake(2,i)=zero
@@ -25573,8 +24169,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     call dumpbin('asearch',95,995)
 !     call abend('asearch                                           ')
 +ei
-
-        !! Initialize kicks
         izu=0
         do 150 i=1,iu
 +if debug
@@ -25590,8 +24184,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(iorg.lt.0) mzu(i)=izu
           izu=mzu(i)+1
           smizf(i)=zfz(izu)*ek(ix)
-          smiv(m,i)=sm(ix)+smizf(i) ! Also in initalize_element!
-          smi(i)=smiv(m,i)          ! Also in initalize_element!
+          smiv(m,i)=sm(ix)+smizf(i)
+          smi(i)=smiv(m,i)
 +if debug
 !         call warr('smizf(i)',smizf(i),i,0,0,0)
 !         call warr('smiv(m,i)',smiv(m,i),m,i,0,0)
@@ -25611,13 +24205,37 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             write(31,'(a16,1p,d19.11,2d14.6,d17.9)') bez(ix),           &
      &zfz(izu-2),zfz(izu-1),zfz(izu),extalign(i,3)
           endif
-         
-!-- MULTIPOLE BLOCK
           if(kzz.eq.11) then
-             dynk_izuIndex(ix)=izu
-+ca multini
+            r0=ek(ix)
+            if(abs(r0).le.pieni) goto 150
+            nmz=nmu(ix)
+            if(nmz.eq.0) then
+              izu=izu+2*mmul
+              goto 150
+            endif
+            im=irm(ix)
+            r0a=one
+            do 140 k=1,nmz
+              izu=izu+1
+!hr05         aaiv(k,m,i)=ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k))/r0a
+              aaiv(k,m,i)=(ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k)))/r0a    !hr05
++if time
+!hr05         aaiv35(k,m,i)=ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k))/r0a
+             aaiv35(k,m,i)=(ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k)))/r0a !hr05
++ei
+              aai(i,k)=aaiv(k,m,i)
+              izu=izu+1
+!hr05         bbiv(k,m,i)=ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k))/r0a
+              bbiv(k,m,i)=(ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k)))/r0a    !hr05
++if time
+!hr05         bbiv35(k,m,i)=ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k))/r0a
+             bbiv35(k,m,i)=(ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k)))/r0a !hr05
++ei
+              bbi(i,k)=bbiv(k,m,i)
+  140       r0a=r0a*r0
+            izu=izu+2*mmul-2*nmz
           endif
- 150   continue
+  150   continue
 +if debug
 !     call dumpbin('ado 150',150,150)
 !     call abend('ado 150                                           ')
@@ -26041,10 +24659,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
      &clop6(3), idz(1),idz(2),iver,idfor,iclo6,ition
           endif
-!         A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!         last modified: 17-07-2013
-!         cycle to npart, not to napx
-          do 240 ib1=1,npart
+          do 240 ib1=1,napx
             ib2=ib0+ib1
             clov(1,ib2)=clo(1)
             clov(2,ib2)=clo(2)
@@ -26071,43 +24686,23 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     call dumpbin('ado 260',260,260)
 !     call abend('ado 260                                           ')
 +ei
-
+      if(irip.eq.1) then
+        do 280 i=1,iu
+          ix=ic(i)
+          if(ix.le.nblo) goto 280
+          ix=ix-nblo
+          do 270 j=1,irco
+            jj=nrel(j)
+            if(ix.eq.jj) then
+              rsmi(i)=ramp(jj)
+              rfres(i)=rfre(jj)
+              rzphs(i)=rzph(jj)
+            endif
+  270     continue
+  280   continue
+      endif
 !hr05 napx=napx*imc*mmac
       napx=(napx*imc)*mmac                                               !hr05
-+if fluka
-
-!     A.Mereghetti, P. Garcia Ortega, D.Sinuela Pastor, V. Vlachoudis 
-!             for the FLUKA Team
-!     last modified: 11-06-2014
-!     start connection to FLUKA and initialise max ID
-!     inserted in main code by the 'fluka' compilation flag
-      if(fluka_enable) then
-        n = fluka_is_running()
-        if(n.eq.-1) then
-          write(*,*) '[Fluka] Error: Fluka is expected to run but it is'
-          write(*,*) '               NOT actually the case'
-          write(fluka_log_unit,*)
-     &                '# Fluka is expected to run but it is'
-          write(fluka_log_unit,*)
-     &                '               NOT actually the case'
-          call prror(-1)
-        endif
-        write(*,*) '[Fluka] Initializing FlukaIO interface...'
-        write(fluka_log_unit,*) '# Initializing FlukaIO interface...'
-        n = fluka_connect()
-        if(n.eq.-1) then
-          write(*,*) '[Fluka] Error connecting to Fluka server'
-          write(fluka_log_unit,*) '# Error connecting to Fluka server'
-          call prror(-1)
-        endif
-        write(*,*) '[Fluka] Successfully connected to Fluka server'
-        write(fluka_log_unit,*)
-     &'# Successfully connected to Fluka server'
-        fluka_connected = .true.
-      endif
-      call flush
-
-+ei
 +if cr
       write(93,*) 'MAINCR setting napxo=',napx
       endfile 93
@@ -26130,120 +24725,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         nnumxv(i)=numl
    80 numxv(i)=numl
       rat0=rat
-
-
-!----- Initial distribution creation
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     acquisition of initial distribution moved out of loop
-!     always in main code
-
-      if ( idfor.eq.3 ) then
-!       A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!       last modified: 17-07-2013
-!       initialize particle distribution, read from file
-!       always in main code
-
-        if(.not. dist_enable) then
-          write(*,*) 'idfor set to 3 but DIST block not present'
-          call prror(-1)
-        endif
-
-        e0f=sqrt(e0**2-pma**2)
-
-        call dist_readdis( napx, npart, e0, e0f, clight,
-     &       xv(1,:), xv(2,:), yv(1,:), yv(2,:), sigmv(:), ejfv(:) )
-
-!       finalise beam distribution creation
-        do j=1, napx
-!         values related to losses
-          nlostp(j) = j
-          pstop (j) = .false.
-
-!         values related to momentum
-          ejv   (j) = sqrt(ejfv(j)**2+pma**2)
-          dpsv  (j) = (ejfv(j)-e0f)/e0f
-          oidpsv(j) = one/(one+dpsv(j))
-
-!         check existence of on-momentum particles in the distribution
-          if ( abs(dpsv(j)).lt.1.0D-15 .or.                             &
-     &         abs( (ejv(j)-e0)/e0 ) .lt. 1.0D-15 ) then
-
-!           warning with old infos:
-            write(*,*)''
-            write(*,'(5X,A22)') 'on-momentum particle!!'
-            write(*,'(5X,10X,4(1X,A25))')                               &
-     &   "momentum [MeV/c]","total energy [MeV]","Dp/p","1/(1+Dp/p)"
-            write(*,'(5X,"ORIGINAL: ",4(1X,1PE25.18))')                 &
-     &                       ejfv(j), ejv(j), dpsv(j), oidpsv(j)
-
-            ejfv(j)   = e0f
-            ejv(j)    = e0
-            dpsv(j)   = 0.0D+00
-            oidpsv(j) = 1.0D+00
-
-!           warning with new infos:
-            write(*,'(5X,"CORRECTED:",4(1X,1PE25.18))')                 &
-     &                       ejfv(j), ejv(j), dpsv(j), oidpsv(j)
-            write(*,*)''
-          endif
-        end do
-
-!       A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!       last modified: 07-02-2014
-!       in principle there is no need to fill in the unused places:
-!       - nlostp(j) = j        with j=1,npart    filled in trauthin/trauthck
-!       - pstop (j) = .false.  with j=1,npart    filled in maincr
-!       - ejv   (j) = zero     with j=1,npart    filled in maincr
-!       - dpsv  (j) = zero     with j=1,npart    filled in maincr
-!       - oidpsv(j) = one      with j=1,npart    filled in maincr
-!       nevertheless, let's do it, to be fully sure:
-        do j=napx+1,npart
-!         values related to losses
-          nlostp(j) = j
-          pstop (j) = .true.
-!         values related to momentum
-          ejv   (j) = 0.0D+00
-          dpsv  (j) = 0.0D+00
-          oidpsv(j) = 1.0D+00
-        enddo
-
-!       add closed orbit
-        if(iclo6.eq.2) then
-          do j=1, napx
-            xv(1,j)=xv(1,j)+clo6v(1,j)
-            yv(1,j)=yv(1,j)+clop6v(1,j)
-            xv(2,j)=xv(2,j)+clo6v(2,j)
-            yv(2,j)=yv(2,j)+clop6v(2,j)
-            sigmv(j)=sigmv(j)+clo6v(3,j)
-            dpsv(j)=dpsv(j)+clop6v(3,j)
-            oidpsv(j)=one/(one+dpsv(j))
-          end do
-        end if
-
-!       echo
-        if ( dist_echo ) then
-           open(unit=dist_echo_unit)
-           rewind(dist_echo_unit)
-           write(dist_echo_unit,'(" # ",A40,1PE25.18)')                 &
-     &         " # total energy of synch part [MeV]: ", e0
-           write(dist_echo_unit,'(" # ",A40,1PE25.18)')                 &
-     &         " # momentumy of synch part [MeV/c]: ", e0f
-           write(dist_echo_unit,*)'#'
-           write(dist_echo_unit,*)'# for every particle (j)'
-           write(dist_echo_unit,*)                                      &
-     &                   '# xv(1), yv(1), xv(2), yv(2), sigmv, ejfv'
-           do j = 1, napx
-             write(dist_echo_unit,'(6(1X,1PE25.18))')                   &
-     &       xv(1, j), yv(1, j), xv(2,j), yv(2,j), sigmv(j), ejfv(j)
-           end do
-           close(dist_echo_unit)
-        endif
-
-      endif
       do 340 ia=1,napx,2
-        if(idfor.ne.2.and.idfor.ne.3) then
+        if(idfor.ne.2) then
 !---------------------------------------  SUBROUTINE 'ANFB' IN-LINE
 +if cr
           write(lout,10050)
@@ -26393,7 +24876,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if .not.cr
           write(*,10020) ampv(ia),amp(2),epsa
 +ei
-        else if(idfor.eq.2) then
+        else
           read(13,*,iostat=ierro) xv(1,ia),yv(1,ia),xv(2,ia),yv(2,ia),  &
      &sigmv(ia),dpsv(ia),xv(1,ia+1),yv(1,ia+1),xv(2,ia+1),yv            &
      &(2,ia+1), sigmv(ia+1),dpsv(ia+1),e0,ejv(ia),ejv(ia+1)
@@ -26406,18 +24889,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           ejfv(ia+1)=sqrt(ejv(ia+1)**2-pma**2)                           !hr05
           oidpsv(ia)=one/(one+dpsv(ia))
           oidpsv(ia+1)=one/(one+dpsv(ia+1))
-
         endif
-        if ( idfor.ne.3 ) then
 +if cr
-          write(lout,10090) xv(1,ia),yv(1,ia),xv(2,ia),yv(2,ia),        &
+        write(lout,10090) xv(1,ia),yv(1,ia),xv(2,ia),yv(2,ia),sigmv(ia),&
 +ei
 +if .not.cr
-          write(*,10090) xv(1,ia),yv(1,ia),xv(2,ia),yv(2,ia),sigmv(ia), &
+        write(*,10090) xv(1,ia),yv(1,ia),xv(2,ia),yv(2,ia),sigmv(ia),   &
 +ei
-     &sigmv(ia),dpsv(ia),xv(1,ia+1),yv(1,ia+1),xv(2,ia+1),yv(2,ia+1),   &
-     &sigmv(ia+1),dpsv(ia+1),e0,ejv(ia),ejv(ia+1)
-        endif
+     &dpsv(ia),xv(1,ia+1),yv(1,ia+1),xv(2,ia+1),yv(2,ia+1), sigmv       &
+     &(ia+1),dpsv(ia+1),e0,ejv(ia),ejv(ia+1)
         idam=3
         icode=0
         if(abs(xv(1,ia)).le.pieni.and.abs(yv(1,ia)).le.pieni) then
@@ -26490,7 +24970,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRDRHIC
 !GRD-042008
 +ei
-+if .not.fluka
 +if cr
           if (.not.restart) then
 +ei
@@ -26507,7 +24986,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &(ia,5,6), tas(ia,6,1),tas(ia,6,2),tas(ia,6,3),tas(ia,6,4),tas     &
      &(ia,6,5), tas(ia,6,6),                                            &
      &dble(mmac),dble(nms(ia)),dble(izu0),                              &
-     &dble(numlr),sigcor,dpscor,zero,zero,zero,zero,                    &
+     &dble(numlr),sigcor,dpscor,dble(nrturn),zero,zero,zero,            &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
@@ -26517,7 +24996,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           backspace 91-ia2
           binrecs(ia2)=1
           endif
-+ei
 +ei
         else
 +if bnlelens
@@ -26540,7 +25018,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRDRHIC
 !GRD-042008
 +ei
-+if .not.fluka
 +if cr
           if (.not.restart) then
 +ei
@@ -26557,7 +25034,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &(ia,5,5), tas(ia,5,6), tas(ia,6,1),tas(ia,6,2),tas(ia,6,3),tas    &
      &(ia,6,4),tas(ia,6,5), tas(ia,6,6),                                &
      &dble(mmac),dble(nms(ia)),dble(izu0),                              &
-     &dble(numlr),sigcor,dpscor,zero,zero,zero,zero,                    &
+     &dble(numlr),sigcor,dpscor,dble(nrturn),zero,zero,zero,            &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
@@ -26568,9 +25045,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           binrecs(ia2)=1
           endif
 +ei
-+ei
         endif
-+if .not.fluka
         if(ierro.ne.0) then
 +if cr
           write(lout,*)
@@ -26599,7 +25074,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
           goto 520
         endif
-+ei
   340 continue
 +if cr
       if (lhc.ne.9) binrec=1
@@ -26610,122 +25084,53 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       else
         call prror(79)
       endif
-
-!-----/ End of initial distribution
-
-      if(ithick.eq.1) then
-!------ Compute matrices for linear tracking
-        call envarsv(dpsv,oidpsv,rvv,ekv)
-        if (idp.eq.0 .or. ition.eq.0) then
-! ------- Only in case of thck4d
-          call blocksv
-        endif
-      endif
-
-+if fluka
-!     P.Garcia Ortega, A.Mereghetti and V.Vlachoudis, for the FLUKA Team
-!     last modified: 26-08-2014
-!     send napx to fluka
-!     inserted in main code by the 'fluka' compilation flag
-      if(fluka_enable) then
-        write(*,*) '[Fluka] Sending napx: ', napx
-        write(fluka_log_unit,*) '# Sending napx: ', napx
-        n = fluka_init_max_uid( napx )
-        if (n .lt. 0) then
-           write(*, *) '[Fluka] Error: failed to send napx to fluka ',
-     &  napx
-           write(fluka_log_unit, *) '# failed to send napx to fluka ',
-     &  napx
-           call prror(-1)
-        end if
-        write(*,*) '[Fluka] Sending napx successful;'
-        write(fluka_log_unit,*) '# Sending napx successful;'
-      endif
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     initialise energy/momentum/rest mass of reference particle in mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      if(fluka_enable) call fluka_set_synch_part( e0, e0f, pma )
-
-+ei
-
-!     A.Mereghetti, P. G. Ortega and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 01-07-2014
-!     call routine for calculating dcum, necessary for the online
-!        aperture check and in case of dumping particle population
-!        or statistics or beam matrix
-!     always in main code
-      call cadcum
-
-!     P. G. Ortega, for the FLUKA Team
-!     last modified: 01-07-2014
-!     dump aperture model
-!     always in main code
-      if (ldmpaper) then
-        write(*,*)''
-        write(*,10340)
-        write(*,*)''
-        write(*,*)' DUMP OF APERTURE MODEL'
-        write(*,*)''
-
-        inquire( unit=aperunit, opened=lopen )
-        if ( .not.lopen .and. aper_filename .ne. ' ' ) then
-	  if(aperunit .ne. 0 ) then
-	    if(aper_filename .ne. ' ') then
-              open(aperunit,file=aper_filename,form='formatted')
-	      write(*,*) 'DUMPED IN FILE: ',aper_filename
-	    else
-	      open(aperunit,form='formatted')
-	      write(*,*) 'DUMPED IN FILE: fort.',aperunit
-	    endif
-	  else
- 	    write(*,*) 'APERTURE MODEL:'
-	    write(*,*) '---------------------------------'
-	  endif
-	endif
-        call dump_apertures
-      endif
-
-	
-	
-!     A.Mereghetti, P.Garcia Ortega and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 01-09-2014
-!     open units for dumping particle population or statistics or beam matrix
-!     always in main code
-      do i=0,il
-        if (ldump(i)) then
-!         the same file could be used by more than one SINGLE ELEMENT
-          inquire( unit=dumpunit(i), opened=lopen )
-          if ( .not.lopen ) then
-             open(dumpunit(i),form='formatted')
-             if ( dumpfmt(i).eq.1 )    write(dumpunit(i),*)
-     &                       '# ID  turn  s  x  y  xp  yp  dE/E  type'
-             if ( dumpfmt(i).eq.2 )    write(dumpunit(i),*)
-     &                       '# ID  turn  s  x  y  z xp  yp dE/E  type'
-          endif
-        endif
-      enddo
-      do i=1,il
-        if (lstat(i)) then
-!         the same file could be used by more than one SINGLE ELEMENT
-          inquire( unit=statunit(i), opened=lopen )
-          if ( .not.lopen ) open(statunit(i),form='formatted')
-        endif
-      enddo
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 02-09-2014
-!     WAS: open units for logging dynks
-!     always in main code
-
-      do i=1,il
-        if (lbmat(i)) then
-!         the same file could be used by more than one SINGLE ELEMENT
-          inquire( unit=bmatunit(i), opened=lopen )
-          if ( .not.lopen ) open(bmatunit(i),form='formatted')
-        endif
-      enddo
+      if(ithick.eq.1) call envarsv(dpsv,oidpsv,rvv,ekv)
+!-------------------------------------  START OF 'BLOCK'
+      do 440 k=1,mblo
+        jm=mel(k)
+        ikk=mtyp(k,1)
+        do 370 lkk=1,2
+          do 370 mkk=1,6
+            do 360 ia=1,napx
+              dpoff=dpsv(ia)*c1e3
+              if(abs(dpoff).le.pieni) dpoff=one
+              hv(mkk,lkk,ia,1)=al(mkk,lkk,ia,ikk)
+  360       if(mkk.eq.5.or.mkk.eq.6) hv(mkk,lkk,ia,1)=hv(mkk,lkk,ia,1)  &
+     &/dpoff
+  370   continue
+        if(jm.eq.1) goto 410
+        do 400 j=2,jm
+          ikk=mtyp(k,j)
+          do 390 lkk=1,2
+            do 380 ia=1,napx
+              dpoff=dpsv(ia)*c1e3
+              if(abs(dpoff).le.pieni) dpoff=one
+              hv(1,lkk,ia,j)=hv(1,lkk,ia,j-1)*al(1,lkk,ia,ikk)+ hv(3,   &
+     &lkk,ia,j-1)*al(2,lkk,ia,ikk)
+              hv(2,lkk,ia,j)=hv(2,lkk,ia,j-1)*al(1,lkk,ia,ikk)+ hv(4,   &
+     &lkk,ia,j-1)*al(2,lkk,ia,ikk)
+              hv(3,lkk,ia,j)=hv(1,lkk,ia,j-1)*al(3,lkk,ia,ikk)+ hv(3,   &
+     &lkk,ia,j-1)*al(4,lkk,ia,ikk)
+              hv(4,lkk,ia,j)=hv(2,lkk,ia,j-1)*al(3,lkk,ia,ikk)+ hv(4,   &
+     &lkk,ia,j-1)*al(4,lkk,ia,ikk)
+!hr05         hv(5,lkk,ia,j)=hv(5,lkk,ia,j-1)*al(1,lkk,ia,ikk)+ hv(6,   &
+!hr05&lkk,ia,j-1)*al(2,lkk,ia,ikk)+al(5,lkk,ia,ikk)/dpoff
+              hv(5,lkk,ia,j)=(hv(5,lkk,ia,j-1)*al(1,lkk,ia,ikk)+ hv(6,  &!hr05
+     &lkk,ia,j-1)*al(2,lkk,ia,ikk))+al(5,lkk,ia,ikk)/dpoff               !hr05
+!hr05         hv(6,lkk,ia,j)=hv(5,lkk,ia,j-1)*al(3,lkk,ia,ikk)+ hv(6,   &
+!hr05&lkk,ia,j-1)*al(4,lkk,ia,ikk)+al(6,lkk,ia,ikk)/dpoff
+              hv(6,lkk,ia,j)=(hv(5,lkk,ia,j-1)*al(3,lkk,ia,ikk)+ hv(6,  &!hr05
+     &lkk,ia,j-1)*al(4,lkk,ia,ikk))+al(6,lkk,ia,ikk)/dpoff               !hr05
+  380       continue
+  390     continue
+  400   continue
+  410   do 430 lkk=1,2
+          do 430 mkk=1,6
+            do 420 ia=1,napx
+  420       bl1v(mkk,lkk,ia,k)=hv(mkk,lkk,ia,jm)
+  430   continue
+  440 continue
+!---------------------------------------  END OF 'BLOCK'
 +if cr
       write(lout,10200)
 +ei
@@ -26765,14 +25170,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if(nthinerr.eq.3001) goto 460
 !---------------------------------------  END OF LOOP OVER TURNS
   460 continue
-+if .not.fluka
       napxto=0
-+ei
 ! and set numx=nnuml (for writebin) NOT for LOST particles
 ! because all lost set nnuml=numl
       numx=nnuml
       id=0
-+if .not.fluka
 +if cr
       if (.not.restart) then  
 ! If restart is true , we haven't done any tracking
@@ -26948,30 +25350,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           id=ig
         endif
   470 continue
-+ei
-+if fluka
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     print stable particles only
-!     inserted in main code by the 'fluka' compilation flag
-      write(*,*)
-      write(*,10340)
-      if ( napxo .gt. 0 ) then
-        write(*,*)
-        write(*,10350) napxo
-        write(*,*)
-        write(*,10360) 'ID', 'GEN', 'WEIGHT', 'X [m]', 'XP []', 
-     &    'Y [m]', 'YP[]', 'PC [GeV]', 'DE [eV]', 'DT [s]'
-        write(*,*)
-        do ia=1,napxo
-         if(.not.pstop(ia)) then
-          write(*,10370) fluka_uid(ia), fluka_gen(ia), fluka_weight(ia),
-     &       xv(1,ia)*1d-3, yv(1,ia)*1d-3, xv(2,ia)*1d-3, yv(2,ia)*1d-3,&
-     &ejfv(ia)*1d-3, (ejv(ia)-e0)*1d6, -1d-3*(sigmv(ia)/clight)*(e0/e0f)
-         end if
-        end do
-      end if
-+ei
 +if bnlelens
 !GRDRHIC
 !GRD-042008
@@ -26979,7 +25357,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRDRHIC
 !GRD-042008
 +ei
-+if .not.fluka
         iposc=0
         if(ipos.eq.1) then
           do 480 ia=1,napxo,2
@@ -27021,18 +25398,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         call igmeta(999,0)
         call hplend
       endif
-+ei
-+if fluka
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 28-05-2014
-!     collect a couple of goto statements, sending code flow
-!       to different plotting points, which are not actually
-!       inserted
-!     inserted in main code by the 'fluka' compilation flag
- 490  continue
- 520  continue
-+ca flukaclose
-+ei
       time3=0.
       call timex(time3)
 ! Note that crpoint no longer destroys time2
@@ -27089,14 +25454,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     call dumpbin('THE END',999,9999)
 !     call dumpzfz('THE END',9,9)
 +ei
-      call closeUnits
++ca close
 +if cr
       call abend('                                                  ')
 +ei
 +if .not.cr
       stop
 +ei
-10000 format(/t10,'TRACKING ENDED ABNORMALLY'/t10, 'PARTICLE ',i6,      &
+10000 format(/t10,'TRACKING ENDED ABNORMALLY'/t10, 'PARTICLE ',i3,      &
      &' RANDOM SEED ',i8,/ t10,' MOMENTUM DEVIATION ',g12.5,            &
      &' LOST IN REVOLUTION ',i8,/ t10,'HORIZ:  AMPLITUDE = ',f15.3,     &
      &'   APERTURE = ',f15.3/ t10,'VERT:   AMPLITUDE = ',f15.3,         &
@@ -27209,13 +25574,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &t60,f15.9,1x,f15.10,f15.9/t60,f15.9,1x,f15.10,f15.9/)
 10230 format(t10,'NO OPTICAL SOLUTION FOR',2x,f19.16,2x,                &
      &'RELATIVE MOMENTUM DEVIATION')
-10240 format(1x/5x,'PARTICLE ',i6,' STABLE - RANDOM SEED ', i8,         &
+10240 format(1x/5x,'PARTICLE ',i3,' STABLE - RANDOM SEED ', i8,         &
      &' MOMENTUM DEVIATION ',g12.5 /5x,'REVOLUTION ',i8/)
-10250 format(1x/5x,'PARTICLE ',i6,' RANDOM SEED ',i8,                   &
+10250 format(1x/5x,'PARTICLE ',i3,' RANDOM SEED ',i8,                   &
      &' MOMENTUM DEVIATION ',g12.5 /5x,'REVOLUTION ',i8/)
-10260 format(1x/5x,'PARTICLE ',i6,' RANDOM SEED ',i8,                   &
+10260 format(1x/5x,'PARTICLE ',i3,' RANDOM SEED ',i8,                   &
      &' MOMENTUM DEVIATION ',g12.5/)
-10270 format(1x/5x,'PARTICLE ',i6,' AND ',i6,' STABLE - RANDOM SEED ',  &
+10270 format(1x/5x,'PARTICLE ',i3,' AND ',i3,' STABLE - RANDOM SEED ',  &
      &i8,' MOMENTUM DEVIATION ',g12.5 /5x,'REVOLUTION ',i8/)
 10280 format(10x,f47.33)
 10290 format(/10x,'The Preparating Calculations took',f12.3,' second(s)'&
@@ -27228,17 +25593,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &'RANDOM NUMBERS GENERATED:',i20/ t10,'MEAN VALUE=',f15.7,         &
      &'  -   DEVIATION=',f15.7)
 10330 format(/10x,'ERROR IN OPENING FILES')
-10340 format(131('-'))	
-+if fluka
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     print stable particles only (format directives)
-!     inserted in main code by the 'fluka' compilation flag
-10350 format(4X,I8,1X,'SURVIVING PARTICLES:')
-10360 format(2(1X,A8),8(1X,A16))
-10370 format(2(1X,I8),8(1X,1PE16.9))
-10380 format(10x,f47.33)
-+ei
       end
 +dk tra_thin
       subroutine trauthin(nthinerr)
@@ -27252,15 +25606,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !
 !  CHANGES FOR COLLIMATION MADE BY G. ROBERT-DEMOLAIZE, October 29th, 2004
 !--------------------------------------------------------------------------
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     import mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      use mod_fluka
-
-+ei
       implicit none
 +if cr
 +ca crcoall
@@ -27296,7 +25641,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca rhicelens
 +ei
-+ca comdynk
 +ca save
 !-----------------------------------------------------------------------
       do 5 i=1,npart
@@ -27393,7 +25737,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         ktrack(i)=11
 +ca stra01
         goto 290
-   60   if(abs(smiv(1,i)).le.pieni) then
+   60   if(abs(smiv(1,i)).le.pieni.and.abs(ramp(ix)).le.pieni) then
           ktrack(i)=31
           goto 290
         endif
@@ -27462,11 +25806,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         ktrack(i)=55
         goto 290
 !--solenoid
-  146   continue
+  146   continue 
 +ca solenoid
         ktrack(i)=56
         goto 290
-!--Multipole block
   150   r0=ek(ix)
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
@@ -27626,26 +25969,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       nwri=nwr(3)
 !hr01 if(nwri.eq.0) nwri=numl+numlr+1
       if(nwri.eq.0) nwri=(numl+numlr)+1                                  !hr01
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 17-07-2013
-!     save original kicks
-!     always in main code
-      if (ldynk) call dynk_pretrack
-
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     check integrity of coupling markers
-!     inserted in main code by the 'fluka' compilation flag
-      if (fluka_enable) call check_coupling_integrity
-
-+ei
       if(idp.eq.0.or.ition.eq.0) then
-        write(*,*) ''
-        write(*,*) 'Calling thin4d subroutine'
-        write(*,*) ''
         call thin4d(nthinerr)
       else
 !hr01   hsy(3)=c1m3*hsy(3)*ition
@@ -27655,9 +25979,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(kz(jj).eq.12) hsyc(jj)=(c1m3*hsyc(jj))*dble(itionc(jj))     !hr01
   310   continue
         if(abs(phas).ge.pieni) then
-          write(*,*) ''
-          write(*,*) 'Calling thin6dua subroutine'
-          write(*,*) ''
           call thin6dua(nthinerr)
         else
 +if collimat
@@ -28554,9 +26875,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !FOR FAST TRACKING CHECKS
 !       open(unit=999,file='checkturns.dat')
 !
-          write(*,*) ''
-          write(*,*) 'Calling thin6d subroutine'
-          write(*,*) ''
           call thin6d(nthinerr)
 !
 !++  Save particle offsets to a file
@@ -28923,13 +27241,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &j, sampl(j),torbx(j), torby(j)
       end do
       close(99)
-
-! endif collimat
 +ei
 +if .not.collimat
-          write(*,*) ''
-          write(*,*) 'Calling thin6d subroutine'
-          write(*,*) ''
           call thin6d(nthinerr)
         endif
       endif
@@ -28944,15 +27257,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !
 !  F. SCHMIDT
 !-----------------------------------------------------------------------
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     import mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      use mod_fluka
-
-+ei
       implicit none
 +ca exactvars
 +ca commonex
@@ -28996,16 +27300,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
-+ca dbdump
-+ca dbstat
-+ca combmat
-+ca comdynk
-+ca dbdcum
 +ca save
 !-----------------------------------------------------------------------
       nthinerr=0
-!     flush all units at start-up
-      call flush
 +if bnlelens
 !GRDRHIC
 !GRD-042008
@@ -29013,18 +27310,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca bnlin
 !GRDRHIC
 !GRD-042008
-+ei
-+if backtrk
-+ca backtrkinit
-+ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     initialise napxto
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = 0
-
 +ei
 +if cr
       if (restart) then
@@ -29055,20 +27340,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !       call graphic_progress(n,numl)
 +ei
         numx=n-1
-
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
-+if .not.fluka
+        if(irip.eq.1) call ripple(n)
         if(mod(numx,nwri).eq.0) call writebin(nthinerr)
         if(nthinerr.ne.0) return
-+ei
-
 +if cr
 !  does not call CRPOINT if restart=.true.
 !  (and note that writebin does nothing if restart=.true.
@@ -29079,58 +27353,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca bnltwiss
 +ei
-          if(ktrack(i).eq.1) then
-            ix=ic(i)
-          else
-            ix=ic(i)-nblo
-          endif
+          ix=ic(i)-nblo
 +if bpm
 +ca bpmdata
 +ei bpm
 +if time
 +ca timefct
 +ei
-+if fluka
-
-!         A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!         last modified: 17-07-2013
-!         is the current entry an instance of a FLUKA element?
-!         inserted in main code by the 'fluka' compilation flag
-          if (fluka_enable) then
-            if(ktrack(i).ne.1) then ! Skip BLOCs, FLUKA elements must
-                                    !      be SINGLE ELEMENTs
-              if(fluka_type(ix).ne.FLUKA_NONE) then
-                if(fluka_type(ix).eq.FLUKA_ELEMENT) then
-                  call kernel_fluka_element( n, i, ix )
-                  goto 620
-                else if(fluka_type(ix).eq.FLUKA_ENTRY) then
-                  fluka_inside = .true.
-                  call kernel_fluka_entrance( n, i, ix )
-                  goto 625
-                else if(fluka_type(ix).eq.FLUKA_EXIT) then
-                  fluka_inside = .false.
-                  call kernel_fluka_exit( n, i, ix )
-                  goto 620
-                end if
-              end if
-            end if
-            if(fluka_inside) then
-              if(fluka_debug) then
-                write(*,*) '[Fluka] Skipping lattice element at ', i
-                write(fluka_log_unit,*)
-     &'# Skipping lattice element at ', i
-              end if
-              goto 630
-            end if
-          endif
-
-+ei
-          goto(10,  630,  740, 630, 630, 630, 630, 630, 630, 630, !10
-     &         30,  50,   70,   90, 110, 130, 150, 170, 190, 210, !20
-     &         420, 440, 460,  480, 500, 520, 540, 560, 580, 600, !30
-     &         620, 390, 230,  250, 270, 290, 310, 330, 350, 370, !40
-     &         680, 700, 720,  630, 748, 630, 630, 630, 630, 630, !50
-     &         745, 746, 751,  752, 753, 754),ktrack(i)
+!---------count:43
+          goto(10,630,740,630,630,630,630,630,630,630,30,50,70,90,110,  &
+     &130,150,170,190,210,420,440,460,480,500,520,540,560,580,600,      &
+     &620,390,230,250,270,290,310,330,350,370,680,700,720,630,748,      &
+     &630,630,630,630,630,745,746,751,752,753,754),ktrack(i)
           goto 630
    10     stracki=strack(i)
           if(iexact.eq.0) then
@@ -29489,22 +27723,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !----------------------------
 
   620     continue
-
 +ca lostpart
-
-  625     continue
-
-+ca dumplines
-
-+ca statlines
-
-+ca bmatlines
-
   630   continue
+        call lostpart(nthinerr)
+        if(nthinerr.ne.0) return
         if(ntwin.ne.2) call dist1
-+if .not.fluka
         if(mod(n,nwr(4)).eq.0) call write6(n)
-+ei
 +if bnlelens
 !GRDRHIC
 !GRD-042008
@@ -29513,15 +27737,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         endif
 !GRDRHIC
 !GRD-042008
-+ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     increase napxto, to get an estimation of particles*turns
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = napxto + napx
-
 +ei
   640 continue
       return
@@ -29534,16 +27749,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !
 !  F. SCHMIDT
 !-----------------------------------------------------------------------
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     import mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      use mod_fluka
-
-+ei
-
 +if beamgas
 ! <b>Additions/modifications:</b>
 ! - YIL: Added call to beamGas subroutine if element name starts with 
@@ -29609,19 +27814,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
-+ca dbdump
-+ca dbstat
-+ca combmat
-+ca comdynk
-+ca dbdcum
 +ca save
 !-----------------------------------------------------------------------
 +if fast
       c5m4=5.0d-4
 +ei
       nthinerr=0
-!     flush all units at start-up
-      call flush
 +if bnlelens
 !GRDRHIC
 !GRD-042008
@@ -30128,18 +28326,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRD
       open(unit=99,file='betatron.dat')
 +ei
-+if backtrk
-+ca backtrkinit
-+ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     initialise napxto
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = 0
-
-+ei
 +if cr
       if (restart) then
         call crstart
@@ -30171,21 +28357,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if collimat
        iturn=n
 +ei
-        numx=n-1
-
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
-+if .not.fluka
+       numx=n-1
+        if(irip.eq.1) call ripple(n)
         if(mod(numx,nwri).eq.0) call writebin(nthinerr)
         if(nthinerr.ne.0) return
-+ei
-
 +if cr
 !  does not call CRPOINT if restart=.true.
 !  (and note that writebin does nothing if restart=.true.
@@ -30195,7 +28370,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if collimat
         totals=0d0
 +ei
-        do 650 i=1,iu
+      do 650 i=1,iu
 +if collimat
         ie=i
 !!     SR, 10-08-2005 - My format to writer down particle distributions
@@ -30275,11 +28450,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca bnltwiss
 +ei
-          if(ktrack(i).eq.1) then
-            ix=ic(i)
-          else
-            ix=ic(i)-nblo
-          endif
+          ix=ic(i)-nblo
 +if beamgas
 !YIL Call beamGas subroutine whenever a pressure-element is found
 ! should be faster/safer to first check the turn then do the name search
@@ -30340,40 +28511,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !           backspace 93
 !         endif
 +ei
-+if fluka
-
-!         A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!         last modified: 17-07-2013
-!         is the current entry an instance of a FLUKA element?
-!         inserted in main code by the 'fluka' compilation flag
-          if (fluka_enable) then
-            if(ktrack(i).ne.1) then ! Skip BLOCs, FLUKA elements must
-                                    !      be SINGLE ELEMENTs
-              if(fluka_type(ix).ne.FLUKA_NONE) then
-                if(fluka_type(ix).eq.FLUKA_ELEMENT) then
-                  call kernel_fluka_element( n, i, ix )
-                  goto 640
-                else if(fluka_type(ix).eq.FLUKA_ENTRY) then
-                  fluka_inside = .true.
-                  call kernel_fluka_entrance( n, i, ix )
-                  goto 645
-                else if(fluka_type(ix).eq.FLUKA_EXIT) then
-                  fluka_inside = .false.
-                  call kernel_fluka_exit( n, i, ix )
-                  goto 640
-                end if
-              end if
-            end if
-            if(fluka_inside) then
-              if(fluka_debug) then
-                write(*,*) '[Fluka] Skipping lattice element at ', i
-                write(fluka_log_unit,*)
-     &'# Skipping lattice element at ', i
-              end if
-              goto 650
-            end if
-          endif
-+ei
 ! JBG RF CC Multipoles
 ! JBG adding CC multipoles elements in tracking. ONLY in thin6d!!!
 ! JBG 755 -RF quad, 756 RF Sext, 757 RF Oct
@@ -30382,25 +28519,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &640,410,250,270,290,310,330,350,370,390,680,700,720,730,748,      &
      &650,650,650,650,650,745,746,751,752,753,754,755,758,756,759,757,  &
      &760),ktrack(i)
+          goto 650
 +ei
 +if collimat
-!          if (myktrack .eq. 1) then !BLOCK of linear elements
-!             write (*,*) "Kick for element", i,ix, "[BLOCK]"
-!          else
-!             write(*,*) "Kick for element", i,ix,bez(ix),myktrack,kp(ix)
-!          endif
-          goto(10,  30, 740, 650, 650, 650, 650, 650, 650, 650, !10
-     &         50,  70,  90, 110, 130, 150, 170, 190, 210, 230, !20
-     &        440, 460, 480, 500, 520, 540, 560, 580, 600, 620, !30
-     &        640, 410, 250, 270, 290, 310, 330, 350, 370, 390, !40
-     &        680, 700, 720, 730, 748, 650, 650, 650, 650, 650, !50
-     &        745, 746, 751, 752, 753, 754, 755, 758, 756, 759, !60
-     &        757, 760 ),myktrack
-          write (*,*) "WARNING: Non-handled element in thin6d()!",
-     &                " i=", i, "ix=", ix, "myktrack=",  myktrack,
-     &                " bez(ix)='", bez(ix),"' SKIPPED"
-+ei
+          goto(10,30,740,650,650,650,650,650,650,650,50,70,90,110,130,  &
+     &150,170,190,210,230,440,460,480,500,520,540,560,580,600,620,      &
+     &640,410,250,270,290,310,330,350,370,390,680,700,720,730,748,      &
+     &650,650,650,650,650,745,746),myktrack
           goto 650
++ei
    10     stracki=strack(i)
 +if collimat
 !==========================================
@@ -32091,7 +30218,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               if ( part_hit(j).eq.(10000*ie+iturn) ) then
                 if (part_impact(j).lt.-0.5d0) then
 +if cr
-                  write(lout,*) 'ERR>  Found invalid impact parameter!',&
+                  write(lout,*) 'ERR>  Found invalid impact parameter!' &
      &                  part_impact(j)
 +ei
 +if .not.cr
@@ -32978,7 +31105,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
        call APPENDREADING(hdfpid,hdfturn,hdfs,hdfx,hdfxp,hdfy,hdfyp,    &
      &                    hdfdee,hdftyp)
 +ei
-+if .not.hdf5
++if .not.hdf5  
 !                write(38,'(1x,i8,1x,i4,1x,f7.1,4(1x,e11.3))')           &     
           write(38,'(1x,i8,1x,i4,1x,f8.2,4(1x,e11.5),1x,e11.3,1x,i4)')   &
 !          write(38,'(1x,i8,1x,i4,1x,f8.2,5(1x,e11.3),1x,i4)')           &
@@ -32987,7 +31114,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &xv(2,j),yv(2,j),(ejv(j)-myenom)/myenom,                           &
      &secondary(j)+tertiary(j)+other(j)
 !     2          ITURN,SAMPL(ie),XJ,XPJ,YJ,YPJ
-+ei
++ei              
               endif
 !GRD
 !GRD-SR,09-02-2006 => freeing unit, file no longer needed
@@ -33047,16 +31174,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRD
 !GRD END OF UPGRADE
 !GRD
-
++if collimat
+          kpz=abs(kp(ix))
+          if(kpz.eq.0) goto 650
+          if(kpz.eq.1) goto 650
++ei
++if .not.collimat
 +ca lostpart
-
-  645     continue
-+ca dumplines
-
-+ca statlines
-
-+ca bmatlines
-
++ei
   650   continue
 !GRD
 !UPGRADE JANUARY 2005
@@ -33383,16 +31508,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !++  Write final distribution
 !
       if (dowrite_dist.and.(ie.eq.iu).and.(n.eq.numl)) then
-        open(unit=9998, file='distn.dat')
+        open(unit=99, file='distn.dat')
         write(99,*)                                                     &
-     &'# 1=x 2=xp 3=y 4=yp 5=z 6 =E'
+     &'# 1=x 2=xp 3=y 4=yp'
         do j = 1, napx
-          write(9998,'(6(1X,E15.7))') (xgrd(j)-torbx(1))/1d3,           &
-     &(xpgrd(j)-torbxp(1))/1d3, (ygrd(j)-torby(1))/1d3,                 &
-     &(ypgrd(j)-torbyp(1))/1d3,sigmvgrd(j),ejfvgrd(j)
+          write(99,'(5(1X,E15.7))') xgrd(j), xpgrd(j),                  &
+     &ygrd(j), ypgrd(j)
 !     2             , S(J)
         end do
-!        close(99)
+        close(99)
       endif
 !
 !GRD
@@ -33605,10 +31729,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRD END OF UPGRADE
 !GRD
 +if .not.collimat
+        call lostpart(nthinerr)
+        if(nthinerr.ne.0) return
         if(ntwin.ne.2) call dist1
-+if .not.fluka
         if(mod(n,nwr(4)).eq.0) call write6(n)
-+ei
 +ei
 +if bnlelens
 !GRDRHIC
@@ -33618,15 +31742,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         endif
 !GRDRHIC
 !GRD-042008
-+ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     increase napxto, to get an estimation of particles*turns
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = napxto + napx
-
 +ei
   660 continue
 +if collimat
@@ -33650,15 +31765,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !
 !  F. SCHMIDT
 !-----------------------------------------------------------------------
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     import mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      use mod_fluka
-
-+ei
       implicit none
 +ca exactvars
 +ca commonex
@@ -33702,11 +31808,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
-+ca dbdump
-+ca dbstat
-+ca combmat
-+ca comdynk
-+ca dbdcum
 +ca save
 !-----------------------------------------------------------------------
 +if fast
@@ -33721,20 +31822,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRD-042008
 +ei
       nthinerr=0
-!     flush all units at start-up
-      call flush
-+if backtrk
-+ca backtrkinit
-+ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     initialise napxto
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = 0
-
-+ei
 +if cr
       if (restart) then
         call crstart
@@ -33764,24 +31851,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !       call graphic_progress(n,numl)
 +ei
         numx=n-1
-
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
-+if .not.fluka
+        if(irip.eq.1) call ripple(n)
         if(n.le.nde(1)) nwri=nwr(1)
         if(n.gt.nde(1).and.n.le.nde(2)) nwri=nwr(2)
         if(n.gt.nde(2)) nwri=nwr(3)
         if(nwri.eq.0) nwri=numl+numlr+1
         if(mod(numx,nwri).eq.0) call writebin(nthinerr)
         if(nthinerr.ne.0) return
-+ei
-
 +if cr
 !  does not call CRPOINT if restart=.true.
 !  (and note that writebin does nothing if restart=.true.
@@ -33792,50 +31868,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca bnltwiss
 +ei
-          if(ktrack(i).eq.1) then
-            ix=ic(i)
-          else
-            ix=ic(i)-nblo
-          endif
+          ix=ic(i)-nblo
 +if bpm
 +ca bpmdata
 +ei bpm
 +if time
 +ca timefct
-+ei
-+if fluka
-
-!         A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!         last modified: 17-07-2013
-!         is the current entry an instance of a FLUKA element?
-!         inserted in main code by the 'fluka' compilation flag
-          if (fluka_enable) then
-            if(ktrack(i).ne.1) then ! Skip BLOCs, FLUKA elements must
-                                    !      be SINGLE ELEMENTs
-              if(fluka_type(ix).ne.FLUKA_NONE) then
-                if(fluka_type(ix).eq.FLUKA_ELEMENT) then
-                  call kernel_fluka_element( n, i, ix )
-                  goto 640
-                else if(fluka_type(ix).eq.FLUKA_ENTRY) then
-                  fluka_inside = .true.
-                  call kernel_fluka_entrance( n, i, ix )
-                  goto 645
-                else if(fluka_type(ix).eq.FLUKA_EXIT) then
-                  fluka_inside = .false.
-                  call kernel_fluka_exit( n, i, ix )
-                  goto 640
-                end if
-              end if
-            end if
-            if(fluka_inside) then
-              if(fluka_debug) then
-                write(*,*) '[Fluka] Skipping lattice element at ', i
-                write(fluka_log_unit,*)
-     &'# Skipping lattice element at ', i
-              end if
-              goto 650
-            end if
-          endif
 +ei
 !--------count44
           goto(10,30,740,650,650,650,650,650,650,650,50,70,90,110,130,  &
@@ -33857,17 +31895,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
    30     e0o=e0
           e0fo=e0f
           call adia(n,e0f)
-+if fluka
-
-!         A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!         last modified: 17-07-2013
-!         update energy/momentum of reference particle in mod_fluka
-!         NB: adia(n,e0f) updates e0 first (contained in common 'syn')
-!             and then e0f
-!         inserted in main code by the 'fluka' compilation flag
-          if (fluka_enable) call fluka_set_synch_part( e0, e0f, pma )
-
-+ei
           do 40 j=1,napx
             ejf0v(j)=ejfv(j)
             if(abs(dppoff).gt.pieni) sigmv(j)=sigmv(j)-sigmoff(i)
@@ -33895,7 +31922,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
             endif
 !hr01       ejfv(j)=sqrt(ejv(j)*ejv(j)-pma*pma)
-            ejfv(j)=sqrt((ejv(j)-pma)*(ejv(j)+pma))                      !hr01
+            ejfv(j)=sqrt(ejv(j)**2-pma**2)                               !hr01
             rvv(j)=(ejv(j)*e0f)/(e0*ejfv(j))
             dpsv(j)=(ejfv(j)-e0f)/e0f
             oidpsv(j)=one/(one+dpsv(j))
@@ -34272,22 +32299,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !----------------------------
 
   640     continue
-
 +ca lostpart
-
-  645     continue
-
-+ca dumplines
-
-+ca statlines
-
-+ca bmatlines
-
   650   continue
+        call lostpart(nthinerr)
+        if(nthinerr.ne.0) return
         if(ntwin.ne.2) call dist1
-+if .not.fluka
         if(mod(n,nwr(4)).eq.0) call write6(n)
-+ei
 +if bnlelens
 !GRDRHIC
 !GRD-042008
@@ -34297,20 +32314,56 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRDRHIC
 !GRD-042008
 +ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     increase napxto, to get an estimation of particles*turns
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = napxto + napx
-
-+ei
   660 continue
       return
       end
-
-+if .not.fluka
+      subroutine ripple(n)
+!-----------------------------------------------------------------------
+!
+!  F. SCHMIDT
+!-----------------------------------------------------------------------
+      implicit none
++if cr
++ca crcoall
++ei
++if crlibm
++ca crlibco
++ei
+      integer i,n,nripple
++ca parpro
++ca parnum
++ca common
++ca commons
++ca commont1
++ca commondl
++ca commonxz
++ca commonta
++ca commonmn
++ca commonm1
++ca commontr
++if bnlelens
++ca rhicelens
++ei
++ca save
+!-----------------------------------------------------------------------
+      nripple=nrturn+n
+      do 20 i=1,iu
+        if(abs(rsmi(i)).gt.pieni) then
++if crlibm
+!hr01     smiv(1,i)=rsmi(i)*cos_rn(two*pi*(nripple-1)/rfres(i)+rzphs(i))
+          smiv(1,i)=rsmi(i)*cos_rn(((two*pi)*dble(nripple-1))/rfres(i)  &!hr01
+     &     +rzphs(i))                                                    !hr01
++ei
++if .not.crlibm
+!hr01     smiv(1,i)=rsmi(i)*cos(two*pi*(nripple-1)/rfres(i)+rzphs(i))
+          smiv(1,i)=rsmi(i)*cos(((two*pi)*dble(nripple-1))/rfres(i)     &!hr01
+     &     +rzphs(i))                                                    !hr01
++ei
++ca stra02
+        endif
+   20 continue
+      return
+      end
       subroutine writebin(nthinerr)
 !-----------------------------------------------------------------------
 !
@@ -34520,7 +32573,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
       return
       end
-+ei
       subroutine callcrp()
 !-----------------------------------------------------------------------
 !
@@ -34607,30 +32659,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
       return
       end
-!
-      subroutine lostpart(turn, i, ix, llost, nthinerr)
+      subroutine lostpart(nthinerr)
 !-----------------------------------------------------------------------
 !
-!     P.Garcia Ortega, A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified:  8-12-2014
-!     aperture check and dump lost particles
-!     always in main code
+!  F. SCHMIDT
 !-----------------------------------------------------------------------
-!     7 April 2014
+!  3 February 1999
 !-----------------------------------------------------------------------
-
-+if fluka
-      use mod_fluka
-+ei
       implicit none
-!     parameters
-      integer turn  ! turn number
-      integer i     ! element entry in the lattice
-      integer ix    ! single element type index
-      logical llost ! at least one particle was lost
-      logical lparID      ! temporal flag for ID checking	 
-      integer nthinerr
-      double precision xnew(2), apxx, apyy, apxy, aps, apc
 +if cr
 +ca crcoall
 +ei
@@ -34639,20 +32675,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
 !      logical isnan
       logical myisnan
-      integer ib2,ib3,ilostch,j,jj,jj1,jjx,lnapx
+      integer ib2,ib3,ilostch,j,jj,jj1,lnapx,nthinerr
 +ca parpro
-+if backtrk
-!     A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 12-06-2014
-!     additional variables for back-tracking, when computing locations of
-!        lost particles
-!     inserted in main code by the 'backtrk' compilation flag
-      integer niter       ! number of iterations
-      integer kapert      ! temporal integer for aperture type
-      logical llos(npart) ! temporal logic array for interpolation
-      double precision xlos(2,npart), aprr(7), step(npart), length,     &
-     & slos(npart), apnew(7)
-+ei
 +ca parnum
 +ca common
 +ca common2
@@ -34667,1096 +32691,133 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca rhicelens
 +ei
-+if collimat
-! Module to access ipart array
-+ca collpara	
-+ca dbthin6d
-+ca dbcommon
-+ei
-+ca dbdcum
-      logical checkRE, checkEL, checkRL, checkOC, checkRT 
 +ca save
 !-----------------------------------------------------------------------
-      llost=.false.
-
-!     Set pstop for each particle
-
-      if ( limifound ) then
-
-!       go through all possible types
-
-        if ( kape(ix).eq.2 ) then
-!          Rectangle
-           if ( lapeofftlt(ix) ) then
-!             Include offset and angle rotation
-              do j=1,napx
-                 call roffpos( xv(1,j), xv(2,j), xnew(1), xnew(2),      &
-     &                ape(5,ix), ape(6,ix), ape(7,ix) )
-                 pstop(j)=checkRE(xnew(1),xnew(2),ape(1,ix),ape(2,ix))  &
-     &          .or.myisnan(xnew(1),xnew(1)).or.myisnan(xnew(2),xnew(2))
-              end do
-           else
-!             go with original coordinates
-              do j=1,napx
-                 pstop(j)=checkRE(xv(1,j),xv(2,j),ape(1,ix),ape(2,ix))  &
-     &          .or.myisnan(xv(1,j),xv(1,j)).or.myisnan(xv(2,j),xv(2,j))
-              end do
-           end if
-        
-        else if( kape(ix).eq.3 ) then
-!          Ellipse
-           apxx = ape(3,ix)**2.
-           apyy = ape(4,ix)**2.
-           apxy = apxx * apyy
-           if ( lapeofftlt(ix) ) then
-!             Include offset and angle rotation
-              do j=1,napx
-                 call roffpos( xv(1,j), xv(2,j), xnew(1), xnew(2),      &
-     &                ape(5,ix), ape(6,ix), ape(7,ix) )
-                 pstop(j) = checkEL( xnew(1),xnew(2),apxx,apyy,apxy )   &
-     &          .or.myisnan(xnew(1),xnew(1)).or.myisnan(xnew(2),xnew(2))
-              end do
-           else
-!             go with original coordinates
-              do j=1,napx
-                 pstop(j) = checkEL( xv(1,j),xv(2,j),apxx,apyy,apxy )   &
-     &          .or.myisnan(xv(1,j),xv(1,j)).or.myisnan(xv(2,j),xv(2,j))
-              end do
-           end if
-        
-        else if( kape(ix).eq.4 ) then
-!          RectEllipse
-           apxx = ape(3,ix)**2.
-           apyy = ape(4,ix)**2.
-           apxy = apxx * apyy
-           if ( lapeofftlt(ix) ) then
-!             Include offset and angle rotation
-              do j=1,napx
-                 call roffpos( xv(1,j), xv(2,j), xnew(1), xnew(2),      &
-     &                ape(5,ix), ape(6,ix), ape(7,ix) )
-                 pstop(j) = checkRL(xnew(1),xnew(2),ape(1,ix),ape(2,ix),&
-     &                      apxx, apyy, apxy ) .or.                     &
-     &              myisnan(xnew(1),xnew(1)).or.myisnan(xnew(2),xnew(2))
-              end do
-           else
-!             go with original coordinates
-              do j=1,napx
-                 pstop(j) = checkRL(xv(1,j),xv(2,j),ape(1,ix),ape(2,ix),&
-     &                      apxx, apyy, apxy ) .or.                     &
-     &              myisnan(xv(1,j),xv(1,j)).or.myisnan(xv(2,j),xv(2,j))
-              end do
-           end if
-        
-        else if( kape(ix).eq.5 ) then
-!          Octagon
-!          First parameter: outer radius of corners [mm]
-!          Second parameter: subtended angle between corners of the side
-!                            without cooling pipes (vertical sides)[rad]
-           aps = ape(1,ix)*sin(ape(2,ix)/2.)
-           apc = ape(1,ix)*cos(ape(2,ix)/2.)
-           if ( lapeofftlt(ix) ) then
-!             Include offset and angle rotation
-              do j=1,napx
-                 call roffpos( xv(1,j), xv(2,j), xnew(1), xnew(2),      &
-     &                ape(5,ix), ape(6,ix), ape(7,ix) )
-                 pstop(j) = checkOC( xnew(1), xnew(2), aps, apc ) .or.  &
-     &              myisnan(xnew(1),xnew(1)).or.myisnan(xnew(2),xnew(2))
-              end do
-           else
-!             go with original coordinates
-              do j=1,napx
-                 pstop(j) = checkOC( xv(1,j), xv(2,j), aps, apc ) .or.  &
-     &              myisnan(xv(1,j),xv(1,j)).or.myisnan(xv(2,j),xv(2,j))
-              end do
-           end if
-        
-        else if( kape(ix).eq.6 ) then
-!          Racetrack
-!          NB: it follows the MadX definition
-           apxy = ape(3,ix)**2.
-           if ( lapeofftlt(ix) ) then
-!             Include offset and angle rotation
-              do j=1,napx
-                 call roffpos( xv(1,j), xv(2,j), xnew(1), xnew(2),      &
-     &                ape(5,ix), ape(6,ix), ape(7,ix) )
-                 pstop(j) = checkRT( xnew(1), xnew(2),                  &
-     &                      ape(1,ix), ape(2,ix), ape(3,ix), apxy ).or. &
-     &              myisnan(xnew(1),xnew(1)).or.myisnan(xnew(2),xnew(2))
-              end do
-           else
-!             go with original coordinates
-              do j=1,napx
-                 pstop(j) = checkRT( xv(1,j), xv(2,j),                  &
-     &                      ape(1,ix), ape(2,ix), ape(3,ix), apxy ).or. &
-     &              myisnan(xv(1,j),xv(1,j)).or.myisnan(xv(2,j),xv(2,j))
-              end do
-           end if
-        else
-!          Unknown aperture type, general check (set in the ITER block)
-           do j=1,napx
-              pstop(j) = checkRE( xv(1,j), xv(2,j), aper(1), aper(2) )  &
-     &          .or.myisnan(xv(1,j),xv(1,j)).or.myisnan(xv(2,j),xv(2,j))
-           end do
-        endif
-
-      else
-!       no actual aperture profile is assigned to any SINGLE ELEMENT
-!       use the general check (set in the ITER block)
-        do j=1,napx
-           pstop(j) = checkRE( xv(1,j), xv(2,j), aper(1), aper(2) )     &
-     &       .or.myisnan(xv(1,j),xv(1,j)).or.myisnan(xv(2,j),xv(2,j))
-        end do
-      endif
-
-!     is there at least a particle lost?
-      do j=1,napx
-         if ( pstop(j) ) then
-            llost=.true.
-            goto 10
-         endif
-      enddo
- 10   continue
-
-      if ( llost ) then
-
-+if backtrk
-!        P. Garcia Ortega, for the FLUKA Team
-!        last modified: 11-06-2014
-!        back-track particles, in order to better estimate actual loss point
-!        inserted in main code by the 'backtrk' compilation flag
-
-!        Initialise arrays
-         do j=1,napx
-           xlos(1,j) = xv(1,j)
-           xlos(2,j) = xv(2,j)
-           llos(j)   = pstop(j)
-           slos(j)   = dcum(i)
-           step(j)   = 1.d0
-         enddo
-     
-         if ( kape(ix) .ne. 0 ) then
-	
-           ! initialize temporary aperture profile;
-           ! it can be either a constant aperture or a changing one (only RL
-           !    allowed, for the moment!)
-           kapert = kape(ix)
-           do jj=1,7
-             apnew(jj) = ape(jj,ix)
-           enddo
-	   if ( kape(ix) .ge. 5 .or. kapold .ge. 5 ) then
-             ! force constant Racetrack or Octagon profile
-             do jj=1,7
-               apold(jj) = apnew(jj)
-             end do
-	   else
-             ! a possible RL-equivalent transition
-             kapert = 4
-	   endif
-	
-           ! Length between elements
-           length = dcum(i)-sold
-           if ( length .lt. 0.0d0 ) then
-             ! pay attention to overflow:
-             ! length = dcum(i)+(dcum(iu+1)-sold)
-             length = length+dcum(iu+1)
-           endif
-           if ( length .le. bktpre ) goto 11
-	
-           ! Number of iterations (ln(2x/precision)/ln(2)+1)
-           niter = nint(1.442695040889d0*log( 2.d0*length/bktpre ) + 2)
-	
-           ! Interpolation of the lost particles position down to bktpre
-           ! only for already lost particles
-           do jj=1,niter
-             do j=1,napx
-               if(pstop(j)) then
-	         ! Update parameter
-	         if ( llos(j) ) then
-	           step(j) = step(j) - 1. / (2.d0**(jj))
-	         else
-	           step(j) = step(j) + 1. / (2.d0**(jj))
-	         endif
-           
-	         ! step discretized, to compare with BeamLossPattern
-	         if (jj.eq.niter) then
-	           slos(j) = int((sold+length*step(j))/bktpre+1.)*bktpre
-	           step(j) = (slos(j)-sold)/length
-	         end if
-           
-                 ! Update position
-                 xlos(1,j) = xold(1,j) + (xv(1,j)-xold(1,j))*step(j)
-                 xlos(2,j) = xold(2,j) + (xv(2,j)-xold(2,j))*step(j)
-	         slos(j)   = sold      + length*step(j)
-           
-	         ! Update apertures
-	         do jj1=1,7
-	           aprr(jj1)=apold(jj1)+(apnew(jj1)-apold(jj1))*step(j)
-	         end do
-           
-	         ! Check aperture
-                 if ( lapeofftlt(ix) ) then
-                    call roffpos( xlos(1,j), xlos(2,j), xnew(1),xnew(2),&
-     &                            aprr(5), aprr(6), aprr(7) )
-                 else
-                    xnew(1) = xlos(1,j)
-                    xnew(2) = xlos(2,j)
-                 end if
-                 if ( kapert.eq.4 ) then
-!                   RectEllipse
-                    apxx = aprr(3)**2.
-                    apyy = aprr(4)**2.
-                    apxy = apxx * apyy
-                    llos(j) = checkRL( xnew(1),xnew(2),aprr(1),aprr(2), &
-     &                       apxx, apyy, apxy ) .or.                    &
-     &                  myisnan(xnew(1),xnew(1)).or.                    &
-     &                  myisnan(xnew(2),xnew(2))
-                 else if ( kapert.eq.5 ) then
-!                   Octagon
-!                   First parameter: outer radius of corners [mm]
-!                   Second parameter: subtended angle between corners of
-!                                     the side without cooling pipes
-!                                     (vertical sides)[rad]
-                    aps = aprr(1)*sin(aprr(2)/2.)
-                    apc = aprr(1)*cos(aprr(2)/2.)
-                    llos(j) = checkOC( xnew(1), xnew(2), aps, apc ).or. &
-     &                  myisnan(xnew(1),xnew(1)).or.                    &
-     &                  myisnan(xnew(2),xnew(2))
-                 else if ( kapert.eq.6 ) then
-!                   Racetrack
-!                   NB: it follows the MadX definition
-                    llos(j) = checkRT( xnew(1), xnew(2),                &
-     &                     aprr(1), aprr(2), aprr(3), aprr(3)**2. ) .or.&
-     &                  myisnan(xnew(1),xnew(1)).or.                    &
-     &                  myisnan(xnew(2),xnew(2))
-                 end if
-	       endif
-             enddo
-           enddo
-           
-  11       continue
-        
-         endif
++ca lost1a
++ca lost2
++ca lost3a
++ca lost4
++ca lost5a
+      subroutine lostpar2(i,ix,nthinerr)
+!-----------------------------------------------------------------------
+!
+!  F. SCHMIDT
+!-----------------------------------------------------------------------
+!  3 February 1999
+!-----------------------------------------------------------------------
+      implicit none
++if cr
++ca crcoall
 +ei
-	
-!	 If lost particles aren't killed, the lost info is dumped only
-!	 the first time they hit the aperture. Their secondaries generated
-!	 from a lost particles are considered lost as well
-	 if ( apflag ) then
-	   do j=1,napx
-	     if(pstop(j)) then
-	       lparID = .false.
-	       jjx=1
-+if collimat
-	       do jj=1,npart
++if crlibm
++ca crlibco
 +ei
-+if .not.collimat
-	       do jj=1,napx
-+ei
-	         if (plost(jj).ne.0) then
-+if fluka	
-	           if ( fluka_uid(j).eq.plost(jj).or.
-     &                  fluka_gen(j).eq.plost(jj) )
-+ei
-+if collimat
-	           if ( ipart(j)+100*samplenumber .eq. plost(jj) )
-+ei
-+if .not.collimat.and..not.fluka
-	           if ( j .eq. plost(jj) )
-+ei
-     &     		lparID=.true.
-	           jjx=jj+1 !points to the last zero 
-	         end if
-	       end do
-	       if (lparID) then
-	         !old lost particle or secondary, don't print it
-	         pstop(j) = .false.
-	       else
-	         !new lost particle, store ID and print it
-+if fluka	
-	         plost(jjx) = fluka_uid(j)
-+ei
-+if collimat
-	         plost(jjx) = ipart(j)+100*samplenumber
-+ei
-+if .not.collimat.and..not.fluka
-	         plost(jjx) = j
-+ei
-	       end if
-	     end if
-	   end do
-	 end if
-
-	
-         ! Print to 999
-         do j=1,napx
-           if(pstop(j)) then
-+if backtrk
-!            A. Mereghetti and P. Garcia Ortega, for the FLUKA Team
-!            last modified: 11-06-2014
-!            back-track particles, in order to better estimate actual loss point
-!            inserted in main code by the 'backtrk' compilation flag
-             if ( slos(j).gt.dcum(iu+1) ) then
-                ! pay attention to overflow:
-                slos(j)=slos(j)-dcum(iu+1)
-             endif
-+ei
-             write(999,                                                 &
-+if fluka
-     &         '(3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE14.7))')     &
-+ei
-+if .not.fluka
-     &         '(3(1X,I8),1X,A16,1X,F12.5,1X,I8,7(1X,1PE14.7))')        &
-+ei
-+if .not.backtrk
-     &         turn, i, ix, bez(ix), dcum(i),                           &
-+ei
-+if backtrk
-     &         turn, i, ix, bez(ix), slos(j),                           &
-+ei
-+if fluka	
-     &         fluka_uid(j), fluka_gen(j), fluka_weight(j),             &
-+ei
-+if collimat	
-     &         ipart(j)+100*samplenumber,                               &
-+ei
-+if .not.fluka.and..not.collimat	
-     &         j,                                                       &
-+ei
-+if .not.backtrk
-     &         xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3,                &
-+ei
-+if backtrk
-     &         xlos(1,j)*1d-3, yv(1,j)*1d-3, xlos(2,j)*1d-3,            &
-+ei
-     &         yv(2,j)*1d-3,ejfv(j)*1d-3, (ejv(j)-e0)*1d6,              &
-     &         -1.0d-03 * (sigmv(j)/clight) * (e0/e0f)
-           endif
-         end do
-
-!	 Don't kill lost particle if apflag is activated
-	 if ( apflag ) then
-	   do j=1,napx
-	     pstop(j) = .false.
-	   end do
-	 end if
-	
-         ! Compact array
-         lnapx=napx
-         do j=napx,1,-1
-           if(pstop(j)) then
-             if(j.ne.lnapx) then
-               do jj=j,lnapx-1
-                 jj1=jj+1
-                 nlostp(jj)=nlostp(jj1)
-                 xv(1,jj)=xv(1,jj1)
-                 xv(2,jj)=xv(2,jj1)
-                 yv(1,jj)=yv(1,jj1)
-                 yv(2,jj)=yv(2,jj1)
+!      logical isnan
+      logical myisnan
+      integer i,ib2,ib3,ilostch,ix,j,jj,jj1,lnapx,nthinerr
++ca parpro
++ca parnum
++ca common
++ca common2
++ca commons
++ca commont1
++ca commondl
++ca commonxz
++ca commonta
++ca commonmn
++ca commonm1
++ca commontr
 +if bnlelens
-                 namepart(jj)=namepart(jj1)
++ca rhicelens
 +ei
-                 dpsv(jj)=dpsv(jj1)
-                 sigmv(jj)=sigmv(jj1)
-                 ejfv(jj)=ejfv(jj1)
-                 ejv(jj)=ejv(jj1)
-                 rvv(jj)=rvv(jj1)
-+if rvet
-                 rvet(jj)=rvet(jj1)
++ca save
+!-----------------------------------------------------------------------
++ca lost1a
++ca lost2a
++ca lost2
++ca lost3b
++ca lost4
++ca lost5b
+      subroutine lostpar3(i,ix,nthinerr)
+!-----------------------------------------------------------------------
+!
+!  F. SCHMIDT
+!-----------------------------------------------------------------------
+!  3 February 1999
+!-----------------------------------------------------------------------
+      implicit none
++if cr
++ca crcoall
 +ei
-                 oidpsv(jj)=oidpsv(jj1)
-                 dpsv1(jj)=dpsv1(jj1)
-                 clo6v(1,jj)=clo6v(1,jj1)
-                 clo6v(2,jj)=clo6v(2,jj1)
-                 clo6v(3,jj)=clo6v(3,jj1)
-                 clop6v(1,jj)=clop6v(1,jj1)
-                 clop6v(2,jj)=clop6v(2,jj1)
-                 clop6v(3,jj)=clop6v(3,jj1)
-!--beam-beam element
-                 di0xs(jj)=di0xs(jj1)
-                 dip0xs(jj)=dip0xs(jj1)
-                 di0zs(jj)=di0zs(jj1)
-                 dip0zs(jj)=dip0zs(jj1)
-                 do ib2=1,6
-                   do ib3=1,6
-                     tasau(jj,ib2,ib3)=tasau(jj1,ib2,ib3)
-                   end do
-                 end do
-               end do
-+if fluka
-               if (fluka_enable) call fluka_lostpart(lnapx, j) ! Inform fluka
++if crlibm
++ca crlibco
 +ei
-             endif
-             lnapx=lnapx-1
-           endif
-         end do
-
-
-         napx=lnapx
-      endif
-
-      napxo = napx
-
-      if(napx.eq.0) then
-        write(*,*)
-        write(*,*)
-        write(*,*) '************************'
-        write(*,*) '** ALL PARTICLES LOST **'
-        write(*,*) '**   PROGRAM STOPS    **'
-        write(*,*) '************************'
-        write(*,*)
-        write(*,*)
-        nthinerr = 3000
-        return
-      end if
-
-      end subroutine
-
-      subroutine roffpos( x, y, xnew, ynew, tlt, xoff, yoff )
-!
-!-----------------------------------------------------------------------
-!     A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 16-05-2014
-!     centre/rotate position of particles in case of offcentered/tilted 
-!        aperture types
-!     always in main code
-!  
-!     input parameters:
-!        x : horizontal particle position [mm]
-!        y : vertical   particle position [mm]
-!        tlt:  tilt angle of the aperture profile [rad]
-!        xoff: horizontal aperture offset [mm]
-!        yoff: vertical   aperture offset [mm]
-!
-!     output parameters:
-!        xnew : offcentered/tilted horizontal particle position [mm]
-!        ynew : offcentered/tilted vertical   particle position [mm]
-!
-!-----------------------------------------------------------------------
-!
-      implicit none
-!     parameters
-      double precision x, y, xnew, ynew, tlt, xoff, yoff
-!     temporary variables
-      double precision theta, radio, xtmp, ytmp, ttmp
-      xtmp = x+xoff
-      ytmp = y+yoff
-      theta = atan2( ytmp, xtmp )
-      radio = sqrt ( xtmp**2. + ytmp**2. )
-      ttmp = theta-tlt
-      xnew = radio * cos ( ttmp )
-      ynew = radio * sin ( ttmp )
-      return
-      end subroutine
-
-      logical function checkRE( x, y, apex, apey )
-!-----------------------------------------------------------------------
-!     A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 16-05-2014
-!     check particle position against REctangle aperture
-!     always in main code
-!-----------------------------------------------------------------------
-      implicit none
-!     parameters
-      double precision x, y, apex, apey
-      checkRE = ( abs(x).gt.apex ).or.( abs(y).gt.apey )
-      return
-      end function
-
-      logical function checkEL( x, y, apxx, apyy, apxy )
-!-----------------------------------------------------------------------
-!     A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 16-05-2014
-!     check particle position against ELlipse aperture
-!     always in main code
-!-----------------------------------------------------------------------
-      implicit none
-!     parameters
-      double precision x, y, apxx, apyy, apxy
-      checkEL = x**2.*apyy+y**2.*apxx .gt. apxy
-      return
-      end function
-
-      logical function checkRL( x, y, apex, apey, apxx, apyy, apxy )
-!-----------------------------------------------------------------------
-!     A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 16-05-2014
-!     check particle position against Rect-Ellipse aperture
-!     always in main code
-!-----------------------------------------------------------------------
-      implicit none
-!     parameters
-      double precision x, y, apex, apey, apxx, apyy, apxy
-!     temporary variables
-      logical checkRE, checkEL
-      checkRL = checkRE( x, y, apex, apey ) .or.                        &
-     &          checkEL( x, y, apxx, apyy, apxy )
-      return
-      end function
-
-      logical function checkOC( x, y, apes, apec )
-!-----------------------------------------------------------------------
-!     A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 16-05-2014
-!     check particle position against OCtagon aperture
-!     always in main code
-!-----------------------------------------------------------------------
-      implicit none
-!     parameters
-      double precision x, y, apes, apec
-!     temporary variables
-      logical checkRE
-      checkOC = checkRE( x, y, apec, apec ) .or.                        &
-     &          ( ( abs(x)+abs(y) ).gt.( apes+apec ) )
-      return
-      end function
-
-      logical function checkRT( x, y, apex, apey, r, r2 )
-!-----------------------------------------------------------------------
-!     A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 19-05-2014
-!     check particle position against RaceTrack aperture
-!     always in main code
-!-----------------------------------------------------------------------
-      implicit none
-!     parameters
-      double precision x, y, apex, apey, r, r2
-!     temporary variables
-      logical checkRE
-      checkRT = checkRE( x, y, apex+r, apey+r ) .or.                    &
-     &          ( ( (abs(x)-apex)**2.+(abs(y)-apey)**2.).gt.r2 )
-      return
-      end function
-
-      subroutine dump_apertures
-!
-!-----------------------------------------------------------------------
-!     by P.Garcia Ortega, for the FLUKA Team
-!     last modified: 19-08-2014
-!     dump apertures 
-!     always in main code
-!-----------------------------------------------------------------------
-!
-      implicit none
-
-
+!      logical isnan
+      logical myisnan
+      integer i,ib2,ib3,ilostch,ix,j,jj,jj1,lnapx,nthinerr
 +ca parpro
 +ca parnum
 +ca common
-+ca commonmn
-+ca commontr	
-+ca dbdcum
-!     temporary variables
-      integer i,ix,j,jj,jj1,niter
-      double precision aprr,slos,step
-      dimension aprr(7)
-      character*2 aptype
-      character*2 rect,elli,reel,ratr,octa
-      data rect,elli,reel,ratr,octa  /'RE','EL','RL','RT','OC'/
-
-+if backtrk
-+ca backtrkinit
-+ei
-	
-!     Header
-      if(aperunit .ne. 0 ) then
-        write(aperunit,*)  '#name  aptype  s[m]  aper1[mm]  aper2[mm]',
-     &	 '  aper3[mm]  aper4[mm]  angle[rad]  xoff[mm]  yoff[mm]'
-      else
-        write(*,*)  '#name  aptype  s[m]  aper1[mm]  aper2[mm]  ',
-     &	 'aper3[mm]  aper4[mm]  angle[rad]  xoff[mm]  yoff[mm]'
-      endif
-      do i=1,iu
-        ix=ic(i)
-        if(ix.gt.nblo) then
-!         SINGLE ELEMENT 
-          ix=ix-nblo
-	  if ( kape(ix) .ne. 0 ) then
-+if .not.backtrk	
-!	    Set aperture type
-	    if (kape(ix).eq.2) aptype=rect
-	    if (kape(ix).eq.3) aptype=elli
-	    if (kape(ix).eq.4) aptype=reel
-	    if (kape(ix).eq.5) aptype=octa
-	    if (kape(ix).eq.6) aptype=ratr
-
-            if(aperunit .ne. 0) then
-              write(aperunit,1984) bez(ix),aptype,dcum(i),ape(1,ix),
-     &	ape(2,ix),ape(3,ix),ape(4,ix),ape(5,ix),ape(6,ix),ape(7,ix)
-            else
-              write(*,1984) bez(ix),aptype,dcum(i),ape(1,ix),ape(2,ix),
-     &	             ape(3,ix),ape(4,ix),ape(5,ix),ape(6,ix),ape(7,ix)
-            endif
-+ei
-+if backtrk
-            ! set aperture type
-            ! it can be either a constant aperture or a changing one (only RL
-            !    allowed, for the moment!)
-	    if ( kape(ix) .ge. 5 .or. kapold .ge. 5 ) then
-              ! force constant Racetrack or Octagon profile
-              do jj1=1,7
-                apold(jj) = ape(jj1,ix)
-              end do
-	      if (kape(ix).eq.5.or.kapold.eq.5) aptype=octa
-	      if (kape(ix).eq.6.or.kapold.eq.6) aptype=ratr
-	    else
-              aptype=reel
-	    endif
-
-            !Number of iterations 
-	    niter = nint((dcum(i)-sold)/bktpre+1)
-	    if ( (dcum(i)-sold).le.0.d0) goto 111
-	    do jj=1,niter
-              slos = int(sold/bktpre+jj)*bktpre
-	      step = (slos-sold)/(dcum(i)-sold)
-	      
-	      if ( step.lt.0.d0 .or. step.gt.1.d0 ) goto 111
-	
-	      do jj1=1,7
-	        aprr(jj1)=apold(jj1)+(ape(jj1,ix)-apold(jj1))*step
-	      end do
-
-              if(aperunit .ne. 0) then
-                write(aperunit,1984) bez(ix), aptype, slos, aprr(1),
-     &	       aprr(2), aprr(3), aprr(4), aprr(5), aprr(6), aprr(7)
-              else
-                write(*,1984) bez(ix), aptype, slos, aprr(1), aprr(2),
-     &	                  aprr(3), aprr(4), aprr(5), aprr(6), aprr(7)
-            endif
-
-	    end do
-111	    continue	
-	    sold = dcum(i)
-	    do jj1=1,7
-	      apold(jj1)=ape(jj1,ix)
-	    end do
-	    kapold = kape(ix)
-+ei
-	  endif
-	endif
-      enddo
-	
- 1984 format (a16,1x,a2,8(1x,f15.5))
-	
-      end subroutine
-
-      subroutine dump_beam_population( nturn, i, ix, unit, fmt,         &
-     &  lhighprec )
-!
-!-----------------------------------------------------------------------
-!     by A.Mereghetti, D.Sinuela-Pastor & P.Garcia Ortega, for the FLUKA Team
-!     last modified: 13-06-2014
-!     dump beam particles
-!     always in main code
-!-----------------------------------------------------------------------
-!
-+if fluka
-      use mod_fluka
-+ei
-
-      implicit none
-
-!     interface variables:
-      integer nturn, i, ix, unit, fmt
-      logical lhighprec, lheader
-
-+ca parpro
-+ca parnum
-+ca common
++ca common2
++ca commons
++ca commont1
++ca commondl
++ca commonxz
++ca commonta
 +ca commonmn
 +ca commonm1
 +ca commontr
-+ca dbdcum
-
-!     temporary variables
-      integer j
-
-      if ( fmt .eq. 0 ) then ! General format
-         if ( lhighprec ) then
-            do j=1,napx
-               write(unit,1981) nturn, i, ix, bez(ix), dcum(i),         &
-+if fluka
-     &fluka_uid(j), fluka_gen(j), fluka_weight(j),                      &
++if bnlelens
++ca rhicelens
 +ei
-     &xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3, yv(2,j)*1d-3,           &
-     &ejfv(j)*1d-3, (ejv(j)-e0)*1d6, -1.0d-03*(sigmv(j)/clight)*(e0/e0f)
-            enddo
-         else
-            do j=1,napx
-               write(unit,1982) nturn, i, ix, bez(ix), dcum(i),         &
-+if fluka
-     &fluka_uid(j), fluka_gen(j), fluka_weight(j),                      &
-+ei
-     &xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3, yv(2,j)*1d-3,           &
-     &ejfv(j)*1d-3, (ejv(j)-e0)*1d6, -1.0d-03*(sigmv(j)/clight)*(e0/e0f)
-            enddo
-         endif
-         write(unit,*) ''
-         write(unit,*) ''
-
-      else if (fmt .eq. 1) then ! Format for aperture check
-
-        if ( lhighprec ) then
-            do j=1,napx
-+if .not.fluka
-               write(unit,1983) nlostp(j), nturn, dcum(i), xv(1,j),     &
-+ei
-+if fluka	
-               write(unit,1983) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
-+ei
-     &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
-            enddo
-         else
-            do j=1,napx
-+if .not.fluka
-               write(unit,1984) nlostp(j), nturn, dcum(i), xv(1,j),     &
-+ei
-+if fluka	
-               write(unit,1984) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
-+ei
-     &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
-            enddo
-         endif
-      else if (fmt .eq. 2) then ! Same as fmt=1 but also include z (for crab cavities etc)
-         if ( lhighprec ) then
-            do j=1,napx
-+if .not.fluka
-               write(unit,1985) nlostp(j), nturn, dcum(i), xv(1,j),     &
-+ei
-+if fluka
-               write(unit,1985) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
-+ei
-     &              yv(1,j), sigmv(j), xv(2,j), yv(2,j),
-     &              (ejv(j)-e0)/e0, ktrack(i)
-            enddo
-         else
-            do j=1,napx
-+if .not.fluka
-               write(unit,1986) nlostp(j), nturn, dcum(i), xv(1,j),
-+ei
-+if fluka
-               write(unit,1986) fluka_uid(j), nturn, dcum(i), xv(1,j),
-+ei
-     &              yv(1,j), sigmv(j), xv(2,j), yv(2,j),
-     &              (ejv(j)-e0)/e0, ktrack(i)
-            enddo
-         endif
-      else
-         write (*,*) "DUMP> Format",fmt, "not understood for unit", unit
-         call prror(-1)
-      endif
-      return
-      
-+if fluka
- 1981 format (3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE25.18)) !fmt 0 / hiprec
- 1982 format (3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE16.9))  !fmt 0 / not hiprec
-+ei
-+if .not.fluka
- 1981 format (3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE25.18)) !fmt 0 / hiprec
- 1982 format (3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE16.9))  !fmt 0 / not hiprec
-+ei
- 1983 format (2(1x,I8),1X,F12.5,5(1X,1PE25.18),1X,I8)  !fmt 1 / hiprec
- 1984 format (2(1x,I8),1X,F12.5,5(1X,1PE16.9),1X,I8)   !fmt 1 / not hiprec
-
- 1985 format (2(1x,I8),1X,F12.5,6(1X,1PE25.18),1X,I8)  !fmt 2 / hiprec
- 1986 format (2(1x,I8),1X,F12.5,6(1X,1PE16.9),1X,I8) !fmt 2 / not hiprec
-      end subroutine
-!
-      subroutine dump_statistics( nturn, ientry, ix, unit, lhighprec )
-!
++ca save
 !-----------------------------------------------------------------------
-!     by A.Mereghetti and D.Sinuela-Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     compute and dump some simple statistics about the beam population
-!     always in main code
++ca lost1b
++ca lost2a
++ca lost2
++ca lost3b
++ca lost4
++ca lost5b
+      subroutine lostpar4(i,ix,nthinerr)
 !-----------------------------------------------------------------------
 !
+!  F. SCHMIDT
+!-----------------------------------------------------------------------
+!  3 February 1999
+!-----------------------------------------------------------------------
       implicit none
-
++if cr
++ca crcoall
++ei
++if crlibm
++ca crlibco
++ei
+!      logical isnan
+      logical myisnan
+      integer i,ib2,ib3,ilostch,ix,j,jj,jj1,lnapx,nthinerr
 +ca parpro
 +ca parnum
 +ca common
++ca common2
++ca commons
++ca commont1
++ca commondl
++ca commonxz
++ca commonta
 +ca commonmn
 +ca commonm1
 +ca commontr
-+ca dbdcum
-
-!     interface variables:
-      integer nturn, ientry, ix, unit
-      logical lhighprec
-
-!     statistical quantities (used only locally)
-      double precision x_sum , y_sum , xpsum , ypsum
-      double precision x_sum2, y_sum2, xpsum2, ypsum2
-      double precision pcsum , dtsum , desum
-      double precision pcsum2, dtsum2, desum2
-
-!     temporary variables
-      integer japx
-
-!     initialise statistical analysis
-      x_sum=zero
-      y_sum=zero
-      xpsum=zero
-      ypsum=zero
-      pcsum=zero
-      dtsum=zero
-      desum=zero
-      x_sum2=zero
-      y_sum2=zero
-      xpsum2=zero
-      ypsum2=zero
-      pcsum2=zero
-      dtsum2=zero
-      desum2=zero
-      
-      if ( napx.eq.0 ) then
-!       this case should never happen, as aperture check is always performed
-!         beforehand, and it closes the simulation in case no particle
-!         remains to be tracked; but still, keep it in, for security
-        write(*,*) 'error while computing the statistics of the current'
-        write(*,*) '  revolution: empty beam population'
-        write(*,'("element:",2(1X,I8),1X,A16,1X,F12.5," at turn: ",I8)')
-     &                 ientry, ix, bez(ix), dcum(ientry), nturn
-        call prror(-1)
-      elseif ( napx.eq.1 ) then
-        x_sum=xv(1,1)     ! [mm] 
-        y_sum=xv(2,1)     ! [mm] 
-        xpsum=yv(1,1)     ! [0.001]
-        ypsum=yv(2,1)     ! [0.001]
-        pcsum=ejfv(1)     ! [MeV/c]
-        dtsum=sigmv(1)    ! [mm] 
-        desum=(ejv(1)-e0) ! [MeV] 
-        x_sum2=zero
-        y_sum2=zero
-        xpsum2=zero
-        ypsum2=zero
-        pcsum2=zero
-        dtsum2=zero
-        desum2=zero
-      else
-!       perform analysis:
-!       - compute mean values:
-        do japx=1,napx
-           x_sum=x_sum+xv(1,japx)     ! [mm]   
-           y_sum=y_sum+xv(2,japx)     ! [mm]   
-           xpsum=xpsum+yv(1,japx)     ! [0.001]
-           ypsum=ypsum+yv(2,japx)     ! [0.001]
-           pcsum=pcsum+ejfv(japx)     ! [MeV/c]
-           dtsum=dtsum+sigmv(japx)    ! [mm]   
-           desum=desum+(ejv(japx)-e0) ! [MeV]  
-        enddo
-        x_sum=x_sum/dble(napx)       ! [mm]   
-        y_sum=y_sum/dble(napx)       ! [mm]   
-        xpsum=xpsum/dble(napx)       ! [0.001]
-        ypsum=ypsum/dble(napx)       ! [0.001]
-        pcsum=pcsum/dble(napx)       ! [MeV/c]
-        dtsum=dtsum/dble(napx)       ! [mm]   
-        desum=desum/dble(napx)       ! [MeV]
-!       - compute standard deviations:
-        do japx=1,napx
-           x_sum2=x_sum2+(xv(1,japx)-x_sum)**2
-           y_sum2=y_sum2+(xv(2,japx)-y_sum)**2
-           xpsum2=xpsum2+(yv(1,japx)-xpsum)**2
-           ypsum2=ypsum2+(yv(2,japx)-ypsum)**2
-           pcsum2=pcsum2+(ejfv(japx)-pcsum)**2
-           dtsum2=dtsum2+(sigmv(japx)-dtsum)**2
-           desum2=desum2+((ejv(japx)-e0)-desum)**2
-        enddo
-!         ...use the unbiased formulation!
-        x_sum2=sqrt(x_sum2/dble(napx-1))
-        y_sum2=sqrt(y_sum2/dble(napx-1))
-        xpsum2=sqrt(xpsum2/dble(napx-1))
-        ypsum2=sqrt(ypsum2/dble(napx-1))
-        pcsum2=sqrt(pcsum2/dble(napx-1))
-        dtsum2=sqrt(dtsum2/dble(napx-1))
-        desum2=sqrt(desum2/dble(napx-1))
-      endif
-
-!     dump it:
-      if ( lhighprec ) then
-         write(unit,1981)                                               &
-     &           nturn, ientry, ix, bez(ix), dcum(ientry), napx,        &
-     &           x_sum*1d-3 , y_sum*1d-3 , xpsum*1d-3 , ypsum*1d-3 ,    &
-     &           pcsum*1d-3 , -1d-3*(dtsum/clight)*(e0/e0f), desum*1d6, &
-     &           x_sum2*1d-3, y_sum2*1d-3, xpsum2*1d-3, ypsum2*1d-3,    &
-     &           pcsum2*1d-3, 1d-3*(dtsum2/clight)*(e0/e0f), desum2*1d6
-      else
-         write(unit,1982)                                               &
-     &           nturn, ientry, ix, bez(ix), dcum(ientry), napx,        &
-     &           x_sum*1d-3 , y_sum*1d-3 , xpsum*1d-3 , ypsum*1d-3 ,    &
-     &           pcsum*1d-3 , -1d-3*(dtsum/clight)*(e0/e0f), desum*1d6, &
-     &           x_sum2*1d-3, y_sum2*1d-3, xpsum2*1d-3, ypsum2*1d-3,    &
-     &           pcsum2*1d-3, 1d-3*(dtsum2/clight)*(e0/e0f), desum2*1d6
-      endif
-      return
-
- 1981 format (3(1X,I8),1X,A16,1X,F12.5,1X,I8,14(1X,1PE25.18))
- 1982 format (3(1X,I8),1X,A16,1X,F12.5,1X,I8,14(1X,1PE16.9))
-      end subroutine
-
-      subroutine dump_beam_mtrix( nturn, ientry, ix, unit, lhighprec )
-!
++if bnlelens
++ca rhicelens
++ei
++ca save
 !-----------------------------------------------------------------------
-!     by A.Mereghetti, for the FLUKA Team
-!     last modified: 02-09-2014
-!     compute and dump the beam matrix
-!     always in main code
-!-----------------------------------------------------------------------
-!
-      implicit none
-
-+ca parpro
-+ca parnum
-+ca common
-+ca commonmn
-+ca commonm1
-+ca commontr
-+ca dbdcum
-
-!     interface variables:
-      integer nturn, ientry, ix, unit
-      logical lhighprec
-
-!     statistical quantities (used only locally)
-      double precision x_sum2, y_sum2, xpsum2, ypsum2, xxpsum, yypsum
-      double precision E_sum2, dtsum2, Edtsum
-      double precision temix, temiy, tbetx, tbety, talfx, talfy
-      double precision temil, tbetl, talfl
-
-!     temporary variables
-      integer japx
-      logical lerr
-      double precision tmpE, tmpT
-
-      lerr=.false.
-
-!     initialise statistical analysis
-      x_sum2=zero
-      y_sum2=zero
-      xpsum2=zero
-      ypsum2=zero
-      xxpsum=zero
-      yypsum=zero
-      E_sum2=zero
-      dtsum2=zero
-      Edtsum=zero
-      temix=zero
-      temiy=zero
-      temil=zero
-      tbetx=zero
-      tbety=zero
-      tbetl=zero
-      talfx=zero
-      talfy=zero
-      talfl=zero
-      
-      if ( napx.eq.0 ) then
-!       this case should never happen, as aperture check is always performed
-!         beforehand, and it closes the simulation in case no particle
-!         remains to be tracked; but still, keep it in, for security
-        write(*,*)'error while computing the beam matrix of the current'
-        write(*,*)'  revolution: empty beam population'
-        write(*,'("element:",2(1X,I8),1X,A16,1X,F12.5," at turn: ",I8)')
-     &                 ientry, ix, bez(ix), dcum(ientry), nturn
-        call prror(-1)
-      else
-!       compute beam matrix
-!       - sum of squares
-        do japx=1,napx
-           tmpE=(ejv(japx)-e0)*1d-3              ! [GeV]
-           tmpT=-sigmv(japx)/clight*(e0/e0f)*1d6 ! [ns]
-           x_sum2=x_sum2+(xv(1,japx))**2         ! [mm^2]
-           y_sum2=y_sum2+(xv(2,japx))**2         ! [mm^2]
-           E_sum2=E_sum2+tmpE**2                 ! [GeV^2]
-           xpsum2=xpsum2+(yv(1,japx))**2         ! [0.001^2]
-           ypsum2=ypsum2+(yv(2,japx))**2         ! [0.001^2]
-           dtsum2=dtsum2+tmpT**2                 ! [ns^2]
-           xxpsum=xxpsum+xv(1,japx)*yv(1,japx)   ! [mm*0.001]
-           yypsum=yypsum+xv(2,japx)*yv(2,japx)   ! [mm*0.001]
-           Edtsum=Edtsum+tmpE*tmpT               ! [eVs]
-        enddo
-!       - averages
-        x_sum2=x_sum2/dble(napx) ! [mm^2]
-        y_sum2=y_sum2/dble(napx) ! [mm^2]
-        E_sum2=E_sum2/dble(napx) ! [GeV^2]
-        xpsum2=xpsum2/dble(napx) ! [0.001^2]
-        ypsum2=ypsum2/dble(napx) ! [0.001^2]
-        dtsum2=dtsum2/dble(napx) ! [ns^2]
-        xxpsum=xxpsum/dble(napx) ! [mm*0.001]
-        yypsum=yypsum/dble(napx) ! [mm*0.001]
-        Edtsum=Edtsum/dble(napx) ! [eVs]
-!       - actual quantities
-!         . horizontal plane
-        temix=x_sum2*xpsum2-xxpsum**2
-        if ( temix .lt. zero ) then
-           temix=abs(temix)
-           write(*,*) ''
-           write(*,*) ' problems of precision when computing the hor'
-           write(*,*) '   emittance (beam matrix analysis)'
-           write(*,*) ' at element (ientry,ix,bez,dcum) ', 
-     &                  ientry, ix, bez(ix), dcum(ientry)
-           write(*,*) '   at turn ',nturn
-           write(*,*) ''
-           lerr=.true.
-        endif
-        temix=sqrt(temix)         ! [mm 0.001]
-        talfx=-xxpsum/temix       ! []
-        tbetx=x_sum2/temix        ! [m]
-!         . vertical plane
-        temiy=y_sum2*ypsum2-yypsum**2
-        if ( temiy .lt. zero ) then
-           temiy=abs(temiy)
-           write(*,*) ''
-           write(*,*) ' problems of precision when computing the ver'
-           write(*,*) '   emittance (beam matrix analysis)'
-           write(*,*) ' at element (ientry,ix,bez,dcum) ', 
-     &                  ientry, ix, bez(ix), dcum(ientry)
-           write(*,*) '   at turn ',nturn
-           write(*,*) ''
-           lerr=.true.
-        endif
-        temiy=sqrt(temiy)         ! [mm 0.001]
-        talfy=-yypsum/temiy       ! []
-        tbety=y_sum2/temiy        ! [m]
-!         . longitudinal plane
-        temil=E_sum2*dtsum2-Edtsum**2
-        if ( temil .lt. zero ) then
-           temil=abs(temil)
-           write(*,*) ''
-           write(*,*) ' problems of precision when computing the lon'
-           write(*,*) '   emittance (beam matrix analysis)'
-           write(*,*) ' at element (ientry,ix,bez,dcum) ', 
-     &                  ientry, ix, bez(ix), dcum(ientry)
-           write(*,*) '   at turn ',nturn
-           write(*,*) ''
-           lerr=.true.
-        endif
-        temil=sqrt(temil)         ! [eVs]
-        talfl=-Edtsum/temil       ! []
-        tbetl=dtsum2/temil        ! [ns]
-      endif
-
-!     dump it:
-      if ( lhighprec ) then
-         write(unit,1981)                                               &
-     &           nturn, ientry, ix, bez(ix), dcum(ientry), napx,        &
-     &           temix, tbetx, talfx, temiy, tbety, talfy,
-     &           temil, tbetl, talfl
-      else
-         write(unit,1982)                                               &
-     &           nturn, ientry, ix, bez(ix), dcum(ientry), napx,        &
-     &           temix, tbetx, talfx, temiy, tbety, talfy,
-     &           temil, tbetl, talfl
-      endif
-
-      if ( lerr ) call prror(-1)
-
-      return
-
- 1981 format (3(1X,I8),1X,A16,1X,F12.5,1X,I8,9(1X,1PE25.18))
- 1982 format (3(1X,I8),1X,A16,1X,F12.5,1X,I8,9(1X,1PE16.9))
-      end subroutine
-
++ca lost1c
++ca lost2a
++ca lost2
++ca lost3b
++ca lost4
++ca lost5c
       subroutine dist1
 !-----------------------------------------------------------------------
 !
@@ -35828,7 +32889,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
    20 continue
       return
       end
-+if .not.fluka
       subroutine write6(n)
 !-----------------------------------------------------------------------
 !
@@ -35934,11 +32994,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       backspace lout
 +ei
       return
-10000 format(1x/5x,'PARTICLE ',i6,' RANDOM SEED ',i8,                   &
+10000 format(1x/5x,'PARTICLE ',i3,' RANDOM SEED ',i8,                   &
      &' MOMENTUM DEVIATION ',g12.5 /5x,'REVOLUTION ',i8/)
 10010 format(10x,f47.33)
       end
-+ei
 +dk tra_thck
       subroutine trauthck(nthinerr)
 !-----------------------------------------------------------------------
@@ -35948,15 +33007,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !
 !  F. SCHMIDT
 !-----------------------------------------------------------------------
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     import mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      use mod_fluka
-
-+ei
       implicit none
 +if cr
 +ca crcoall
@@ -35980,7 +33030,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca commontr
 +ca beamdim
       dimension nbeaux(nbb)
-+ca comdynk
 +ca save
 !-----------------------------------------------------------------------
       do 5 i=1,npart
@@ -36077,7 +33126,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         ktrack(i)=11
 +ca stra01
         goto 290
-   60   if(abs(smiv(1,i)).le.pieni) then
+   60   if(abs(smiv(1,i)).le.pieni.and.abs(ramp(ix)).le.pieni) then
           ktrack(i)=31
           goto 290
         endif
@@ -36150,7 +33199,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca solenoid
         ktrack(i)=56
         goto 290
-!--Multipole block
   150   r0=ek(ix)
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
@@ -36309,26 +33357,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
   300 continue
       nwri=nwr(3)
       if(nwri.eq.0) nwri=numl+numlr+1
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 17-07-2013
-!     save original kicks
-!     always in main code
-      if (ldynk) call dynk_pretrack
-
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     check integrity of coupling markers
-!     inserted in main code by the 'fluka' compilation flag
-      if (fluka_enable) call check_coupling_integrity
-
-+ei
       if(idp.eq.0.or.ition.eq.0) then
-        write(*,*) ''
-        write(*,*) 'Calling thck4d subroutine'
-        write(*,*) ''
         call thck4d(nthinerr)
       else
 !hr01   hsy(3)=c1m3*hsy(3)*ition
@@ -36338,14 +33367,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(kz(jj).eq.12) hsyc(jj)=(c1m3*hsyc(jj))*dble(itionc(jj))     !hr01
   310   continue
         if(abs(phas).ge.pieni) then
-          write(*,*) ''
-          write(*,*) 'Calling thck6dua subroutine'
-          write(*,*) ''
           call thck6dua(nthinerr)
         else
-          write(*,*) ''
-          write(*,*) 'Calling thck6d subroutine'
-          write(*,*) ''
           call thck6d(nthinerr)
         endif
       endif
@@ -36359,15 +33382,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !
 !  F. SCHMIDT
 !-----------------------------------------------------------------------
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     import mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      use mod_fluka
-
-+ei
       implicit none
 +if cr
 +ca crcoall
@@ -36409,36 +33423,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
-+ca dbdump
-+ca dbstat
-+ca combmat
-+ca comdynk
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     force re-computation of transport matrices of linear elements
-!     inserted in main code by the 'fluka' compilation flag
-      logical recompute_linear_matrices
-
-+ei
-+ca dbdcum
 +ca save
 !-----------------------------------------------------------------------
       nthinerr=0
-!     flush all units at start-up
-      call flush
       idz1=idz(1)
       idz2=idz(2)
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     force re-computation of transport matrices of linear elements
-!     inserted in main code by the 'fluka' compilation flag
-      recompute_linear_matrices = .false.
-
-+ei
 +if bnlelens
 !GRDRHIC
 !GRD-042008
@@ -36446,18 +33435,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca bnlin
 !GRDRHIC
 !GRD-042008
-+ei
-+if backtrk
-+ca backtrkinit
-+ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     initialise napxto
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = 0
-
 +ei
 +if cr
       if (restart) then
@@ -36488,20 +33465,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !       call graphic_progress(n,numl)
 +ei
           numx=n-1
-
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
-+if .not.fluka
+          if(irip.eq.1) call ripple(n)
           if(mod(numx,nwri).eq.0) call writebin(nthinerr)
           if(nthinerr.ne.0) return
-+ei
-
 +if cr
 !  does not call CRPOINT if restart=.true.
 !  (and note that writebin does nothing if restart=.true.
@@ -36516,56 +33482,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               ix=ic(i)
             else
               ix=ic(i)-nblo
-            endif
 +if bpm
 +ca bpmdata
 +ei bpm
 +if time
 +ca timefct
 +ei
+            endif
           if(i.eq.1103) then
           endif
-+if fluka
-
-!           A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!           last modified: 17-07-2013
-!           is the current entry an instance of a FLUKA element?
-!           inserted in main code by the 'fluka' compilation flag
-            if (fluka_enable) then
-              if(ktrack(i).ne.1) then ! Skip BLOCs, FLUKA elements must
-                                      !      be SINGLE ELEMENTs
-                if(fluka_type(ix).ne.FLUKA_NONE) then
-                  if(fluka_type(ix).eq.FLUKA_ELEMENT) then
-                    call kernel_fluka_element( n, i, ix )
-!                   re-compute transport matrices of linear elements,
-!                      according to momentum of surviving/new particles
-                    recompute_linear_matrices = .true.
-                    goto 470
-                  else if(fluka_type(ix).eq.FLUKA_ENTRY) then
-                    fluka_inside = .true.
-                    call kernel_fluka_entrance( n, i, ix )
-                    goto 475
-                  else if(fluka_type(ix).eq.FLUKA_EXIT) then
-                    fluka_inside = .false.
-                    call kernel_fluka_exit( n, i, ix )
-!                   re-compute transport matrices of linear elements,
-!                      according to momentum of surviving/new particles
-                    recompute_linear_matrices = .true.
-                    goto 470
-                  end if
-                end if
-              end if
-              if(fluka_inside) then
-                if(fluka_debug) then
-                  write(*,*) '[Fluka] Skipping lattice element at ', i
-                  write(fluka_log_unit,*)
-     &'# Skipping lattice element at ', i
-                end if
-                goto 480
-              end if
-            endif
-
-+ei
 !----------count=43
             goto(20,480,740,480,480,480,480,480,480,480,40,60,80,100,   &
      &120,140,160,180,200,220,270,290,310,330,350,370,390,410,          &
@@ -36940,44 +33865,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
 !----------------------------
 
-  470     continue
-
+  470       continue
 +ca lostpart
-+if fluka
-
-!         A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!         last modified: 17-07-2013
-!         re-compute transport matrices of linear elements
-!         inserted in main code by the 'fluka' compilation flag
-          if ( recompute_linear_matrices ) then
-!           after a FLUKA element: additional particles may have
-!             been generated
-            call envarsv(dpsv,oidpsv,rvv,ekv)
-            recompute_linear_matrices = .false.
-          elseif ( llost ) then
-!           after any other element: no additional particles,
-!              thus update only momentum-dependent matrix elements
-            call synuthck
-          else
-            goto 475
-          endif
-!         recompute matrices of BLOCKs
-          call blocksv
-+ei
-
-  475     continue
-
-+ca dumplines
-
-+ca statlines
-
-+ca bmatlines
-
   480     continue
+          call lostpart(nthinerr)
+          if(nthinerr.ne.0) return
           if(ntwin.ne.2) call dist1
-+if .not.fluka
           if(mod(n,nwr(4)).eq.0) call write6(n)
-+ei
 +if bnlelens
 !GRDRHIC
 !GRD-042008
@@ -36986,15 +33880,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       endif
 !GRDRHIC
 !GRD-042008
-+ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     increase napxto, to get an estimation of particles*turns
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = napxto + napx
-
 +ei
   490 continue
       return
@@ -37007,15 +33892,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !
 !  F. SCHMIDT
 !-----------------------------------------------------------------------
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     import mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      use mod_fluka
-
-+ei
       implicit none
 +if cr
 +ca crcoall
@@ -37061,20 +33937,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRDRHIC
 !GRD-042008
 +ei
-+ca dbdump
-+ca dbstat
-+ca combmat
-+ca comdynk
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     force re-computation of transport matrices of linear elements
-!     inserted in main code by the 'fluka' compilation flag
-      logical recompute_linear_matrices
-
-+ei
-+ca dbdcum
 +ca save
 +if debug
 !-----------------------------------------------------------------------
@@ -37083,19 +33945,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !===================================================================
 +ei
       nthinerr=0
-!     flush all units at start-up
-      call flush
       idz1=idz(1)
       idz2=idz(2)
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     force re-computation of transport matrices of linear elements
-!     inserted in main code by the 'fluka' compilation flag
-      recompute_linear_matrices = .false.
-
-+ei
 +if bnlelens
 !GRDRHIC
 !GRD-042008
@@ -37103,18 +33954,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca bnlin
 !GRDRHIC
 !GRD-042008
-+ei
-+if backtrk
-+ca backtrkinit
-+ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     initialise napxto
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = 0
-
 +ei
 ! Now the outer loop over turns
 +if cr
@@ -37147,20 +33986,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !       call graphic_progress(n,numl)
 +ei
           numx=n-1
-
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
-+if .not.fluka
+          if(irip.eq.1) call ripple(n)
           if(mod(numx,nwri).eq.0) call writebin(nthinerr)
           if(nthinerr.ne.0) return
-+ei
-
 +if cr
 !  does not call CRPOINT if restart=.true.
 !  (and note that writebin does nothing if restart=.true.
@@ -37189,53 +34017,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               ix=ic(i)
             else
               ix=ic(i)-nblo
-            endif
 +if bpm
 +ca bpmdata
 +ei bpm
 +if time
 +ca timefct
 +ei
-+if fluka
-
-!           A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!           last modified: 17-07-2013
-!           is the current entry an instance of a FLUKA element?
-!           inserted in main code by the 'fluka' compilation flag
-            if (fluka_enable) then
-              if(ktrack(i).ne.1) then ! Skip BLOCs, FLUKA elements must
-                                      !      be SINGLE ELEMENTs
-                if(fluka_type(ix).ne.FLUKA_NONE) then
-                  if(fluka_type(ix).eq.FLUKA_ELEMENT) then
-                    call kernel_fluka_element( n, i, ix )
-!                   re-compute transport matrices of linear elements,
-!                      according to momentum of surviving/new particles
-                    recompute_linear_matrices = .true.
-                    goto 490
-                  else if(fluka_type(ix).eq.FLUKA_ENTRY) then
-                    fluka_inside = .true.
-                    call kernel_fluka_entrance( n, i, ix )
-                    goto 495
-                  else if(fluka_type(ix).eq.FLUKA_EXIT) then
-                    fluka_inside = .false.
-                    call kernel_fluka_exit( n, i, ix )
-!                   re-compute transport matrices of linear elements,
-!                      according to momentum of surviving/new particles
-                    recompute_linear_matrices = .true.
-                    goto 490
-                  end if
-                end if
-              end if
-              if(fluka_inside) then
-                if(fluka_debug) then
-                  write(*,*) '[Fluka] Skipping lattice element at ', i
-                  write(fluka_log_unit,*)
-     &'# Skipping lattice element at ', i
-                end if
-                goto 500
-              end if
             endif
-+ei
 +if debug
 !     if (i.ge.673) then
 !     call warr('xv12,i,ktrack ',xv(1,2),i,ktrack(i),0,0)
@@ -37711,35 +34499,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
 !----------------------------
 
-  490     continue
-
+  490       continue
 +ca lostpart
-+if fluka
-
-!         A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!         last modified: 17-07-2013
-!         re-compute transport matrices of linear elements
-!         inserted in main code by the 'fluka' compilation flag
-          if ( recompute_linear_matrices ) then
-!           after a FLUKA element: additional particles may have
-!             been generated
-            call envarsv(dpsv,oidpsv,rvv,ekv)
-            recompute_linear_matrices = .false.
-          elseif ( llost ) then
-!           after any other element: no additional particles,
-!              thus update only momentum-dependent matrix elements
-            call synuthck
-          endif
-+ei
-
-  495     continue
-
-+ca dumplines
-
-+ca statlines
-
-+ca bmatlines
-
 +if debug
   500 continue
 !     if (n.ge.990) then
@@ -37762,10 +34523,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !===================================================================
 !===================================================================
 +ei
+          call lostpart(nthinerr)
+          if(nthinerr.ne.0) return
           if(ntwin.ne.2) call dist1
-+if .not.fluka
           if(mod(n,nwr(4)).eq.0) call write6(n)
-+ei
 +if bnlelens
 !GRDRHIC
 !GRD-042008
@@ -37774,15 +34535,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       endif
 !GRDRHIC
 !GRD-042008
-+ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     increase napxto, to get an estimation of particles*turns
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = napxto + napx
-
 +ei
   510 continue
 +if debug
@@ -37803,15 +34555,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !
 !  F. SCHMIDT
 !-----------------------------------------------------------------------
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     import mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      use mod_fluka
-
-+ei
       implicit none
 +if cr
 +ca crcoall
@@ -37853,36 +34596,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
-+ca dbdump
-+ca dbstat
-+ca combmat
-+ca comdynk
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     force re-computation of transport matrices of linear elements
-!     inserted in main code by the 'fluka' compilation flag
-      logical recompute_linear_matrices
-
-+ei
-+ca dbdcum
 +ca save
 !-----------------------------------------------------------------------
       nthinerr=0
-!     flush all units at start-up
-      call flush
       idz1=idz(1)
       idz2=idz(2)
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     force re-computation of transport matrices of linear elements
-!     inserted in main code by the 'fluka' compilation flag
-      recompute_linear_matrices = .false.
-
-+ei
 +if bnlelens
 !GRDRHIC
 !GRD-042008
@@ -37890,18 +34608,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca bnlin
 !GRDRHIC
 !GRD-042008
-+ei
-+if backtrk
-+ca backtrkinit
-+ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     initialise napxto
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = 0
-
 +ei
 +if cr
       if (restart) then
@@ -37932,24 +34638,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !       call graphic_progress(n,numl)
 +ei
           numx=n-1
-
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
-+if .not.fluka
+          if(irip.eq.1) call ripple(n)
           if(n.le.nde(1)) nwri=nwr(1)
           if(n.gt.nde(1).and.n.le.nde(2)) nwri=nwr(2)
           if(n.gt.nde(2)) nwri=nwr(3)
           if(nwri.eq.0) nwri=numl+numlr+1
           if(mod(numx,nwri).eq.0) call writebin(nthinerr)
           if(nthinerr.ne.0) return
-+ei
-
 +if cr
 !  does not call CRPOINT if restart=.true.
 !  (and note that writebin does nothing if restart=.true.
@@ -37964,55 +34659,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               ix=ic(i)
             else
               ix=ic(i)-nblo
-            endif
 +if bpm
 +ca bpmdata
 +ei bpm
 +if time
 +ca timefct
 +ei
-+if fluka
-
-!           A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!           last modified: 17-07-2013
-!           is the current entry an instance of a FLUKA element?
-!           inserted in main code by the 'fluka' compilation flag
-            if (fluka_enable) then
-              if(ktrack(i).ne.1) then ! Skip BLOCs, FLUKA elements must
-                                      !      be SINGLE ELEMENTs
-                if(fluka_type(ix).ne.FLUKA_NONE) then
-                  if(fluka_type(ix).eq.FLUKA_ELEMENT) then
-                    call kernel_fluka_element( n, i, ix )
-!                   re-compute transport matrices of linear elements,
-!                      according to momentum of surviving/new particles
-                    recompute_linear_matrices = .true.
-                    goto 490
-                  else if(fluka_type(ix).eq.FLUKA_ENTRY) then
-                    fluka_inside = .true.
-                    call kernel_fluka_entrance( n, i, ix )
-                    goto 495
-                  else if(fluka_type(ix).eq.FLUKA_EXIT) then
-                    fluka_inside = .false.
-                    call kernel_fluka_exit( n, i, ix )
-!                   re-compute transport matrices of linear elements,
-!                      according to momentum of surviving/new particles
-                    recompute_linear_matrices = .true.
-                    goto 490
-                  end if
-                end if
-              end if
-              if(fluka_inside) then
-                if(fluka_debug) then
-                  write(*,*) '[Fluka] Skipping lattice element at ', i
-                  write(fluka_log_unit,*)
-     &'# Skipping lattice element at ', i
-                end if
-                goto 500
-              end if
             endif
-
-+ei
-!----------count 56
+!----------count 44
             goto(20,40,740,500,500,500,500,500,500,500,60,80,100,120,   &
      &140,160,180,200,220,240,290,310,330,350,370,390,410,430,          &
      &450,470,490,260,520,540,560,580,600,620,640,660,680,700,720       &
@@ -38028,17 +34682,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
    40       e0o=e0
             e0fo=e0f
             call adia(n,e0f)
-+if fluka
-
-!           A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!           last modified: 17-07-2013
-!           update energy/momentum of reference particle in mod_fluka
-!           NB: adia(n,e0f) updates e0 first (contained in common 'syn')
-!               and then e0f
-!           inserted in main code by the 'fluka' compilation flag
-            if (fluka_enable) call fluka_set_synch_part( e0, e0f, pma )
-
-+ei
             do 50 j=1,napx
               ejf0v(j)=ejfv(j)
               if(abs(dppoff).gt.pieni) sigmv(j)=sigmv(j)-sigmoff(i)
@@ -38449,41 +35092,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
 !----------------------------
 
-  490     continue
-
+  490       continue
 +ca lostpart
-+if fluka
-
-!         A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!         last modified: 17-07-2013
-!         re-compute transport matrices of linear elements
-!         inserted in main code by the 'fluka' compilation flag
-          if ( recompute_linear_matrices ) then
-!           after a FLUKA element: additional particles may have
-!             been generated
-            call envarsv(dpsv,oidpsv,rvv,ekv)
-            recompute_linear_matrices = .false.
-          elseif ( llost ) then
-!           after any other element: no additional particles,
-!              thus update only momentum-dependent matrix elements
-            call synuthck
-          endif
-+ei
-
-  495     continue
-
-+ca dumplines
-
-+ca statlines
-
-+ca bmatlines
-
   500     continue
-
+          call lostpart(nthinerr)
+          if(nthinerr.ne.0) return
           if(ntwin.ne.2) call dist1
-+if .not.fluka
           if(mod(n,nwr(4)).eq.0) call write6(n)
-+ei
 +if bnlelens
 !GRDRHIC
 !GRD-042008
@@ -38492,15 +35107,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       endif
 !GRDRHIC
 !GRD-042008
-+ei
-+if fluka
-
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 14-06-2014
-!     increase napxto, to get an estimation of particles*turns
-!     inserted in main code by the 'fluka' compilation flag
-      napxto = napxto + napx
-
 +ei
   510 continue
       return
@@ -39205,16 +35811,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
    10 continue
       do 160 l=1,il
         do l1=1,6
-+if .not.fluka
           do j=1,napx
-+ei
-+if fluka
-!         A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!         last modified: 11-06-2014
-!         entirely re-initialise to 0.0 al(...) and as(...) arrays
-!         inserted in main code by the 'fluka' compilation flag
-          do j=1,npart
-+ei
             do l2=1,2
               al(l1,l2,j,l)=zero
               as(l1,l2,j,l)=zero
@@ -40013,6 +36610,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !--MULTIPOLE WITH THEIR RANDOM VALUES ADDED
       izu=0
       do 60 i=1,iu
+        rsmi(i)=zero
         ix=ic(i)
         if(ix.le.nblo) goto 60
         ix=ix-nblo
@@ -40023,6 +36621,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         izu=mzu(i)+1
         smizf(i)=zfz(izu)*ek(ix)
         smi(i)=sm(ix)+smizf(i)
+        if(irip.eq.1) then
+          do 40 j=1,irco
+            jj=nrel(j)
+            if(ix.eq.jj) then
+              rsmi(i)=ramp(jj)
+              rfres(i)=rfre(jj)
+              rzphs(i)=rzph(jj)
+            endif
+   40     continue
+        endif
         izu=izu+1
         xsi(i)=xpl(ix)+zfz(izu)*xrms(ix)
         izu=izu+1
@@ -40395,7 +37003,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
   160 continue
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
-      call closeUnits
++ca close
 +if cr
       call abend('                                                  ')
 +ei
@@ -40520,12 +37128,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca rhicelens
 +ei
-+ca dbdcum
-+ca dbreaddis
-+ca dbdump
-+ca dbstat
-+ca combmat
-+ca comdynk
 +ca save
 !-----------------------------------------------------------------------
 !
@@ -40574,6 +37176,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
       ncorru=0
       ncorrep=0
+      nrturn=0
       iexact=0
       ithick=0
       ierro=0
@@ -40646,6 +37249,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       icow=0
       istw=0
       iffw=0
+      irip=0
+      irco=0
       idial=0
       nord=0
       nvar=0
@@ -40746,15 +37351,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       tlim=0.
       time0=0.
       time1=0.
-+if backtrk
-!-----------------------------------------------------------------------
-!       A.Mereghetti and P.Garcia Ortega, for the FLUKA Team
-!       last modified: 12-06-2014
-!       default precision for back-tracking, when computing locations of lost
-!          particles
-!       inserted in main code by the 'backtrk' compilation flag
-	bktpre=0.10d0
-+ei
 !-----------------------------------------------------------------------
       do 10 i=1,2
         nde(i)=0
@@ -40846,6 +37442,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         nmu(i)=0
         kpa(i)=0
         isea(i)=0
+        nrel(i)=0
         ncororb(i)=0
         iratioe(i)=0
         itionc(i)=0
@@ -40862,16 +37459,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         zrms(i)=zero
         benkc(i)=zero
         r00(i)=zero
-
-        kape(i)=0
-        lapeofftlt(i)=.false.
-        ape(1,i)=c1e3
-        ape(2,i)=c1e3
-        ape(3,i)=c1e3
-        ape(4,i)=c1e3
-	ape(5,i)=zero
-	ape(6,i)=zero
-	ape(7,i)=zero
+        apx(i)=c1e3
+        apz(i)=c1e3
+        ape(1,i)=c1e6
+        ape(2,i)=c1e6
+        ape(3,i)=c1e12
+        ramp(i)=zero
+        rfre(i)=zero
+        rzph(i)=zero
         ratioe(i)=one
         hsyc(i)=zero
         phasc(i)=zero
@@ -40955,6 +37550,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         zsi(i)=zero
         smi(i)=zero
         smizf(i)=zero
+        rsmi(i)=zero
+        rfres(i)=zero
+        rzphs(i)=zero
         do i1=1,mmul
           aai(i,i1)=zero
           bbi(i,i1)=zero
@@ -41037,104 +37635,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       do i=1,mcor
         smida_da(i)=0
       enddo
-
-!--CADCUM---------------------------------------------------------------
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     initialise common
-!     always in main code
-      do i=0,nblz+1
-         dcum(i)=zero
-      enddo
-
-!--READ DIST------------------------------------------------------------
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     initialise common
-!     always in main code
-      dist_enable = .false.
-      dist_echo = .false.
-      dist_filename = ''
-      dist_read_unit = 154
-      dist_echo_unit = 152
-
-!--DUMP BEAM POPULATION-------------------------------------------------
-!     A.Mereghetti, D.Sinuela Pastor and P.Garcia Ortega, for the FLUKA Team
-!     last modified: 13-06-2014
-!     initialise common
-!     always in main code
-      ldumphighprec = .false.
-      do i=0,nele
-        ldump(i)    = .false.
-        ndumpt(i)   = 0
-        dumpunit(i) = 0
-	dumpfmt(i)  = 0
-      enddo
-
-!--DUMP BEAM STATISTICS-------------------------------------------------
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     initialise common
-!     always in main code
-      lstathighprec = .false.
-      do i=1,nele
-        lstat(i)    = .false.
-        nstatt(i)   = 0
-        statunit(i) = 0
-      enddo
-
-!--DUMP BEAM MATRIX-----------------------------------------------------
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 01-09-2014
-!     initialise common
-!     always in main code
-      lbmathighprec = .false.
-      do i=1,nele
-        lbmat(i)    = .false.
-        nbmatt(i)   = 0
-        bmatunit(i) = 0
-      enddo
-
-!--DUMP APERTURES-------------------------------------------------------
-!     P.G.Ortega, for the FLUKA Team
-!     last modified: 04-07-2014
-!     initialise common
-!     always in main code
-      ldmpaper      = .false.
-      aperunit      = 0
-      aper_filename = ' '
-
-!--DYNAMIC KICKS--------------------------------------------------------
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 03-09-2014
-!     initialise common
-!     always in main code
-!     - general-purpose variables
-      ldynk = .false.
-      ldynkdebug = .false.
-      ldynkfileopen = .false.
-      ldynkfiledisable = .false.
-      
-      nfuncs_dynk = 0
-      niexpr_dynk = 0
-      nfexpr_dynk = 0
-      ncexpr_dynk = 0
-
-      do i=1,maxdata_dynk
-         do j=1,maxstrlen_dynk
-            cexpr_dynk(i)(j:j) = char(0)
-         enddo
-      enddo
-      
-      nsets_dynk = 0
-
-      do i=1, maxsets_dynk
-         do j=1, maxstrlen_dynk
-            csets_dynk(i,1)(j:j) = char(0)
-            csets_dynk(i,2)(j:j) = char(0)
-         enddo
-      enddo
-!
 !-----------------------------------------------------------------------
       return
       end
@@ -41920,94 +38420,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !-----------------------------------------------------------------------
   160 ierro=1
       return
-      end
-+dk blocksv
-      subroutine blocksv
-      implicit none
-+ca parpro
-+ca parnum
-+ca common
-+ca common2
-+ca commons
-+ca commont1
-+ca commondl
-+ca commonxz
-+ca commonta
-+ca commonl
-+ca commonmn
-+ca commonm1
-+ca commonc
-      integer n, ia, ikk, j, jm, k, lkk, mkk
-      double precision dpoff
-!     integer i,itiono,i1,i2,i3,ia,ia2,iar,iation,ib,ib0,ib1,ib2,ib3,id,&
-!    &idate,ie,ig,ii,ikk,im,imonth,iposc,irecuin,itime,ix,izu,j,j2,jj,  &
-!    &jm,k,kpz,kzz,l,lkk,ll,m,mkk,napxto,ncorruo,ncrr,nd,nd2,ndafi2,    &
-!    &nerror,nlino,nlinoo,nmz,nthinerr
-!     double precision alf0s1,alf0s2,alf0s3,alf0x2,alf0x3,alf0z2,alf0z3,&
-!    &amp00,bet0s1,bet0s2,bet0s3,bet0x2,bet0x3,bet0z2,bet0z3,chi,coc,   &
-!    &dam1,dchi,ddp1,dp0,dp00,dp10,dpoff,dpsic,dps0,dsign,gam0s1,gam0s2,&
-!    &gam0s3,gam0x1,gam0x2,gam0x3,gam0z1,gam0z2,gam0z3,phag,r0,r0a,rat0,&
-!    &rdev,rmean,rsqsum,rsum,sic,tasia56,tasiar16,tasiar26,tasiar36,    &
-!    &tasiar46,tasiar56,tasiar61,tasiar62,tasiar63,tasiar64,tasiar65,   &
-!    &taus,x11,x13
-+ca save
-+if fluka
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 11-06-2014
-!     entirely re-initialise to 0.0 hv(...) and bl1v(...) arrays
-!     inserted in main code by the 'fluka' compilation flag
-      do 40 ia=1,npart
-        do 40 k=1,nblo
-          do 40 lkk=1,2
-            do 40 mkk=1,6
-              hv(mkk,lkk,ia,k)=zero
-              bl1v(mkk,lkk,ia,k)=zero
- 40   continue
-+ei
-      do 440 k=1,mblo
-        jm=mel(k)
-        ikk=mtyp(k,1)
-        do 370 lkk=1,2
-          do 370 mkk=1,6
-            do 360 ia=1,napx
-              dpoff=dpsv(ia)*c1e3
-              if(abs(dpoff).le.pieni) dpoff=one
-              hv(mkk,lkk,ia,1)=al(mkk,lkk,ia,ikk)
-  360       if(mkk.eq.5.or.mkk.eq.6) hv(mkk,lkk,ia,1)=hv(mkk,lkk,ia,1)  &
-     &/dpoff
-  370   continue
-        if(jm.eq.1) goto 410
-        do 400 j=2,jm
-          ikk=mtyp(k,j)
-          do 390 lkk=1,2
-            do 380 ia=1,napx
-              dpoff=dpsv(ia)*c1e3
-              if(abs(dpoff).le.pieni) dpoff=one
-              hv(1,lkk,ia,j)=hv(1,lkk,ia,j-1)*al(1,lkk,ia,ikk)+ hv(3,   &
-     &lkk,ia,j-1)*al(2,lkk,ia,ikk)
-              hv(2,lkk,ia,j)=hv(2,lkk,ia,j-1)*al(1,lkk,ia,ikk)+ hv(4,   &
-     &lkk,ia,j-1)*al(2,lkk,ia,ikk)
-              hv(3,lkk,ia,j)=hv(1,lkk,ia,j-1)*al(3,lkk,ia,ikk)+ hv(3,   &
-     &lkk,ia,j-1)*al(4,lkk,ia,ikk)
-              hv(4,lkk,ia,j)=hv(2,lkk,ia,j-1)*al(3,lkk,ia,ikk)+ hv(4,   &
-     &lkk,ia,j-1)*al(4,lkk,ia,ikk)
-!hr05         hv(5,lkk,ia,j)=hv(5,lkk,ia,j-1)*al(1,lkk,ia,ikk)+ hv(6,   &
-!hr05&lkk,ia,j-1)*al(2,lkk,ia,ikk)+al(5,lkk,ia,ikk)/dpoff
-              hv(5,lkk,ia,j)=(hv(5,lkk,ia,j-1)*al(1,lkk,ia,ikk)+ hv(6,  &!hr05
-     &lkk,ia,j-1)*al(2,lkk,ia,ikk))+al(5,lkk,ia,ikk)/dpoff               !hr05
-!hr05         hv(6,lkk,ia,j)=hv(5,lkk,ia,j-1)*al(3,lkk,ia,ikk)+ hv(6,   &
-!hr05&lkk,ia,j-1)*al(4,lkk,ia,ikk)+al(6,lkk,ia,ikk)/dpoff
-              hv(6,lkk,ia,j)=(hv(5,lkk,ia,j-1)*al(3,lkk,ia,ikk)+ hv(6,  &!hr05
-     &lkk,ia,j-1)*al(4,lkk,ia,ikk))+al(6,lkk,ia,ikk)/dpoff               !hr05
-  380       continue
-  390     continue
-  400   continue
-  410   do 430 lkk=1,2
-          do 430 mkk=1,6
-            do 420 ia=1,napx
-  420       bl1v(mkk,lkk,ia,k)=hv(mkk,lkk,ia,jm)
-  430   continue
-  440 continue
       end
 +dk block
       subroutine block
@@ -43975,15 +40387,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !-----------------------------------------------------------------------
 !  ERROR OUTPUT
 !-----------------------------------------------------------------------
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     import mod_fluka
-!     inserted in main code by the 'fluka' compilation flag
-      use mod_fluka
-
-+ei
       implicit none
 +if cr
 +ca crcoall
@@ -44000,17 +40403,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca rhicelens
 +ei
-+if fluka
- 
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 17-07-2013
-!     status of connection
-!     inserted in main code by the 'fluka' compilation flag
-      integer n
-
-+ei
-      integer i
-      logical lopen
 +ca save
 !-----------------------------------------------------------------------
 +if cr
@@ -44766,12 +41158,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
  1050 write(*,11050) mmul
 +ei
  1870 continue
-      call flush
 !-----------------------------------------------------------------------
-+if fluka
-+ca flukaclose
-+ei
-      call closeUnits
++ca close
 +if cr
       call abend('                                                  ')
 +ei
@@ -44866,7 +41254,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 10490 format(t10,'ONLY UP TO 3 SUBRESONANCES CAN BE COMPENSATED')
 10500 format(t10,'THE MULTIPOLE ORDER FOR THE SUBRESONANCE COMPENSATION'&
      &,' SHOULD NOT EXCEED THE VALUE 9')
-10510 format(t10,'PROBLEMS WITH FILE 3 WITH DYNAMIC KIKS')
+10510 format(t10,'TOO MANY RIPPLE ELEMENTS')
 10520 format(t10,'MAXIMUM ORDER OF THE ONE TURN MAP IS ',i4, /,         &
      &' NEMA HAS TO BE LARGER THAN NORD')
 10530 format(t10,'# OF VARIABLES -NV- OF THE ONE TURN MAP IS NOT',      &
@@ -44950,2832 +41338,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 11050 format(t10,'THE INPUT ORDER OF MULTIPOLES IS LARGER THAN THE ',   &
      &'MAXIMUM ALLOWED ORDER MMUL: ',i4)
       end
-+dk readdis
-      subroutine dist_readdis( napx, npart, enom, pnom, clight,
-     &                         x, y, xp, yp, s, pc )
-!
-!-----------------------------------------------------------------------
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 07-02-2014
-!     read a beam distribution
-!     always in main code
-!
-!     Format of the input file:
-!       id:         unique identifier of the particle (integer)
-!       gen:        parent ID (integer)
-!       weight:     statistical weight of the particle (double: >0.0)
-!       x,  y,  s:  particle position  [m]
-!       xp, yp, zp: particle direction (tangents) []
-!       aa, zz:     mass and atomic number
-!       m:          rest mass [GeV/c2]
-!       pc:         particle momentum [GeV/c]
-!       dt:         time delay with respect to the reference particle [s]
-!
-!     NOTA BENE:
-!     - id, gen and weight are assigned by the fluka_mod_init subroutine;
-!     - z and zp are actually useless (but we never know);
-!     - aa, zz and m are not stored at the moment (safer decision from the code
-!       point of view, until a decision about ion tracking is taken);
-!       the subroutine fluka_send is then responsible for using the corresponding
-!       values for protons through the interface, whereas the subroutine fluka_receive
-!       simply ignores the values passed through the FlukaIO interface;
-!
-!     variables in input to routine:
-!     - napx: number of protons to be tracked (from fort.3 file);
-!     - npart: max number of protons that can be tracked (array dimensioning);
-!     - enom: nominal total energy of the beam (ie of synch particle) [MeV];
-!     - pnom: nominal linear momentum of the beam (ie of synch particle) [MeV/c];
-!     - clight: speed of light [m/s];
-!     NB: in case the file contains less particle than napx, napx is
-!         re-assigned 
-!
-!     output variables:
-!       all other variables in the interface (6D tracking variables);
-!
-!-----------------------------------------------------------------------
-!
-      implicit none
-
-+ca dbreaddis
-
-!     interface variables:
-      integer napx, npart
-      double precision enom, pnom, clight
-      double precision x, y, xp, yp, s, pc
-
-!     temporary variables:
-      integer id, gen, aa, zz
-      double precision weight, z, zp, m, dt
-      integer jj
-      character*240 tmp_line
-
-      character comment_char
-      parameter ( comment_char = '*' )
-
-      dimension x ( npart ), y ( npart )
-      dimension xp( npart ), yp( npart )
-      dimension s ( npart ), pc( npart )
-      dimension dt( npart )
-
-      write(*,*) ''
-      write(*,*) "Reading particles from ", dist_filename
-
-!     initialise tracking variables:
-      do jj=1,npart
-        x (jj) = 0.0D+00
-        y (jj) = 0.0D+00
-        xp(jj) = 0.0D+00
-        yp(jj) = 0.0D+00
-        pc(jj) = 0.0D+00
-        s (jj) = 0.0D+00
-      enddo
-!     initialise particle counter
-      jj = 0
-
-      open( unit=dist_read_unit, file=dist_filename )
-
-!     cycle on lines in file:
- 1981 continue
-      read(dist_read_unit,'(A)',end=1983,err=1982) tmp_line
-      if ( tmp_line(1:1).eq.comment_char ) goto 1981
-      jj = jj+1
-      if ( jj.gt.npart ) then
-         write(*,*)'Error while reading particles'
-         write(*,*)'not enough memory for all particles in file'
-         write(*,*)'please increase the npart parameter and recompile'
-         write(*,*)'present value:',npart
-         jj = npart
-         goto 1984
-      elseif ( jj.gt.napx ) then
-         write(*,*)''
-         write(*,*)'Stopping reading file, as already ',napx
-         write(*,*)' particles have been read, as requested by the user'
-         write(*,*)' in fort.3 file'
-         write(*,*)''
-         jj = napx
-         goto 1983
-      endif
-      read( tmp_line, *, err=1982 ) id, gen, weight,
-     &    x(jj), y(jj), z, xp(jj), yp(jj), zp, aa, zz, m, pc(jj), dt(jj)
-      goto 1981
-
-!     error while parsing file:
- 1982 continue
-      write(*,*) 'Error while reading particles at line:'
-      write(*,*) tmp_line
-      goto 1984
-
- 1983 continue
-      if ( jj.eq.0 ) then
-         write(*,*) 'Error while reading particles'
-         write(*,*) 'no particles read from file'
-         goto 1984
-      endif
-      close(dist_read_unit)
-      write(*,*) "Number of particles read = ", jj
-      if ( jj.lt.napx ) then
-         write(*,*)''
-         write(*,*)'Warning: read a number of particles'
-         write(*,*)'         LOWER than the one requested for tracking'
-         write(*,*)'         requested:',napx
-         write(*,*)''
-         napx = jj
-      endif
-!     fix units:
-      do jj=1,napx
-        x (jj) = x(jj)  * 1.0D+03 ! [m]     -> [mm]
-        y (jj) = y(jj)  * 1.0D+03 ! [m]     -> [mm]
-        xp(jj) = xp(jj) * 1.0D+03 ! []      -> [1.0E-03]
-        yp(jj) = yp(jj) * 1.0D+03 ! []      -> [1.0E-03]
-        pc(jj) = pc(jj) * 1.0D+03 ! [GeV/c] -> [MeV/c]
-        s (jj) = -pnom/enom * dt(jj)*clight * 1.0D+03
-      enddo
-
-      return
-
-!     exit with error
- 1984 continue
-      close(dist_read_unit)
-      call prror(-1)
-      return
-      end subroutine
-
-+dk dynkancil
-
-      subroutine dynk_parseFUN( getfields_fields,
-     &                          getfields_lfields,getfields_nfields )
-!
-!-----------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 30-10-2014
-!     parse FUN lines in the fort.3 input file, 
-!     store it in COMMON block dynkComExpr.
-!-----------------------------------------------------------------------
-!     
-      implicit none
-+ca parpro      
-+ca comdynk
-+ca comgetfields
-+if cr
-+ca crcoall
-+ei
-
-      intent(in) getfields_fields, getfields_lfields, getfields_nfields
-      
-      ! Temp variables
-      integer ii, stat, t
-      double precision x,y,               ! FILE, FILELIN
-     &                 x1,x2,y1,y2,deriv, ! LINSEG, QUADSEG,
-     &                 tinj,Iinj,Inom,A,D,R,te,                 !PELP (input)
-     &                 derivI_te,I_te,bexp,aexp, t1,I1, td,tnom !PELP (calc)
-      
-      ! define function return type
-      integer dynk_findFUNindex
-      
-      if (nfuncs_dynk+1 .gt. maxfuncs_dynk) then
-+if cr
-         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-         write (lout,*) "Maximum number of FUN exceeded, please" //
-     &        "parameter maxfuncs_dynk."
-         write (lout,*) "Current value of maxfuncs_dynk:",maxfuncs_dynk
-+ei
-+if .not.cr
-         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
-         write (*,*)    "Maximum number of FUN exceeded, please" //
-     &        "parameter maxfuncs_dynk."
-         write (*,*)    "Current value of maxfuncs_dynk:",maxfuncs_dynk
-+ei
-         call prror(51)
-      endif
-      
-      ! ! ! ! ! ! ! ! ! ! ! ! ! !
-      ! Which type of function? !
-      ! ! ! ! ! ! ! ! ! ! ! ! ! !
-
-      !!! System functions: #0-19 !!!
-      select case ( getfields_fields(3)(1:getfields_lfields(3)) )
-      case ("GET")
-         ! GET: Store the value of an element/value
-
-         call dynk_checkargs(getfields_nfields,5,
-     &        "FUN funname GET elementName attribute" )
-         call dynk_checkspace(0,1,3)
-         
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 0           !TYPE (GET)
-         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
-         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk  )(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         cexpr_dynk(ncexpr_dynk+1)(1:getfields_lfields(4)) = !ELEMENT_NAME
-     &        getfields_fields(4)(1:getfields_lfields(4))
-         cexpr_dynk(ncexpr_dynk+2)(1:getfields_lfields(5)) = !ATTRIBUTE_NAME
-     &        getfields_fields(5)(1:getfields_lfields(5))
-         ncexpr_dynk = ncexpr_dynk+2
-         
-         fexpr_dynk(nfexpr_dynk) = -1.0 !Initialize a place in the array to store the value
-         
-         if (getfields_lfields(2) .gt. 16) then ! length of BEZ elements
-+if cr
-            write (lout,*) "*************************************"
-            write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-            write (lout,*) "SET FUN got an element name with     "
-            write (lout,*) "length =", getfields_lfields(4), "> 16."
-            write (lout,*) "The name was: '",getfields_fields(4)
-     &                                    (1:getfields_lfields(4)),"'"
-            write (lout,*) "*************************************"
-+ei
-+if .not.cr
-            write (*,*) "*************************************"
-            write (*,*) "ERROR in DYNK block parsing (fort.3):"
-            write (*,*) "SET FUN got an element name with     "
-            write (*,*) "length =", getfields_lfields(4), "> 16."
-            write (*,*) "The name was: '",getfields_fields(4)
-     &                                    (1:getfields_lfields(4)),"'"
-            write (*,*) "*************************************"
-+ei
-            call prror(51)
-         end if
-
-      case ("FILE")
-         ! FILE: Load the contents from a file
-         ! File format: two ASCII columns of numbers,
-         ! first  column = turn number (all turns should be there, starting from 1)
-         ! second column = value (as a double)
-
-         call dynk_checkargs(getfields_nfields,4,
-     &        "FUN funname FILE filename" )
-         call dynk_checkspace(0,0,2)
-         
-         ! Set pointers to start of funs data blocks (nfexpr_dynk handled when reading data)
-         nfuncs_dynk = nfuncs_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk   !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 1             !TYPE (FILE)
-         funcs_dynk(nfuncs_dynk,3) = ncexpr_dynk+1 !Filename (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk+1 !Data     (in fexpr_dynk)
-         funcs_dynk(nfuncs_dynk,5) = -1            !Below: Length of file
-         ! Store data
-         cexpr_dynk(ncexpr_dynk  )(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         cexpr_dynk(ncexpr_dynk+1)(1:getfields_lfields(4)) = !FILE NAME
-     &        getfields_fields(4)(1:getfields_lfields(4))
-         ncexpr_dynk = ncexpr_dynk+1
-         
-         !Open the file
-         open(unit=664,file=cexpr_dynk(ncexpr_dynk),action='read',
-     &        iostat=stat)
-         if (stat .ne. 0) then
-+if cr
-            write(lout,*) "DYNK> dynk_parseFUN():FILE"
-            write(lout,*) "DYNK> Error opening file '",
-     &           cexpr_dynk(ncexpr_dynk), "'"
-+ei
-+if .not.cr
-            write(*,*)    "DYNK> dynk_parseFUN():FILE"
-            write(*,*)    "DYNK> Error opening file '",
-     &           cexpr_dynk(ncexpr_dynk), "'"
-+ei
-            call prror(51)
-         endif
-
-         ii = 0 !Number of data lines read
-         do
-            read(664,*, iostat=stat) t,y
-            if (stat .ne. 0) exit !EOF
-
-            ii = ii+1
-            if (t .ne. ii) then
-+if cr
-               write(lout,*) "DYNK> dynk_parseFUN():FILE"
-               write(lout,*) "DYNK> Error reading file '",
-     &              cexpr_dynk(ncexpr_dynk),"'"
-               write(lout,*) "DYNK> Missing turn number", ii,
-     &              ", got turn", t
-+ei
-+if .not.cr
-               write(*,*)    "DYNK> dynk_parseFUN():FILE"
-               write(*,*)    "DYNK> Error reading file '",
-     &              cexpr_dynk(ncexpr_dynk),"'"
-               write(*,*)    "DYNK> Missing turn number", ii,
-     &              ", got turn", t
-+ei
-               call prror(51)
-            endif
-            if (nfexpr_dynk+1 .gt. maxdata_dynk) then
-+if cr
-               write(lout,*) "DYNK> dynk_parseFUN():FILE"
-               write(lout,*) "DYNK> Error reading file '",
-     &              cexpr_dynk(ncexpr_dynk),"'"
-               write(lout,*) "DYNK> Ran out of memory in fexpr_dynk ",
-     &              "in turn", t
-               write(lout,*) "DYNK> Please increase maxdata_dynk."
-+ei
-+if .not.cr
-               write(*,*)    "DYNK> dynk_parseFUN():FILE"
-               write(*,*)    "DYNK> Error reading file '",
-     &              cexpr_dynk(ncexpr_dynk),"'"
-               write(*,*)    "DYNK> Ran out of memory in fexpr_dynk ",
-     &              "in turn", t
-               write(*,*)    "DYNK> Please increase maxdata_dynk."
-+ei
-               call prror(51)
-            endif
-            
-            nfexpr_dynk = nfexpr_dynk+1
-            fexpr_dynk(nfexpr_dynk) = y
-         enddo
-         funcs_dynk(nfuncs_dynk,5) = ii
-         
-         close(664)
-
-      case ("FILELIN")
-         ! FILELIN: Load the contents from a file, linearly interpolate
-         ! File format: two ASCII columns of numbers,
-         ! first  column = turn number (as a double)
-         ! second column = value (as a double)
-
-         call dynk_checkargs(getfields_nfields,4,
-     &        "FUN funname FILELIN filename" )
-         call dynk_checkspace(0,0,2)
-
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk   !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 2             !TYPE (FILELIN)
-         funcs_dynk(nfuncs_dynk,3) = ncexpr_dynk+1 !Filename (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk+1 !Data     (in fexpr_dynk)
-         funcs_dynk(nfuncs_dynk,5) = -1            !Below: Length of file (number of x,y sets)
-         ! Store data
-         cexpr_dynk(ncexpr_dynk  )(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         cexpr_dynk(ncexpr_dynk+1)(1:getfields_lfields(4)) = !FILE NAME
-     &        getfields_fields(4)(1:getfields_lfields(4))
-         ncexpr_dynk = ncexpr_dynk+1
-         
-         !Open the file
-         open(unit=664,file=cexpr_dynk(ncexpr_dynk),action='read',
-     &        iostat=stat)
-         if (stat .ne. 0) then
-+if cr
-            write(lout,*) "DYNK> dynk_parseFUN():FILELIN"
-            write(lout,*) "DYNK> Error opening file '",
-     &           cexpr_dynk(ncexpr_dynk), "'"
-+ei
-+if .not.cr
-            write(*,*)    "DYNK> dynk_parseFUN():FILELIN"
-            write(*,*)    "DYNK> Error opening file '",
-     &           cexpr_dynk(ncexpr_dynk), "'"
-+ei
-            call prror(51)
-         endif
-         ! Find the size of the file
-         ii = 0 !Number of data lines read
-         do
-            read(664,*, iostat=stat) x,y
-            if (stat .ne. 0) exit !EOF
-            
-            if (ii.gt.0 .and. x.le. x2) then !Insane: Decreasing x
-+if cr
-               write (lout,*) "DYNK> dynk_parseFUN():FILELIN"
-               write (lout,*) "DYNK> Error while reading file '",
-     &              cexpr_dynk(ncexpr_dynk),"'"
-               write (lout,*) "DYNK> x values must "//
-     &              "be in increasing order"
-+ei
-+if .not.cr
-               write (*,*)    "DYNK> dynk_parseFUN():FILELIN"
-               write (*,*)    "DYNK> Error while reading file '",
-     &              cexpr_dynk(ncexpr_dynk),"'"
-               write (*,*)    "DYNK> x values must "//
-     &              "be in increasing order"
-+ei
-               call prror(-1)
-            endif
-            x2 = x
-            
-            ii = ii+1
-         enddo
-         t = ii
-         rewind(664)
-         
-         if (nfexpr_dynk+2*t .gt. maxdata_dynk) then
-+if cr
-            write (lout,*) "DYNK> dynk_parseFUN():FILELIN"
-            write (lout,*) "DYNK> Error reading file '",
-     &           cexpr_dynk(ncexpr_dynk),"'"
-            write (lout,*) "DYNK> Not enough space in fexpr_dynk,"//
-     &           " need", 2*t
-            write (lout,*) "DYNK> Please increase maxdata_dynk"
-+ei
-+if .not.cr
-            write (*,*)    "DYNK> dynk_parseFUN():FILELIN"
-            write (*,*)    "DYNK> Error reading file '",
-     &           cexpr_dynk(ncexpr_dynk),"'"
-            write (*,*)    "DYNK> Not enough space in fexpr_dynk,"//
-     &           " need", 2*t
-            write (*,*)    "DYNK> Please increase maxdata_dynk"
-+ei
-            call prror(51)
-         endif
-
-         !Read the file
-         ii = 0
-         do
-            read(664,*, iostat=stat) x,y
-            if (stat .ne. 0) then !EOF
-               if (ii .ne. t) then
-+if cr
-                  write (lout,*) "DYNK> dynk_parseFUN():FILELIN"
-                  write (lout,*) "DYNK> Unexpected when reading file '",
-     &                 cexpr_dynk(ncexpr_dynk),"'"
-                  write (lout,*) "DYNK> ii=",ii,"t=",t
-
-+ei
-+if .not.cr
-                  write (*,*)    "DYNK> dynk_parseFUN():FILELIN"
-                  write (*,*)    "DYNK> Unexpected when reading file '",
-     &                 cexpr_dynk(ncexpr_dynk),"'"
-                  write (*,*)    "DYNK> ii=",ii,"t=",t
-+ei
-                  call prror(51)
-               endif
-               exit
-            endif
-            !Current line number
-            ii = ii+1
-            
-            fexpr_dynk(nfexpr_dynk + ii    ) = x
-            fexpr_dynk(nfexpr_dynk + ii + t) = y
-         enddo
-         
-         nfexpr_dynk = nfexpr_dynk + 2*t
-         funcs_dynk(nfuncs_dynk,5) = t
-         close(664)
-
-      case ("RANDG")
-         ! RANDG: Gausian random number with mu, sigma, and optional cutoff
-         
-         call dynk_checkargs(getfields_nfields,8,
-     &        "FUN funname RANDG seed1 seed2 mu sigma cut" )
-         call dynk_checkspace(5,2,1)
-         
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         niexpr_dynk = niexpr_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 6           !TYPE (RANDG)
-         funcs_dynk(nfuncs_dynk,3) = niexpr_dynk !seed1, seed2, mcut (in iexpr_dynk)
-         funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk !mu, sigma (in fexpr_dynk)
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         
-         read(getfields_fields(4)(1:getfields_lfields(4)),*)
-     &        iexpr_dynk(niexpr_dynk) ! seed1 (initial)
-         read(getfields_fields(5)(1:getfields_lfields(5)),*)
-     &        iexpr_dynk(niexpr_dynk+1) ! seed2 (initial)
-         read(getfields_fields(6)(1:getfields_lfields(6)),*)
-     &        fexpr_dynk(nfexpr_dynk) ! mu
-         read(getfields_fields(7)(1:getfields_lfields(7)),*)
-     &        fexpr_dynk(nfexpr_dynk+1) ! sigma
-         read(getfields_fields(8)(1:getfields_lfields(8)),*)
-     &        iexpr_dynk(niexpr_dynk+2) ! mcut
-         iexpr_dynk(niexpr_dynk+3) = 0 ! seed1 (current)
-         iexpr_dynk(niexpr_dynk+4) = 0 ! seed2 (current)
-         niexpr_dynk = niexpr_dynk+4
-         nfexpr_dynk = nfexpr_dynk+1
-         if (iexpr_dynk(niexpr_dynk) .lt. 0) then
-            !mcut < 0
-+if cr
-            write (lout,*) "DYNK> dynk_parseFUN():RANDG"
-            write (lout,*) "DYNK> ERROR in DYNK block parsing (fort.3)"
-            write (lout,*) "DYNK> mcut must be >= 0"
-+ei
-+if .not.cr
-            write (*,*)    "DYNK> dynk_parseFUN():RANDG"
-            write (*,*)    "DYNK> ERROR in DYNK block parsing (fort.3)"
-            write (*,*)    "DYNK> mcut must be >= 0"
-+ei
-            call prror(51)
-         endif
-
-      !!! Operators: #20-39 !!!
-      case("ADD","SUB","MUL","DIV","POW")
-         ! Two-argument operators  y = OP(f1, f2)
-
-         call dynk_checkargs(getfields_nfields,5,
-     &        "FUN funname {ADD|SUB|MUL|DIV|POW} funname1 funname2")
-         call dynk_checkspace(0,0,1)
-         
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         select case (getfields_fields(3)(1:getfields_lfields(3)))
-         case ("ADD")
-            funcs_dynk(nfuncs_dynk,2) = 20 !TYPE (ADD)
-         case ("SUB")
-            funcs_dynk(nfuncs_dynk,2) = 21 !TYPE (SUB)
-         case ("MUL")
-            funcs_dynk(nfuncs_dynk,2) = 22 !TYPE (MUL)
-         case ("DIV")
-            funcs_dynk(nfuncs_dynk,2) = 23 !TYPE (DIV)
-         case ("POW")
-            funcs_dynk(nfuncs_dynk,2) = 24 !TYPE (POW)
-         case default
-+if cr
-            write (lout,*) "DYNK> dynk_parseFUN() : 2-arg function"
-            write (lout,*) "DYNK> non-recognized type in inner switch"
-+ei
-+if .not.cr
-            write (*,*)    "DYNK> dynk_parseFUN() : 2-arg function"
-            write (*,*)    "DYNK> non-recognized type in inner switch"
-+ei
-            call prror(51)
-         end select
-         funcs_dynk(nfuncs_dynk,3) = 
-     &        dynk_findFUNindex( getfields_fields(4)
-     &                           (1:getfields_lfields(4)), 1) !Index to f1
-         funcs_dynk(nfuncs_dynk,4) = 
-     &        dynk_findFUNindex( getfields_fields(5)
-     &                           (1:getfields_lfields(5)), 1) !Index to f2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         ! Sanity check
-         if (funcs_dynk(nfuncs_dynk,3) .eq. -1 .or. 
-     &       funcs_dynk(nfuncs_dynk,4) .eq. -1) then
-+if cr
-            write (lout,*) "*************************************"
-            write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-            write (lout,*) "TWO ARG OPERATOR wanting functions '",
-     &           getfields_fields(4)(1:getfields_lfields(4)), "' and '", 
-     &           getfields_fields(5)(1:getfields_lfields(5)), "'"
-            write (lout,*) "Calculated indices:",
-     &           funcs_dynk(nfuncs_dynk,3), funcs_dynk(nfuncs_dynk,4)
-            write (lout,*) "One or both of these are not known (-1)."
-            write (lout,*) "*************************************"
-+ei
-+if .not.cr
-            write (*,*)    "*************************************"
-            write (*,*)    "ERROR in DYNK block parsing (fort.3):"
-            write (*,*)    "TWO ARG OPERATOR wanting functions '",
-     &           getfields_fields(4)(1:getfields_lfields(4)), "' and '",
-     &           getfields_fields(5)(1:getfields_lfields(5)), "'"
-            write (*,*)    "Calculated indices:",
-     &           funcs_dynk(nfuncs_dynk,3), funcs_dynk(nfuncs_dynk,4)
-            write (*,*)    "One or both of these are not known (-1)."
-            write (*,*)    "*************************************"
-+ei
-            call dynk_dumpdata
-            call prror(51)
-         end if
-
-      case ("MINUS","SQRT","SIN","COS","LOG","LOG10","EXP")
-         ! One-argument operators  y = OP(f1)
-
-         call dynk_checkargs(getfields_nfields,4,
-     &        "FUN funname {MINUS|SQRT|SIN|COS|LOG|LOG10|EXP} funname")
-         call dynk_checkspace(0,0,1)
-         
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         select case ( getfields_fields(3)(1:getfields_lfields(3)) )
-         case ("MINUS")
-            funcs_dynk(nfuncs_dynk,2) = 30 !TYPE (MINUS)
-         case ("SQRT")
-            funcs_dynk(nfuncs_dynk,2) = 31 !TYPE (SQRT)
-         case ("SIN")
-            funcs_dynk(nfuncs_dynk,2) = 32 !TYPE (SIN)
-         case ("COS")
-            funcs_dynk(nfuncs_dynk,2) = 33 !TYPE (COS)
-         case ("LOG")
-            funcs_dynk(nfuncs_dynk,2) = 34 !TYPE (LOG)
-         case ("LOG10")
-            funcs_dynk(nfuncs_dynk,2) = 35 !TYPE (LOG10)
-         case ("EXP")
-            funcs_dynk(nfuncs_dynk,2) = 36 !TYPE (EXP)
-         case default
-+if cr
-            write (lout,*) "DYNK> dynk_parseFUN() : 1-arg function"
-            write (lout,*) "DYNK> non-recognized type in inner switch?"
-+ei
-+if .not.cr
-            write (*,*)    "DYNK> dynk_parseFUN() : 1-arg function"
-            write (*,*)    "DYNK> non-recognized type in inner switch?"
-+ei
-            call prror(51)
-         end select
-         funcs_dynk(nfuncs_dynk,3) = 
-     &        dynk_findFUNindex(getfields_fields(4)
-     &        (1:getfields_lfields(4)), 1)       !Index to f1
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         ! Sanity check
-         if (funcs_dynk(nfuncs_dynk,3) .eq. -1) then
-+if cr
-            write (lout,*) "*************************************"
-            write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-            write (lout,*) "SINGLE OPERATOR FUNC wanting function '",
-     &           getfields_fields(4)(1:getfields_lfields(4)), "'"
-            write (lout,*) "Calculated index:",
-     &           funcs_dynk(nfuncs_dynk,3)
-            write (lout,*) "One or both of these are not known (-1)."
-            write (lout,*) "*************************************"
-+ei
-+if .not.cr
-            write (*,*)    "*************************************"
-            write (*,*)    "ERROR in DYNK block parsing (fort.3):"
-            write (*,*)    "SINGLE OPERATOR FUNC wanting function '",
-     &           getfields_fields(4)(1:getfields_lfields(4)), "'"
-            write (*,*)    "Calculated index:",
-     &           funcs_dynk(nfuncs_dynk,3)
-            write (*,*)    "One or both of these are not known (-1)."
-            write (*,*)    "*************************************"
-+ei
-            call dynk_dumpdata
-            call prror(51)
-         end if
-
-      !!! Polynomial & Elliptical functions: # 40-59 !!!
-      case("CONST")   
-         ! CONST: Just a constant value
-         
-         call dynk_checkargs(getfields_nfields,4,
-     &        "FUN funname CONST value" )
-         call dynk_checkspace(0,1,1)
-         
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 40          !TYPE (CONST)
-         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
-         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         
-         read(getfields_fields(4)(1:getfields_lfields(4)),*)
-     &        fexpr_dynk(nfexpr_dynk) ! value
-
-      case ("TURN")
-         ! TURN: Just the current turn number
-         
-         call dynk_checkargs(getfields_nfields,3,
-     &        "FUN funname TURN" )
-         call dynk_checkspace(0,0,1)
-         
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 41          !TYPE (TURN)
-         funcs_dynk(nfuncs_dynk,3) = -1          !ARG1
-         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-
-      case ("LIN")
-         ! LIN: Linear ramp y = dy/dt*T+b
-         
-         call dynk_checkargs(getfields_nfields,5,
-     &        "FUN funname LIN dy/dt b" )
-         call dynk_checkspace(0,2,1)
-
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 42          !TYPE (LIN)
-         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
-         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         
-         read(getfields_fields(4)(1:getfields_lfields(4)),*)
-     &        fexpr_dynk(nfexpr_dynk) ! dy/dt
-         read(getfields_fields(5)(1:getfields_lfields(5)),*)
-     &        fexpr_dynk(nfexpr_dynk+1) ! b
-         nfexpr_dynk = nfexpr_dynk + 1
-
-      case ("LINSEG")
-         ! LINSEG: Linear ramp between points (x1,y1) and (x2,y2)
-         
-         call dynk_checkargs(getfields_nfields,7,
-     &        "FUN funname LINSEG x1 x2 y1 y2" )
-         call dynk_checkspace(0,4,1)
-
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 43          !TYPE (LINSEG)
-         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
-         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         
-         read(getfields_fields(4)(1:getfields_lfields(4)),*)
-     &        fexpr_dynk(nfexpr_dynk)   ! x1
-         read(getfields_fields(5)(1:getfields_lfields(5)),*)
-     &        fexpr_dynk(nfexpr_dynk+1) ! x2
-         read(getfields_fields(6)(1:getfields_lfields(6)),*)
-     &        fexpr_dynk(nfexpr_dynk+2) ! y1
-         read(getfields_fields(7)(1:getfields_lfields(7)),*)
-     &        fexpr_dynk(nfexpr_dynk+3) ! y2
-         nfexpr_dynk = nfexpr_dynk + 3
-         
-         if (fexpr_dynk(nfexpr_dynk) .eq. fexpr_dynk(nfexpr_dynk+1))then
-+if cr
-            write (lout,*) "ERROR in DYNK block parsing (fort.3)"
-            write (lout,*) "LINSEG: x1 and x2 must be different."
-+ei
-+if .not.cr
-            write (*,*)    "ERROR in DYNK block parsing (fort.3)"
-            write (*,*)    "LINSEG: x1 and x2 must be different."
-+ei
-            call prror(51)
-         endif
-         
-      case ("QUAD")
-         ! QUAD: Quadratic ramp y = a*T^2 + b*T + c
-         
-         call dynk_checkargs(getfields_nfields,6,
-     &        "FUN funname QUAD a b c" )
-         call dynk_checkspace(0,3,1)
-
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 44          !TYPE (QUAD)
-         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
-         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         
-         read(getfields_fields(4)(1:getfields_lfields(4)),*)
-     &        fexpr_dynk(nfexpr_dynk)   ! a
-         read(getfields_fields(5)(1:getfields_lfields(5)),*)
-     &        fexpr_dynk(nfexpr_dynk+1) ! b
-         read(getfields_fields(6)(1:getfields_lfields(6)),*)
-     &        fexpr_dynk(nfexpr_dynk+2) ! c
-         nfexpr_dynk = nfexpr_dynk + 2
-
-      case ("QUADSEG")
-         ! QUADSEG: Quadratic ramp y = a*T^2 + b*T + c,
-         ! input as start point (x1,y1), end point (x2,y2), derivative at at x1
-         
-         call dynk_checkargs(getfields_nfields,8,
-     &        "FUN funname QUADSEG x1 x2 y1 y2 deriv" )
-         call dynk_checkspace(0,8,1)
-
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 45          !TYPE (QUADSEG)
-         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
-         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         
-         read(getfields_fields(4)(1:getfields_lfields(4)),*) x1
-         read(getfields_fields(5)(1:getfields_lfields(5)),*) x2
-         read(getfields_fields(6)(1:getfields_lfields(6)),*) y1
-         read(getfields_fields(7)(1:getfields_lfields(7)),*) y2
-         read(getfields_fields(8)(1:getfields_lfields(8)),*) deriv
-         
-         if (x1 .eq. x2) then
-+if cr
-            write (lout,*) "ERROR in DYNK block parsing (fort.3)"
-            write (lout,*) "QUADSEG: x1 and x2 must be different."
-+ei
-+if .not.cr
-            write (*,*)    "ERROR in DYNK block parsing (fort.3)"
-            write (*,*)    "QUADSEG: x1 and x2 must be different."
-+ei
-            call prror(51)
-         endif
-         
-         ! Compute a:
-         fexpr_dynk(nfexpr_dynk) = deriv/(x1-x2)
-     &        + (y2-y1)/((x1-x2)**2)
-         ! Compute b:
-         fexpr_dynk(nfexpr_dynk+1) = (y2-y1)/(x2-x1)
-     &        - (x1+x2)*fexpr_dynk(nfexpr_dynk)
-         ! Compute c:
-         fexpr_dynk(nfexpr_dynk+2) = y1 + (
-     &        - x1**2 * fexpr_dynk(nfexpr_dynk)
-     &        - x1    * fexpr_dynk(nfexpr_dynk+1) )
-         
-         ! Store input data:
-         fexpr_dynk(nfexpr_dynk+3) = x1
-         fexpr_dynk(nfexpr_dynk+4) = x2
-         fexpr_dynk(nfexpr_dynk+5) = y1
-         fexpr_dynk(nfexpr_dynk+6) = y2
-         fexpr_dynk(nfexpr_dynk+7) = deriv
-
-         nfexpr_dynk = nfexpr_dynk + 7
-         
-      !!! Trancedental functions: #60-79 !!!
-      case ("SINF")
-         ! SINF: Sin functions y = A*sin(omega*T+phi)
-         
-         call dynk_checkargs(getfields_nfields,6,
-     &        "FUN funname SINF amplitude omega phase" )
-         call dynk_checkspace(0,3,1)
-
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 60          !TYPE (SINF)
-         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
-         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         
-         read(getfields_fields(4)(1:getfields_lfields(4)),*)
-     &        fexpr_dynk(nfexpr_dynk) !A
-         read(getfields_fields(5)(1:getfields_lfields(5)),*)
-     &        fexpr_dynk(nfexpr_dynk+1) !omega
-         read(getfields_fields(6)(1:getfields_lfields(6)),*)
-     &        fexpr_dynk(nfexpr_dynk+2) !phi
-         nfexpr_dynk = nfexpr_dynk + 2         
-
-      case ("PELP")
-         ! PELP: Parabolic/exponential/linear/parabolic
-         ! From "Field Computation for Accelerator Magnets:
-         ! Analytical and Numerical Methods for Electromagnetic Design and Optimization"
-         ! By Dr.-Ing. Stephan Russenschuck
-         ! Appendix C: "Ramping the LHC Dipoles"
-         
-         call dynk_checkargs(getfields_nfields,10,
-     &        "FUN funname PELP tinj Iinj Inom A D R te" )
-         call dynk_checkspace(0,13,1) !!...
-
-         ! Set pointers to start of funs data blocks
-         nfuncs_dynk = nfuncs_dynk+1
-         nfexpr_dynk = nfexpr_dynk+1
-         ncexpr_dynk = ncexpr_dynk+1
-         ! Store pointers
-         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 80          !TYPE (PELP)
-         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
-         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
-         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
-         ! Store data
-         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
-     &        getfields_fields(2)(1:getfields_lfields(2))
-         
-         !Read and calculate parameters
-         read(getfields_fields(4) (1:getfields_lfields( 4)),*) tinj
-         read(getfields_fields(5) (1:getfields_lfields( 5)),*) Iinj
-         read(getfields_fields(6) (1:getfields_lfields( 6)),*) Inom
-         read(getfields_fields(7) (1:getfields_lfields( 7)),*) A
-         read(getfields_fields(8) (1:getfields_lfields( 8)),*) D
-         read(getfields_fields(9) (1:getfields_lfields( 9)),*) R
-         read(getfields_fields(10)(1:getfields_lfields(10)),*) te
-                  
-         derivI_te = A*(te-tinj)                 ! nostore
-         I_te      = (A/2.0)*(te-tinj)**2 + Iinj ! nostore
-         bexp      = derivI_te/I_te
-         aexp      = exp(-bexp*te)*I_te
-         t1        = log(R/(aexp*bexp))/bexp
-         I1        = aexp*exp(bexp*t1)
-         td        = (Inom-I1)/R + (t1 - R/(2*D))
-         tnom      = td + R/D
-         
-         if (ldynkdebug) then
-+if cr
-         write (lout,*) "DYNKDEBUG> *** PELP SETTINGS: ***"
-         write (lout,*) "DYNKDEBUG> tinj =", tinj
-         write (lout,*) "DYNKDEBUG> Iinj =", Iinj
-         write (lout,*) "DYNKDEBUG> Inom =", Inom
-         write (lout,*) "DYNKDEBUG> A    =", A
-         write (lout,*) "DYNKDEBUG> D    =", D
-         write (lout,*) "DYNKDEBUG> R    =", R
-         write (lout,*) "DYNKDEBUG> te   =", te
-         write (lout,*) "DYNKDEBUG> "
-         write (lout,*) "DYNKDEBUG> derivI_te =", derivI_te
-         write (lout,*) "DYNKDEBUG> I_te      =", I_te
-         write (lout,*) "DYNKDEBUG> bexp      =", bexp
-         write (lout,*) "DYNKDEBUG> aexp      =", aexp
-         write (lout,*) "DYNKDEBUG> t1        =", t1
-         write (lout,*) "DYNKDEBUG> I1        =", I1
-         write (lout,*) "DYNKDEBUG> td        =", td
-         write (lout,*) "DYNKDEBUG> tnom      =", tnom
-         write (lout,*) "DYNKDEBUG> **********************"
-+ei
-+if .not.cr
-         write (*,*)    "DYNKDEBUG> *** PELP SETTINGS: ***"
-         write (*,*)    "DYNKDEBUG> tinj =", tinj
-         write (*,*)    "DYNKDEBUG> Iinj =", Iinj
-         write (*,*)    "DYNKDEBUG> Inom =", Inom
-         write (*,*)    "DYNKDEBUG> A    =", A
-         write (*,*)    "DYNKDEBUG> D    =", D
-         write (*,*)    "DYNKDEBUG> R    =", R
-         write (*,*)    "DYNKDEBUG> te   =", te
-         write (*,*)    "DYNKDEBUG> "
-         write (*,*)    "DYNKDEBUG> derivI_te =", derivI_te
-         write (*,*)    "DYNKDEBUG> I_te      =", I_te
-         write (*,*)    "DYNKDEBUG> bexp      =", bexp
-         write (*,*)    "DYNKDEBUG> aexp      =", aexp
-         write (*,*)    "DYNKDEBUG> t1        =", t1
-         write (*,*)    "DYNKDEBUG> I1        =", I1
-         write (*,*)    "DYNKDEBUG> td        =", td
-         write (*,*)    "DYNKDEBUG> tnom      =", tnom
-         write (*,*)    "DYNKDEBUG> **********************"
-+ei
-         endif
-         
-         if (.not. (tinj .lt. te .and.
-     &                te .lt. t1 .and.
-     &                t1 .lt. td .and.
-     &                td .lt. tnom ) ) then
-+if cr
-            WRITE(lout,*) "DYNK> ********************************"
-            WRITE(lout,*) "DYNK> ERROR***************************"
-            write(lout,*) "DYNK> PELP: Order of times not correct"
-            WRITE(lout,*) "DYNK> ********************************"
-+ei
-+if .not.cr
-            WRITE(*,*)    "DYNK> ********************************"
-            WRITE(*,*)    "DYNK> ERROR***************************"
-            write(*,*)    "DYNK> PELP: Order of times not correct"
-            WRITE(*,*)    "DYNK> ********************************"
-+ei
-            call prror(51)
-         endif
-         
-         !Store: Times
-         fexpr_dynk(nfexpr_dynk)    = tinj
-         fexpr_dynk(nfexpr_dynk+ 1) = te
-         fexpr_dynk(nfexpr_dynk+ 2) = t1
-         fexpr_dynk(nfexpr_dynk+ 3) = td
-         fexpr_dynk(nfexpr_dynk+ 4) = tnom
-         !Store: Parameters / section1 (parabola)
-         fexpr_dynk(nfexpr_dynk+ 5) = Iinj
-         fexpr_dynk(nfexpr_dynk+ 6) = A
-         !Store: Parameters / section2 (exponential)
-         fexpr_dynk(nfexpr_dynk+ 7) = aexp
-         fexpr_dynk(nfexpr_dynk+ 8) = bexp
-         !Store: Parameters / section3 (linear)
-         fexpr_dynk(nfexpr_dynk+ 9) = I1
-         fexpr_dynk(nfexpr_dynk+10) = R
-         !Store: Parameters / section4 (parabola)
-         fexpr_dynk(nfexpr_dynk+11) = D
-         fexpr_dynk(nfexpr_dynk+12) = Inom
-         
-         nfexpr_dynk = nfexpr_dynk + 12
-         
-      case default
-         ! UNKNOWN function
-+if cr
-         write (lout,*) "*************************************"
-         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-         write (lout,*) "Unkown function to dynk_parseFUN()   "
-         write (lout,*) "Got fields:"
-         do ii=1,getfields_nfields
-            write (lout,*) "Field(",ii,") ='",
-     &           getfields_fields(ii)(1:getfields_lfields(ii)),"'"
-         enddo
-         write (lout,*) "*************************************"
-+ei
-+if .not.cr
-         write (*,*)    "*************************************"
-         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
-         write (*,*)    "Unkown function to dynk_parseFUN()   "
-         write (*,*)    "Got fields:"
-         do ii=1,getfields_nfields
-            write (*,*)    "Field(",ii,") ='",
-     &           getfields_fields(ii)(1:getfields_lfields(ii)),"'"
-         enddo
-         write (*,*)    "*************************************"
-+ei
-
-         call dynk_dumpdata
-         call prror(51)
-      end select
-
-      end subroutine
-
-      subroutine dynk_checkargs(nfields,nfields_expected,funsyntax)
-      implicit none
-      integer nfields, nfields_expected
-      character(*) funsyntax
-      intent(in) nfields, nfields_expected, funsyntax
-      
-      if (nfields .ne. nfields_expected) then
-         write (*,*) "ERROR in DYNK block parsing (fort.3)"
-         write (*,*) "The function expected",nfields_expected,
-     &               "arguments, got",nfields
-         write (*,*) "Expected syntax:"
-         write (*,*) funsyntax(:)
-         call prror(51)
-      endif
-      end subroutine
-
-      subroutine dynk_checkspace(iblocks,fblocks,cblocks)
-      implicit none
-      integer iblocks,fblocks,cblocks
-      intent(in) iblocks,fblocks,cblocks
-+ca parpro
-+ca comdynk      
-
-+if cr
-+ca crcoall
-+ei
-
-      if ( (niexpr_dynk+iblocks .gt. maxdata_dynk) .or.
-     &     (nfexpr_dynk+fblocks .gt. maxdata_dynk) .or.
-     &     (ncexpr_dynk+cblocks .gt. maxdata_dynk) ) then
-+if cr
-         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-         write (lout,*) "Max number of maxdata_dynk to be exceeded"
-         write (lout,*) "niexpr_dynk:", niexpr_dynk
-         write (lout,*) "nfexpr_dynk:", nfexpr_dynk
-         write (lout,*) "ncexpr_dynk:", ncexpr_dynk
-+ei
-+if .not.cr
-         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
-         write (*,*)    "Max number of maxdata_dynk to be exceeded"
-         write (*,*)    "niexpr_dynk:", niexpr_dynk
-         write (*,*)    "nfexpr_dynk:", nfexpr_dynk
-         write (*,*)    "ncexpr_dynk:", ncexpr_dynk
-+ei
-         call prror(51)
-      endif
-      end subroutine
-      
-      subroutine dynk_parseSET(getfields_fields,
-     &     getfields_lfields,getfields_nfields)
-!-----------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 15-10-2014
-!     parse SET lines in the fort.3 input file, 
-!     store it in COMMON block dynkComExpr.
-!-----------------------------------------------------------------------
-      implicit none
-+ca parpro
-+ca comdynk
-+ca comgetfields
-
-+if cr
-+ca crcoall
-+ei
-
-      integer ii
-      
-      integer dynk_findFUNindex
-
-      if (nsets_dynk+1 .gt. maxsets_dynk) then
-+if cr
-         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-         write (lout,*) "Maximum number of SET exceeded, ",
-     &               "please increase parameter maxsets_dynk."
-         write (lout,*) "Current value of maxsets_dynk:", maxsets_dynk
-+ei
-+if .not.cr
-         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
-         write (*,*)    "Maximum number of SET exceeded, ",
-     &                  "please increase parameter maxsets_dynk."
-         write (*,*)    "Current value of maxsets_dynk:", maxsets_dynk
-+ei
-         call prror(51)
-      endif
-
-      if (getfields_nfields .ne. 7) then
-+if cr
-         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-         write (lout,*) "Expected 6 fields on line while parsing SET."
-         write (lout,*) "Correct syntax:"
-         write (lout,*) "SET element_name attribute_name function_name",
-     &                  " startTurn endTurn turnShift"
-         write (lout,*) "got field:"
-         do ii=1,getfields_nfields
-            write (lout,*) "Field(",ii,") ='",
-     &           getfields_fields(ii)(1:getfields_lfields(ii)),"'"
-         enddo
-+ei
-+if .not.cr
-         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
-         write (*,*)    "Expected 6 fields on line while parsing SET."
-         write (*,*)    "Correct syntax:"
-         write (*,*)    "SET element_name attribute_name function_name",
-     &                  " startTurn endTurn turnShift"
-         write (*,*)    "got field:"
-         do ii=1,getfields_nfields
-            write (*,*)    "Field(",ii,") ='",
-     &           getfields_fields(ii)(1:getfields_lfields(ii)),"'"
-         enddo
-+ei
-         call prror(51)
-      endif
-
-      nsets_dynk = nsets_dynk + 1
-
-      sets_dynk(nsets_dynk,1) =
-     &     dynk_findFUNindex( getfields_fields(4)
-     &     (1:getfields_lfields(4)), 1 ) ! function_name -> function index
-      if ( sets_dynk(nsets_dynk,1) .eq. -1 ) then
-+if cr
-         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-         write (lout,*) "specified function ",
-     &        "'",getfields_fields(4)
-     &        (1:getfields_lfields(4)),"' not found."
-+ei
-+if .not.cr
-         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
-         write (*,*)    "specified function ",
-     &        "'",getfields_fields(4)
-     &        (1:getfields_lfields(4)),"' not found."
-+ei
-         call prror(51)
-      endif
-      read(getfields_fields(5)(1:getfields_lfields(5)),*)
-     &     sets_dynk(nsets_dynk,2) ! startTurn
-      read(getfields_fields(6)(1:getfields_lfields(6)),*)
-     &     sets_dynk(nsets_dynk,3) ! endTurn
-      read(getfields_fields(7)(1:getfields_lfields(7)),*)
-     &     sets_dynk(nsets_dynk,4) ! turnShift
-
-      csets_dynk(nsets_dynk,1)(1:getfields_lfields(2)) =
-     &     getfields_fields(2)(1:getfields_lfields(2)) ! element_name
-      csets_dynk(nsets_dynk,2)(1:getfields_lfields(3)) =
-     &     getfields_fields(3)(1:getfields_lfields(3)) ! attribute_name
-      
-      ! Sanity check
-      if (sets_dynk(nsets_dynk,1).eq.-1) then
-+if cr
-         write (lout,*) "*************************************"
-         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-         write (lout,*) "SET wanting function '",
-     &        getfields_fields(4)(1:getfields_lfields(4)), "'"
-         write (lout,*) "Calculated index:", sets_dynk(nsets_dynk,1)
-         write (lout,*) "This function is not known."
-         write (lout,*) "*************************************"
-+ei
-+if .not.cr
-         write (*,*)    "*************************************"
-         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
-         write (*,*)    "SET wanting function '",
-     &        getfields_fields(4)(1:getfields_lfields(4)), "'"
-         write (*,*)    "Calculated index:", sets_dynk(nsets_dynk,1)
-         write (*,*)    "This function is not known."
-         write (*,*)    "*************************************"
-+ei
-         call prror(51)
-      endif
-      if (getfields_lfields(2) .gt. 16) then
-         ! length of elements in BEZ array is 16
-+if cr
-         write (lout,*) "*************************************"
-         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-         write (lout,*) "SET got an element name with length =",
-     &        getfields_lfields(2), "> 16."
-         write (lout,*) "The name was: '",
-     &        getfields_fields(2)(1:getfields_lfields(2)),"'"
-         write (lout,*) "*************************************"
-+ei
-+if .not.cr
-         write (*,*)    "*************************************"
-         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
-         write (*,*)    "SET got an element name with length =",
-     &        getfields_lfields(2), "> 16."
-         write (*,*)    "The name was: '",
-     &        getfields_fields(2)(1:getfields_lfields(2)),"'"
-         write (*,*)    "*************************************"
-+ei
-         call prror(51)
-      end if
-      if (sets_dynk(nsets_dynk,2) .gt. sets_dynk(nsets_dynk,3) ) then
-+if cr
-         write (lout,*) "*************************************"
-         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
-         write (lout,*) "SET got first turn num > last turn num"
-         write (lout,*) "first=",sets_dynk(nsets_dynk,2)
-         write (lout,*) "last =",sets_dynk(nsets_dynk,3)
-         write (lout,*) "SET #", nsets_dynk
-         write (lout,*) "*************************************"
-+ei
-+if .not.cr
-         write (*,*)    "*************************************"
-         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
-         write (*,*)    "SET got first turn num > last turn num"
-         write (*,*)    "first=",sets_dynk(nsets_dynk,2)
-         write (*,*)    "last =",sets_dynk(nsets_dynk,3)
-         write (*,*)    "SET #", nsets_dynk
-         write (*,*)    "*************************************"
-+ei
-         call prror(51)
-      end if
-      end subroutine
-
-      integer function dynk_findFUNindex(funName, startfrom)
-!-----------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 14-10-2014
-!     Find and return the index in the ifuncs array to the
-!      function with name funName, which should be zero-padded.
-!     Return -1 if nothing was found.
-!-----------------------------------------------------------------------
-      implicit none
-+ca parpro
-+ca comdynk
-
-      character(maxstrlen_dynk) funName
-      integer startfrom
-      intent(in) funName, startfrom
-
-      integer ii
-      
-      dynk_findFUNindex = -1
-
-      do ii=startfrom, nfuncs_dynk
-         if (cexpr_dynk(funcs_dynk(ii,1)).eq.funName) then
-            dynk_findFUNindex = ii
-            exit ! break loop
-         endif
-      end do
-      
-      end function
-
-      integer function dynk_findSETindex
-     &     (element_name, att_name, startfrom)
-!-----------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 23-10-2014
-!     Find and return the index in the sets array to the set which
-!     matches element_name and att_name, which should be zero-padded.
-!     Return -1 if nothing was found.
-!-----------------------------------------------------------------------
-      implicit none
-+ca parpro
-+ca comdynk
-      character(maxstrlen_dynk) element_name, att_name
-      integer startfrom
-      intent(in) element_name, att_name, startfrom
-      
-      integer ii
-      
-      dynk_findSETindex = -1
-      
-      do ii=startfrom, nsets_dynk
-         if ( csets_dynk(ii,1) .eq. element_name .and.
-     &        csets_dynk(ii,2) .eq. att_name ) then
-            dynk_findSETindex = ii
-            exit                ! break loop
-         endif
-      enddo
-      
-      end function
-      
-      subroutine dynk_inputsanitycheck
-!-----------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 14-10-2014
-!     Check that DYNK block input in fort.3 was sane
-!-----------------------------------------------------------------------
-      implicit none
-+ca parpro
-+ca comdynk
-+if cr
-+ca crcoall
-+ei
-      ! functions
-      integer dynk_findFUNindex , dynk_findSETindex
-
-      integer ii, jj
-      logical sane
-      sane = .true.
-      
-      ! Check that there are no doubly-defined function names
-      do ii=1, nfuncs_dynk-1
-         jj = dynk_findFUNindex(cexpr_dynk(funcs_dynk(ii,1)),ii+1)
-         if ( jj.ne. -1) then
-            sane = .false.
-+if cr
-            write (lout,*)
-+ei
-+if .not.cr
-            write (*,*) 
-+ei
-     &           "DYNK> Insane: function ", 
-     &           ii, "has the same name as", jj
-         end if
-      end do
-      
-      ! Check that no SETS work on same elem/att at same time
-      do ii=1, nsets_dynk-1
-         jj = ii
-         do while (.true.)
-            jj = dynk_findSETindex(csets_dynk(ii,1),
-     &                             csets_dynk(ii,2),jj+1)
-            if (jj .eq. -1) exit ! next outer loop
-            if ( sets_dynk(jj,2) .le. sets_dynk(ii,2) .and.
-     &           sets_dynk(jj,3) .ge. sets_dynk(ii,2) ) then
-               sane = .false.
-+if cr
-               write (lout,*)
-+ei
-+if .not.cr
-               write (*,*) 
-+ei
-     &              "DYNK> Insane: Lower edge of SET #", jj,
-     &         "=", sets_dynk(jj,2)," <= lower edge of SET #",ii,
-     &         "=", sets_dynk(ii,2),"; and also higer edge of SET #",jj,
-     &         "=", sets_dynk(jj,3)," >= lower edge of SET #", ii
-            else if (sets_dynk(jj,3) .ge. sets_dynk(ii,3) .and.
-     &               sets_dynk(jj,2) .le. sets_dynk(ii,3) ) then
-               sane = .false.
-+if cr
-               write(lout,*)
-+ei
-+if .not.cr
-               write (*,*)
-+ei
-     &              "DYNK> Insane: Upper edge of SET #", jj,
-     &         "=", sets_dynk(jj,3)," >= upper edge of SET #",ii,
-     &         "=", sets_dynk(ii,3),"; and also lower edge of SET #",jj,
-     &         "=", sets_dynk(jj,2)," <= upper edge of SET #", ii
-            endif
-         enddo
-      enddo
-      if (.not. sane) then
-+if cr
-         write (lout,*) "****************************************"
-         write (lout,*) "*******DYNK input was insane************"
-         write (lout,*) "****************************************"
-+ei
-+if .not.cr
-         write (*,*)    "****************************************"
-         write (*,*)    "*******DYNK input was insane************"
-         write (*,*)    "****************************************"
-+ei
-         call dynk_dumpdata
-         call prror(-11)
-      else if (sane .and. ldynkdebug) then
-+if cr
-         write (lout,*)
-+ei
-+if .not.cr
-         write (*,*)
-+ei
-     &        "DYNK> DYNK input was sane"
-      end if
-      end subroutine
-
-      subroutine dynk_dumpdata
-!----------------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 14-10-2014
-!     Dump arrays with DYNK FUN and SET data to the std. output for debugging
-!----------------------------------------------------------------------------
-      implicit none
-+ca parpro      
-+ca comdynk
-+if cr
-+ca crcoall
-+ei
-      character(maxstrlen_dynk) dynk_stringzerotrim
-
-      integer ii
-+if cr
-      write(lout,*)
-+ei
-+if .not.cr
-      write(*,*)
-+ei      
-     &     "**************** DYNK parser knows: ****************"
-
-+if cr
-      write (lout,*) "OPTIONS:"
-      write (lout,*) " ldynk            =", ldynk
-      write (lout,*) " ldynkdebug       =", ldynkdebug
-      write (lout,*) " ldynkfiledisable =", ldynkfiledisable
-      write (lout,*) " ldynkfileopen    =", ldynkfileopen
-+ei
-+if .not.cr
-      write (*,*)    "OPTIONS:"
-      write (*,*)    " ldynk            =", ldynk
-      write (*,*)    " ldynkdebug       =", ldynkdebug
-      write (*,*)    " ldynkfiledisable =", ldynkfiledisable
-      write (*,*)    " ldynkfileopen    =", ldynkfileopen
-+ei
-
-+if cr
-      write (lout,*) "FUN:"
-      write (lout,*) "ifuncs: (",nfuncs_dynk,")"
-+ei
-+if .not.cr
-      write (*,*)    "FUN:"
-      write (*,*)    "ifuncs: (",nfuncs_dynk,")"
-+ei
-      do ii=1,nfuncs_dynk
-+if cr
-         write (lout,*) 
-+ei
-+if .not.cr
-         write (*,*) 
-+ei
-     &        ii, ":", funcs_dynk(ii,:)
-
-      end do
-+if cr
-      write (lout,*) "iexpr_dynk: (",niexpr_dynk,")"
-+ei
-+if .not.cr
-      write (*,*)    "iexpr_dynk: (",niexpr_dynk,")"
-+ei
-      do ii=1,niexpr_dynk
-+if cr
-         write (lout,*)
-+ei
-+if .not.cr
-         write (*,*)
-+ei
-     &     ii, ":", iexpr_dynk(ii)
-      end do
-+if cr
-      write (lout,*) "fexpr_dynk: (",nfexpr_dynk,")"
-+ei
-+if .not.cr
-      write (*,*)    "fexpr_dynk: (",nfexpr_dynk,")"
-+ei
-      do ii=1,nfexpr_dynk
-+if cr
-         write (lout,*)
-+ei
-+if .not.cr
-         write (*,*)
-+ei
-     &   ii, ":", fexpr_dynk(ii)
-      end do
-+if cr
-      write (lout,*) "cexpr_dynk: (",ncexpr_dynk,")"
-+ei
-+if .not.cr
-      write (*,*)    "cexpr_dynk: (",ncexpr_dynk,")"
-+ei
-      do ii=1,ncexpr_dynk
-+if cr
-         write(lout,*)
-+ei
-+if .not.cr
-         write(*,*)
-+ei
-     &   ii, ":", "'"//trim(dynk_stringzerotrim(cexpr_dynk(ii)))//"'"
-      end do
-
-+if cr
-      write (lout,*) "SET:"      
-      write (lout,*) "sets(,:) csets(,1) csets(,2): (",
-     &     nsets_dynk,")"
-+ei
-+if .not.cr
-      write (*,*)    "SET:"      
-      write (*,*)    "sets(,:) csets(,1) csets(,2): (",
-     &     nsets_dynk,")"
-+ei
-      do ii=1,nsets_dynk
-+if cr
-         write (lout,*)
-+ei
-+if .not.cr
-         write (*,*) 
-+ei
-     &        ii, ":", sets_dynk(ii,:),
-     &        "'"//trim(dynk_stringzerotrim(csets_dynk(ii,1)))//
-     &  "' ", "'"//trim(dynk_stringzerotrim(csets_dynk(ii,2)))//"'"
-      end do
-      
-+if cr
-      write (lout,*) "csets_unique_dynk: (",nsets_unique_dynk,")"
-+ei
-+if .not.cr
-      write (*,*)    "csets_unique_dynk: (",nsets_unique_dynk,")"
-+ei
-      do ii=1,nsets_unique_dynk
-+if cr
-         write(lout,*)
-+ei
-+if .not.cr
-         write (*,*) 
-+ei
-     &       ii, ":", "'"//
-     &       trim(dynk_stringzerotrim(csets_unique_dynk(ii,1)))//"' '"//
-     &       trim(dynk_stringzerotrim(csets_unique_dynk(ii,2)))//"' = ",
-     &        fsets_origvalue_dynk(ii)
-      end do
-
-+if cr
-      write (lout,*) "*************************************************"
-+ei
-+if .not.cr
-      write (*,*)    "*************************************************"
-+ei
-      
-      end subroutine
-
-      function dynk_stringzerotrim(instring)
-!----------------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 30-10-2014
-!     Replace "\0" with ' ' in strings.
-!     Usefull before output, else "write (*,*)" will actually write all the \0s
-!
-!     Warning: Do not add any write(*,*) inside this function:
-!     if this function is called by a write(*,*) and then does a write,
-!     the program may deadlock!
-!----------------------------------------------------------------------------
-      implicit none
-+ca parpro
-+ca comdynk
-      character(maxstrlen_dynk) dynk_stringzerotrim, instring
-      intent(in) instring
-
-      integer ii
-
-      do ii=1,maxstrlen_dynk
-         if ( instring(ii:ii) .ne. char(0) ) then
-            dynk_stringzerotrim(ii:ii) = instring(ii:ii)
-         else 
-            dynk_stringzerotrim(ii:ii) = ' '
-         end if
-      end do
-      dynk_stringzerotrim = trim(dynk_stringzerotrim)
-
-      end function
-      
-      subroutine dynk_pretrack
-!-----------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 21-10-2014
-!     
-!     Save original values for GET functions and sanity check
-!     that elements/attributes for SET actually exist.
-!-----------------------------------------------------------------------
-      implicit none
-+ca parpro
-+ca comdynk
-+if cr
-+ca crcoall
-+ei
-      !Functions
-      double precision dynk_getvalue
-      integer dynk_findSETindex
-      !Temp variables
-      integer ii
-
-      if (ldynkdebug) then
-+if cr
-         write(lout,*)
-+ei
-+if .not.cr
-         write(*,*)
-+ei
-     &    "DYNKDEBUG> In dynk_pretrack()"
-      end if
-      
-      ! Find which elem/attr combos are affected by SET
-      nsets_unique_dynk = 0 !Assuming this is only run once
-      do ii=1,nsets_dynk
-         if ( dynk_findSETindex(
-     &        csets_dynk(ii,1),csets_dynk(ii,2), ii+1 ) .eq. -1 ) then
-            ! Last SET which has this attribute, store it
-            nsets_unique_dynk = nsets_unique_dynk+1
-
-            csets_unique_dynk(nsets_unique_dynk,1) = csets_dynk(ii,1)
-            csets_unique_dynk(nsets_unique_dynk,2) = csets_dynk(ii,2)
-
-            ! Store original value of data point
-            fsets_origvalue_dynk(nsets_unique_dynk) = 42.0
-            fsets_origvalue_dynk(nsets_unique_dynk) =  
-     &           dynk_getvalue(csets_dynk(ii,1),csets_dynk(ii,2))
-         endif
-      enddo
-
-      ! Save original values for GET functions
-      do ii=1,nfuncs_dynk
-         if (funcs_dynk(ii,2) .eq. 0) then !GET
-            fexpr_dynk(funcs_dynk(ii,3)) =
-     &           dynk_getvalue( cexpr_dynk(funcs_dynk(ii,1)+1),
-     &                          cexpr_dynk(funcs_dynk(ii,1)+2) )
-         endif
-      enddo
-
-      if (ldynkdebug) call dynk_dumpdata
-      
-      end subroutine
-
-+dk dynktrack
-      subroutine dynk_apply(turn)
-!-----------------------------------------------------------------------
-!     A.Mereghetti, for the FLUKA Team
-!     K.Sjobak & A. Santamaria, BE-ABP/HSS
-!     last modified: 30-10-2014
-!     actually apply dynamic kicks
-!     always in main code
-!
-!     For each element (group) flagged with SET(R), compute the new value
-!     using dynk_computeFUN() at the given (shifted) turn number
-!     using the specified FUN function. The values are stored 
-!     in the element using dynk_setvalue().
-!     
-!     Also resets the values at the beginning of each pass through the
-!     turn loop (for COLLIMATION).
-!
-!     Also writes the file "dynksets.dat", only on the first turn.
-!-----------------------------------------------------------------------
-      implicit none
-
-+if cr
-+ca crcoall
-+ei
-+ca parpro
-+ca parnum
-+ca common
-+ca commonmn
-+ca commontr
-+ca comdynk
-
-!     interface variables
-      integer turn  ! current turn number
-      intent(in) turn
-
-!     temporary variables
-      integer ii, jj, shiftedTurn
-      logical ldynksetsEnable
-!     functions
-      double precision dynk_computeFUN
-      character(maxstrlen_dynk) dynk_stringzerotrim
-      integer dynk_findSETindex
-      
-      double precision dynk_getvalue, getvaldata
-      
-      character(maxstrlen_dynk) whichFUN(maxsets_dynk) !Which function was used to set a given elem/attr?
-      integer whichSET(maxsets_dynk) !Which SET was used for a given elem/attr?
-      
-      save ldynksetsEnable
-
-      if ( ldynkdebug ) then
-+if cr
-         write (lout,*)
-+ei
-+if .not.cr
-         write (*,*)
-+ei
-     &   'DYNKDEBUG> In dynk_apply(), turn = ', turn
-      end if
-      
-      !Initialize variables
-      do jj=1, nsets_unique_dynk
-         whichSET(jj) = -1
-         do ii=1,maxstrlen_dynk
-            whichFUN(jj)(ii:ii) = char(0)
-         enddo
-      enddo
-
-      if (turn .eq. 1) then
-         ! Reset RNGs
-         do ii=1, nfuncs_dynk
-            if (funcs_dynk(ii,2) .eq. 6) then !RANDG
-               if (ldynkdebug) then
-+if cr
-                  write (lout,*) 
-+ei
-+if .not.cr
-                  write (*,*) 
-+ei
-     &              "DYNKDEBUG> Resetting RNG for FUN named '",
-     &              cexpr_dynk(funcs_dynk(ii,1)), "'"
-               endif
-
-               iexpr_dynk(funcs_dynk(ii,3)+3) =
-     &         iexpr_dynk(funcs_dynk(ii,3) )
-               iexpr_dynk(funcs_dynk(ii,3)+4) =
-     &         iexpr_dynk(funcs_dynk(ii,3)+1)
-            endif
-         enddo
-      endif
-
-      if (ldynkfileopen .and. turn .eq. 1) then
-         ! We're in the 2nd pass of the turn loop
-         
-         ! Only write to output file in first "pass"
-         ldynksetsEnable = .false. ! (comment out for debugging)
-         
-         ! Reset values
-         do ii=1, nsets_unique_dynk
-            if (ldynkdebug) then
-+if cr
-               write (lout,*)
-+ei
-+if .not.cr
-               write (*,*)
-+ei
-     &              "DYNKDEBUG> resetting: '",
-     &               trim(dynk_stringzerotrim(csets_unique_dynk(ii,1))),
-     &         "':'",trim(dynk_stringzerotrim(csets_unique_dynk(ii,2))),
-     &         "', funNum=", -ii, "turn=", 0
-            endif
-            call dynk_setvalue(csets_unique_dynk(ii,1),
-     &                         csets_unique_dynk(ii,2),
-     &                         -ii, 0 )
-         enddo
-         
-      endif
-      
-      if (.not. ldynkfileopen) then
-         open(unit=665, file="dynksets.dat",
-     &        status="replace",action="write") 
-         if (ldynkfiledisable) then
-            write (665,*) "### DYNK file output was disabled ",
-     &                    "with flag NOFILE in fort.3 ###"
-            ldynksetsEnable = .false.
-         else
-            write(665,*) "# turn element attribute SETidx funname ",
-     &        "nvalues value1 value2 ..." !TODO Update file format
-            ldynksetsEnable = .true.
-         endif
-         ldynkfileopen = .true.
-      endif
-      
-      do ii=1,nsets_dynk
-         ! Sanity check already confirms that only a single SET
-         ! is active on a given element:attribute on a given turn.
-         if (turn .ge. sets_dynk(ii,2) .and.
-     &       turn .le. sets_dynk(ii,3)) then
-            
-            !Shifting
-            shiftedTurn = turn + sets_dynk(ii,4)
-            
-            !Set the value
-            if (ldynkdebug) then
-+if cr
-               write(lout,*)
-+ei
-+if .not.cr
-               write(*,*)
-+ei
-     &              "DYNKDEBUG> Applying set #", ii, "on '",
-     &           trim(dynk_stringzerotrim(csets_dynk(ii,1))),
-     &           "':'", trim(dynk_stringzerotrim(csets_dynk(ii,2))),
-     &           "', shiftedTurn=",shiftedTurn
-            endif
-            call dynk_setvalue(csets_dynk(ii,1), csets_dynk(ii,2),
-     &           sets_dynk(ii,1), shiftedTurn )
-            
-            if (ldynkdebug) then
-               getvaldata = dynk_getvalue( csets_dynk(ii,1), 
-     &                                     csets_dynk(ii,2) )
-+if cr
-               write (lout,*)
-+ei
-+if .not.cr
-               write (*,*)
-+ei
-     &              "DYNKDEBUG> Read back value = ",
-     &              getvaldata
-            endif
-            
-            !For the output file: Which function was used?
-            do jj=1, nsets_unique_dynk
-               if (csets_dynk(ii,1) .eq. csets_unique_dynk(jj,1) .and.
-     &             csets_dynk(ii,2) .eq. csets_unique_dynk(jj,2) ) then
-                  whichSET(jj)=ii
-                  whichFUN(jj)=cexpr_dynk(funcs_dynk(sets_dynk(ii,1),1))
-               endif
-            enddo
-         end if
-      end do
-      
-      !Write output file
-      if (ldynksetsEnable) then
-         do jj=1,nsets_unique_dynk
-            getvaldata =  dynk_getvalue( csets_unique_dynk(jj,1),
-     &                                   csets_unique_dynk(jj,2) )
-            
-            if (whichSET(jj) .eq. -1) then
-               whichFUN(jj) = "N/A"
-            endif
-            
-            write(665,*)
-     &           turn, 
-     &           dynk_stringzerotrim(csets_unique_dynk(jj,1)),
-     &           dynk_stringzerotrim(csets_unique_dynk(jj,2)),
-     &           whichSET(jj),
-     &           dynk_stringzerotrim(whichFUN(jj)),
-     &           1, getvaldata ! TODO: Change file format
-         enddo
-      endif
-
-      end subroutine
-!
-      
-      recursive double precision function 
-     &     dynk_computeFUN( funNum, turn ) result(retval)
-!-----------------------------------------------------------------------
-!     K. Sjobak, BE-ABP/HSS
-!     last modified: 17-10-2014
-!     Compute the value of a given DYNK function (funNum) for the given turn
-!     If turn = 0 and -nsets_unique_dynk<funNum<0: reset to original value
-!-----------------------------------------------------------------------
-      implicit none
-+ca parpro
-+ca comdynk
-      integer funNum, turn
-      intent (in) funNum, turn
-      
-      !Functions to call
-      double precision dynk_lininterp
-+if crlibm
-+ca crlibco
-+ei
-+if cr
-+ca crcoall
-+ei
-      
-      ! Temporaries for FILELIN
-      integer filelin_start, filelin_xypoints
-      
-      ! Temporaries for random generator functions
-      integer tmpseed1, tmpseed2
-      double precision ranecu_rvec(1)
-      
-      ! General temporaries
-      integer foff !base offset into fexpr array
-            
-      if (  funNum .lt. 0 .and. 
-     &     -funNum .le. nsets_unique_dynk .and. 
-     &        turn .eq. 0 ) then
-         ! Recall at first turn
-         retval = fsets_origvalue_dynk(-funNum)
-         return
-      elseif (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
-+if cr
-         write(lout,*) "DYNK> **** ERROR in dynk_computeFUN() ****"
-         write(lout,*) "DYNK> funNum =", funNum, "turn=", turn
-         write(lout,*) "DYNK> Invalid funNum & turn combination"
-+ei
-+if .not. cr
-         write(*,*)    "DYNK> **** ERROR in dynk_computeFUN() ****"
-         write(*,*)    "DYNK> funNum =", funNum, "turn=", turn
-         write(*,*)    "DYNK> Invalid funNum & turn combination"
-+ei
-         call dynk_dumpdata
-         call prror(-1)
-      endif
-      
-      select case ( funcs_dynk(funNum,2) )                              ! WHICH FUNCTION TYPE?
-      case (0)                                                          ! GET
-         retval = fexpr_dynk(funcs_dynk(funNum,3))
-      case (1)                                                          ! FILE
-         if (turn .gt. funcs_dynk(funNum,5) ) then
-+if cr
-            write(lout,*)"DYNK> ****ERROR in dynk_computeFUN():FILE****"
-            write(lout,*)"DYNK> funNum =", funNum, "turn=", turn
-            write(lout,*)"DYNK> Turn > length of file = ", 
-     &           funcs_dynk(funNum,5)
-+ei
-+if .not.cr
-            write(*,*)   "DYNK> ****ERROR in dynk_computeFUN():FILE****"
-            write(*,*)   "DYNK> funNum =", funNum, "turn=", turn
-            write(*,*)   "DYNK> Turn > length of file = ", 
-     &           funcs_dynk(funNum,5)
-+ei
-            call dynk_dumpdata
-            call prror(-1)
-         endif
-         retval = fexpr_dynk(funcs_dynk(funNum,4)+turn-1)
-      case(2)                                                           ! FILELIN
-         filelin_start    = funcs_dynk(funNum,4)
-         filelin_xypoints = funcs_dynk(funNum,5)
-         !Pass the correct array views/sections to dynk_lininterp
-         retval = dynk_lininterp( dble(turn),
-     &       fexpr_dynk(filelin_start:filelin_start+filelin_xypoints-1),
-     &       fexpr_dynk(filelin_start +  filelin_xypoints:
-     &                  filelin_start +2*filelin_xypoints-1),
-     &        filelin_xypoints )
-         
-      case (6)                                                          ! RANDG
-         ! Save old seeds and loud our current seeds
-         call recuut(tmpseed1,tmpseed2)
-         call recuin(iexpr_dynk(funcs_dynk(funNum,3)+3),
-     &               iexpr_dynk(funcs_dynk(funNum,3)+4) )
-         ! Run generator for 1 value with current mcut
-         call ranecu( ranecu_rvec, 1,
-     &                iexpr_dynk(funcs_dynk(funNum,3)+2) )
-         ! Save our current seeds and load old seeds
-         call recuut(iexpr_dynk(funcs_dynk(funNum,3)+3),
-     &               iexpr_dynk(funcs_dynk(funNum,3)+4) )
-         call recuin(tmpseed1,tmpseed2)
-         ! Change to mu, sigma
-         retval = fexpr_dynk(funcs_dynk(funNum,4))
-     &          + fexpr_dynk(funcs_dynk(funNum,4)+1)*ranecu_rvec(1)
-         
-      case (20)                                                         ! ADD
-         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
-     &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      case (21)                                                         ! SUB
-         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
-     &          - dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      case (22)                                                         ! MUL
-         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
-     &          * dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      case (23)                                                         ! DIV
-         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
-     &          / dynk_computeFUN(funcs_dynk(funNum,4),turn)
-      case (24)                                                         ! POW
-         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
-     &         ** dynk_computeFUN(funcs_dynk(funNum,4),turn)
-         
-      case (30)                                                         ! MINUS
-         retval = (-1)*dynk_computeFUN(funcs_dynk(funNum,3),turn)
-      case (31)                                                         ! SQRT
-C+if crlibm
-C      retval = sqrt_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-C+ei
-C+if .not.crlibm      
-      retval = sqrt(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-C+ei
-      case (32)                                                         ! SIN
-+if crlibm
-         retval = sin_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-+ei
-+if .not.crlibm
-         retval = sin(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-+ei
-      case (33)                                                         ! COS
-+if crlibm
-         retval = cos_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-+ei
-+if .not.crlibm
-         retval = cos(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-+ei
-      case (34)                                                         ! LOG
-+if crlibm
-         retval = log_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-+ei
-+if .not.crlibm
-         retval = log(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-+ei
-      case (35)                                                         ! LOG10
-+if crlibm
-         retval = log10_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-+ei
-+if .not. crlibm
-         retval = log10(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-+ei
-      case (36)                                                         ! EXP
-+if crlibm
-         retval = exp_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-+ei
-+if .not.crlibm
-         retval = exp(dynk_computeFUN(funcs_dynk(funNum,3),turn))
-+ei
-      
-      case (40)                                                         ! CONST
-         retval = fexpr_dynk(funcs_dynk(funNum,3))
-      case (41)                                                         ! TURN
-         retval = turn
-      case (42)                                                         ! LIN
-         retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
-     &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
-      case (43)                                                         ! LINSEG
-         filelin_start    = funcs_dynk(funNum,3)
-         filelin_xypoints = 2
-         !Pass the correct array views/sections to dynk_lininterp
-         retval = dynk_lininterp( dble(turn),
-     &       fexpr_dynk(filelin_start:filelin_start+1),
-     &       fexpr_dynk(filelin_start+2:filelin_xypoints+3),
-     &       filelin_xypoints )
-      case (44,45)                                                      ! QUAD/QUADSEG
-         retval = (turn**2)*fexpr_dynk(funcs_dynk(funNum,3))   + (
-     &                 turn*fexpr_dynk(funcs_dynk(funNum,3)+1) +
-     &                      fexpr_dynk(funcs_dynk(funNum,3)+2) )
-
-      case (60)                                                         ! SIN
-+if crlibm
-      retval = fexpr_dynk(funcs_dynk(funNum,3))
-     &     * SIN_RN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
-     &             + fexpr_dynk(funcs_dynk(funNum,3)+2) )
-
-+ei
-+if .not.crlibm
-      retval = fexpr_dynk(funcs_dynk(funNum,3))
-     &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
-     &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
-+ei
-      
-      case (80)                                                         ! PELP
-         foff = funcs_dynk(funNum,3)
-         if (turn .le. fexpr_dynk(foff)) then ! <= tinj
-            ! Constant Iinj
-            retval = fexpr_dynk(foff+5)
-         elseif (turn .le. fexpr_dynk(foff+1)) then ! <= te
-            ! Parabola (accelerate)
-            retval = ( fexpr_dynk(foff+6) *
-     &                 (turn-fexpr_dynk(foff))**2 ) / 2.0
-     &             + fexpr_dynk(foff+5)
-         elseif (turn .le. fexpr_dynk(foff+2)) then ! <= t1
-            ! Exponential
-            retval = fexpr_dynk(foff+7) *
-     &          exp( fexpr_dynk(foff+8)*turn )
-         elseif (turn .le. fexpr_dynk(foff+3)) then ! <= td
-            ! Linear (max ramp rate)
-            retval = fexpr_dynk(foff+10) *
-     &               (turn-fexpr_dynk(foff+2))
-     &             + fexpr_dynk(foff+9)
-         elseif (turn .le. fexpr_dynk(foff+4)) then ! <= tnom
-            ! Parabola (decelerate)
-            retval =  - ( (fexpr_dynk(foff+11) *
-     &                    (fexpr_dynk(foff+4)-turn)**2) ) / 2.0
-     &                + fexpr_dynk(foff+12)
-         else ! > tnom
-            ! Constant Inom
-            retval = fexpr_dynk(foff+12)
-         endif
-      case default
-+if cr
-         write(lout,*) "DYNK> **** ERROR in dynk_computeFUN(): ****"
-         write(lout,*) "DYNK> funNum =", funNum, "turn=", turn
-         write(lout,*) "DYNK> Unknown function type ",
-     &        funcs_dynk(funNum,2)
-+ei
-+if .not.cr
-         write(*,*)    "DYNK> **** ERROR in dynk_computeFUN(): ****"
-         write(*,*)    "DYNK> funNum =", funNum, "turn=", turn
-         write(*,*)    "DYNK> Unknown function type ",
-     &        funcs_dynk(funNum,2)
-+ei
-         call dynk_dumpdata
-         call prror(-1)
-      end select
-
-      end function
-      
-      subroutine dynk_setvalue(element_name, att_name, 
-     &     funNum, turn )
-!-----------------------------------------------------------------------
-!     A.Santamaria & K.Sjobak, BE-ABP/HSS
-!     last modified: 31-10-2014
-!     Set the value of the element's attribute 
-!     to the value provided by dynk_computeFUN(funNum, turn)
-!-----------------------------------------------------------------------
-      implicit none
-
-+ca parpro
-+ca parnum
-+ca common
-+ca commonmn
-+ca commontr
-+ca comdynk
-
-+if cr
-+ca crcoall
-+ei
-
-      character(maxstrlen_dynk) element_name, att_name
-      integer funNum, turn
-      intent (in) element_name, att_name, funNum, turn
-      !Functions
-      double precision dynk_computeFUN
-      character(maxstrlen_dynk) dynk_stringzerotrim
-      ! temp variables
-      integer el_type, ii
-      double precision fun_val
-      character(maxstrlen_dynk) element_name_stripped
-      character(maxstrlen_dynk) att_name_stripped
-
-      logical ldoubleElement
-      ldoubleElement = .false. ! For sanity check
-      
-      element_name_stripped = trim(dynk_stringzerotrim(element_name))
-      att_name_stripped = trim(dynk_stringzerotrim(att_name))
-
-      if ( ldynkdebug ) then
-+if cr
-         write (lout,*)
-+ei
-+if .not.cr
-         write (*,*)
-+ei
-     &        "DYNKDEBUG> In dynk_setvalue(), element_name = '",
-     &        element_name_stripped, "', att_name = '",
-     &        att_name_stripped, "', funNum =", funNum
-         if (funNUM .gt. 0) then
-+if cr
-            write (lout,*)
-+ei
-+if .not.cr
-            write (*,*)
-+ei
-     &           "DYNKDEBUG> Using function number =", funNUM,
-     &           "named '", 
-     &           trim(dynk_stringzerotrim(cexpr_dynk(
-     &                                      funcs_dynk(funNum,1)))), "'"
-         elseif (funNUM .lt. 0) then
-+if cr
-            write (lout,*)
-+ei
-+if .not.cr
-            write (*,*)
-+ei
-     &           "DYNKDEBUG> Using function number =", funNUM,
-     &           "reffering to origvalue of '",
-     &          trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,1))),
-     & "':'",trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,2))),"'"
-         end if
-      endif
-      
-C     Here comes the logic for setting the value of the attribute for all instances of the element...
-      ! Get type
-      do ii=1,il
-         if (element_name_stripped.eq.bez(ii)) then ! name found
-            el_type=kz(ii)      ! type found
-            
-            if (ldoubleElement) then ! Sanity check
-+if cr
-               write(lout,*)
-+ei
-+if .not.cr
-               write (*,*)
-+ei
-     &            "DYNK> ERROR: two elements with the same BEZ?"
-               call prror(-1)
-            end if
-            ldoubleElement = .true.
-          
-            if ((abs(el_type).eq.1).or. ! horizontal bending kick
-     &          (abs(el_type).eq.2).or. ! quadrupole kick
-     &          (abs(el_type).eq.3).or. ! sextupole kick
-     &          (abs(el_type).eq.4).or. ! octupole kick
-     &          (abs(el_type).eq.5).or. ! decapole kick
-     &          (abs(el_type).eq.6).or. ! dodecapole kick
-     &          (abs(el_type).eq.7).or. ! 14th pole kick
-     &          (abs(el_type).eq.8).or. ! 16th pole kick
-     &          (abs(el_type).eq.9).or. ! 18th pole kick
-     &          (abs(el_type).eq.10)) then ! 20th pole kick
-               if (att_name_stripped.eq."average_ms") then !
-                  ed(ii) = dynk_computeFUN(funNum,turn)
-               else
-+if cr
-                  WRITE (lout,*)"DYNK> *** ERROR in dynk_setvalue() ***"
-                  WRITE (lout,*)"DYNK> Attribute'", att_name_stripped,
-     &           "' does not exist for type =", el_type, "(2-20th pole)"
-+ei
-+if .not.cr
-                  WRITE (*,*)   "DYNK> *** ERROR in dynk_setvalue() ***"
-                  WRITE (*,*)   "DYNK> Attribute '", att_name_stripped,
-     &         "' does not exist for type =", el_type, "(2-20th pole)"
-+ei
-                  call prror(-1)
-               endif
-               call initialize_element(ii, .false.)
-               
-            elseif (abs(el_type).eq.11 .and. 
-     &              abs(el(ii)+one).le.pieni) then ! multipoles 
-               if (att_name_stripped.eq."bending_str") then 
-                  dki(ii,1) = dynk_computeFUN(funNum,turn) !TODO: HUH?!?!? Should be in initialize_element??
-               elseif (att_name_stripped.eq."radius") then
-                  dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
-               else
-+if cr
-                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/hor)"
-+ei
-+if .not.cr
-                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/hor)"
-+ei
-                  call prror(-1)
-               endif
-            elseif (abs(el_type).eq.11 .and. 
-     &              abs(el(ii)+two).le.pieni) then
-               if (att_name_stripped.eq."bending_str") then 
-                  dki(ii,2) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
-               elseif (att_name_stripped.eq."radius") then
-                  dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
-               else
-+if cr
-                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/ver)"
-+ei
-+if .not.cr
-                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/cer)"
-+ei
-                  call prror(-1)
-               endif
-            elseif (abs(el_type).eq.11) then !TODO: Always do this. also for the two cases above?
-               if (att_name_stripped.eq."bending_str") then ! [rad]
-                  ed(ii) = dynk_computeFUN(funNum,turn)
-               elseif (att_name_stripped.eq."radius") then ! [m]
-                  ek(ii) = dynk_computeFUN(funNum,turn)
-               else
-+if cr
-                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/def)"
-+ei
-+if .not.cr
-                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/def)"
-+ei
-                  call prror(-1)
-               endif
-
-          !Not yet supported
-c$$$          elseif (abs(el_type).eq.12) then ! cavities 
-c$$$            if (att_name_stripped.eq."voltage") then ! [MV]
-c$$$               ed(ii) = dynk_computeFUN(funNum,turn)
-c$$$            elseif (att_name_stripped.eq."harmonic") then !
-c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
-c$$$            elseif (att_name_stripped.eq."lag_angle") then ! [deg]
-c$$$               el(ii) = dynk_computeFUN(funNum,turn)
-c$$$            else
-c$$$               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-c$$$               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-c$$$     &              "does not exist for type =", el_type, "(cavity)"
-c$$$               call prror(-1)
-c$$$            endif
-c$$$            call initialize_element(ii, .false.)
-            
-          !Not yet supported
-c$$$          elseif (abs(el_type).eq.16) then ! AC dipole 
-c$$$            if (att_name_stripped.eq."amplitude") then ! [T.m]
-c$$$               ed(ii) = dynk_computeFUN(funNum,turn)
-c$$$            elseif (att_name_stripped.eq."frequency") then ! [2pi]
-c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
-c$$$            elseif (att_name_stripped.eq."phase") then ! [rad]
-c$$$               el(ii) = dynk_computeFUN(funNum,turn)
-c$$$            else
-c$$$              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-c$$$              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-c$$$     &        "does not exist for type =", el_type,"AC dipole"
-c$$$               call prror(-1)
-c$$$            endif
-
-          !Not yet supported
-c$$$          elseif (abs(el_type).eq.20) then ! beam-beam separation
-c$$$            if (att_name_stripped.eq."horizontal") then ! [mm]
-c$$$               ed(ii) = dynk_computeFUN(funNum,turn)
-c$$$            elseif (att_name_stripped.eq."vertical") then ! [mm]
-c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
-c$$$            elseif (att_name_stripped.eq."strength") then ! [m]
-c$$$               el(ii) = dynk_computeFUN(funNum,turn)
-c$$$            else
-c$$$               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-c$$$               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-c$$$     &              "does not exist for type =", el_type, "(beam-beam)"
-c$$$               call prror(-1)
-c$$$            endif
-            
-            elseif ((abs(el_type).eq.23).or.    ! crab cavity
-     &              (abs(el_type).eq.26).or.    ! cc mult. kick order 2
-     &              (abs(el_type).eq.27).or.    ! cc mult. kick order 3
-     &              (abs(el_type).eq.28)) then  ! cc mult. kick order 4
-               if (att_name_stripped.eq."voltage") then ![MV]   
-                  ed(ii) = dynk_computeFUN(funNum,turn)
-               elseif (att_name_stripped.eq."frequency") then ![MHz]
-                  ek(ii) = dynk_computeFUN(funNum,turn)
-               elseif (att_name_stripped.eq."phase") then ![rad]
-                  if (abs(el_type).eq.23) then
-                     crabph(ii) = dynk_computeFUN(funNum,turn)
-                  elseif (abs(el_type).eq.26) then
-                     crabph2(ii) = dynk_computeFUN(funNum,turn)
-                  elseif (abs(el_type).eq.27) then
-                     crabph3(ii) = dynk_computeFUN(funNum,turn)
-                  elseif (abs(el_type).eq.28) then
-                     crabph4(ii) = dynk_computeFUN(funNum,turn)
-                  endif     
-               else
-+if cr
-                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (lout,*) "DYNK> attribute '",att_name_stripped,
-     &              "' does not exist for type =", el_type, "(crab)"
-+ei
-+if .not.cr
-                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (*,*)    "DYNK> attribute '",att_name_stripped,
-     &              "' does not exist for type =", el_type, "(crab)"
-+ei
-                  call prror(-1)
-               endif
-               call initialize_element(ii, .false.)
-            
-            else
-+if cr
-               WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-               write (lout,*) "DYNK> Unsupported element type", el_type
-               write (lout,*) "DYNK> element name = '",
-     &              element_name_stripped,"'"
-+ei
-+if .not.cr
-               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-               write (*,*) "DYNK> Unsupported element type", el_type
-               write (*,*) "DYNK> element name = '",
-     &              element_name_stripped,"'"
-
-+ei
-               call prror(-1)
-            endif
-         endif
-      enddo
-      
-      end subroutine
-
-      double precision function dynk_getvalue
-     &     (element_name, att_name)
-!-----------------------------------------------------------------------
-!     A.Santamaria & K. Sjobak, BE-ABP/HSS
-!     last modified: 2101-2015
-!
-!     Returns the original value currently set by an element.
-!-----------------------------------------------------------------------
-      implicit none
-+ca parpro
-+ca parnum
-+ca common
-+ca commonmn
-+ca commontr
-+ca comdynk
-
-+if cr
-+ca crcoall
-+ei
-
-      character(maxstrlen_dynk) element_name, att_name
-      intent(in) element_name, att_name
-      
-      integer el_type, ii
-      character(maxstrlen_dynk) dynk_stringzerotrim
-      character(maxstrlen_dynk) element_name_s, att_name_s
-      
-      logical ldoubleElement
-      ldoubleElement = .false.  ! For sanity check
-      
-      if (ldynkdebug) then
-+if cr
-         write(lout,*)
-+ei
-+if .not.cr
-         write(*,*)
-+ei
-     &   "DYNKDEBUG> in dynk_getvalue()"
-      end if
-      
-      element_name_s = trim(dynk_stringzerotrim(element_name))
-      att_name_s = trim(dynk_stringzerotrim(att_name))
-      
-      do ii=1,il
-         if (element_name_s.eq.bez(ii)) then ! name found
-            el_type=kz(ii)
-            if (ldoubleElement) then
-+if cr
-               write (lout,*)
-+ei
-+if .not.cr
-               write (*,*)
-+ei
-     &              "DYNK> ERROR: two elements with the same BEZ"
-               call prror(-1)
-            end if
-            ldoubleElement = .true.
-            
-            if ((abs(el_type).eq.1).or.
-     &          (abs(el_type).eq.2).or.
-     &          (abs(el_type).eq.3).or.
-     &          (abs(el_type).eq.4).or.
-     &          (abs(el_type).eq.5).or.
-     &          (abs(el_type).eq.6).or.
-     &          (abs(el_type).eq.7).or.
-     &          (abs(el_type).eq.8).or.
-     &          (abs(el_type).eq.9).or.
-     &          (abs(el_type).eq.10)) then
-               if (att_name_s.eq."average_ms") then
-                  dynk_getvalue = ed(ii)
-               else
-+if cr
-                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(lout,*) "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for type",el_type," name '", trim(bez(ii)), "'"
-
-+ei
-+if .not.cr
-                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*)    "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for type",el_type," name '", trim(bez(ii)), "'"
-+ei
-                  call prror(-1)
-               endif
-               
-            elseif (abs(el_type).eq.11 .and. 
-     &              abs(el(ii)+one).le.pieni) then        ! multipoles 
-               if (att_name_s.eq."bending_str") then 
-                  dynk_getvalue = dki(ii,1)    
-               elseif (att_name_s.eq."radius") then
-                  dynk_getvalue = dki(ii,3) 
-               else
-+if cr
-                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(lout,*) "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-
-+ei
-+if .not.cr
-                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*)    "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-+ei
-                  call prror(-1)
-               endif
-            elseif (abs(el_type).eq.11 .and. 
-     &              abs(el(ii)+two).le.pieni) then
-               if (att_name_s.eq."bending_str") then 
-                  dynk_getvalue = dki(ii,2) 
-               elseif (att_name_s.eq."radius") then
-                  dynk_getvalue = dki(ii,3) 
-               else
-+if cr
-                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(lout,*) "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-+ei
-+if .not.cr
-                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*)    "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-+ei
-                  call prror(-1)
-               endif
-            elseif (abs(el_type).eq.11) then
-               if (att_name_s.eq."bending_str") then ! [rad]
-                  dynk_getvalue = ed(ii)
-               elseif (att_name_s.eq."radius") then ! [m]
-                  dynk_getvalue = ek(ii)
-               else
-+if cr
-                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(lout,*) "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-+ei
-+if .not.cr
-                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*)    "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-+ei
-                  call prror(-1)
-               endif
-               
-            !Not yet supported
-c$$$            elseif (abs(el_type).eq.12) then ! cavities 
-c$$$               if (att_name_s.eq."voltage") then ! MV
-c$$$                  nretdata = nretdata+1
-c$$$                  retdata(nretdata) = ed(ii)                
-c$$$               elseif (att_name_s.eq."harmonic") then ! harmonic number
-c$$$                  nretdata = nretdata+1
-c$$$                  retdata(nretdata) = ek(ii)                
-c$$$               elseif (att_name_s.eq."lag_angle") then ! [deg]
-c$$$                  nretdata = nretdata+1
-c$$$                  retdata(nretdata) = el(ii)       
-c$$$               else
-c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-c$$$                  write(*,*) "DYNK> Unknown attribute '",
-c$$$     &                 trim(att_name_s),"'",
-c$$$     &                 " for cavity '", trim(bez(ii)), "'"
-c$$$                  call prror(-1)
-c$$$               endif
-             
-            !Not yet supported
-c$$$            elseif (abs(el_type).eq.16) then ! AC dipole 
-c$$$               if (att_name_s.eq."amplitude") then ! [T.m]
-c$$$                  nretdata = nretdata+1
-c$$$                  retdata(nretdata) = ed(ii)                
-c$$$               elseif (att_name_s.eq."frequency") then !  [2pi]
-c$$$                  nretdata = nretdata+1
-c$$$                  retdata(nretdata) = ek(ii)                
-c$$$               elseif (att_name_s.eq."phase") then !  [rad]
-c$$$                  nretdata = nretdata+1
-c$$$                  retdata(nretdata) = el(ii)      
-c$$$               else
-c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-c$$$                  write(*,*) "DYNK> Unknown attribute '",
-c$$$     &                 trim(att_name_s),"'",
-c$$$     &                 " for AC dipole '", trim(bez(ii)), "'"
-c$$$                  call prror(-1)
-c$$$               endif
-               
-            !Not yet supported
-c$$$            elseif (abs(el_type).eq.20) then ! beam-beam separation
-c$$$               if (att_name_s.eq."horizontal") then ! [mm]
-c$$$                  nretdata = nretdata+1
-c$$$                  retdata(nretdata) = ed(ii)                
-c$$$               elseif (att_name_s.eq."vertical") then ! [mm]
-c$$$                  nretdata = nretdata+1
-c$$$                  retdata(nretdata) = ek(ii)                
-c$$$               elseif (att_name_s.eq."strength") then ! [m]
-c$$$                  nretdata = nretdata+1
-c$$$                  retdata(nretdata) = el(ii)       
-c$$$               else
-c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-c$$$                  write(*,*) "DYNK> Unknown attribute '",
-c$$$     &                 trim(att_name_s),"'",
-c$$$     &                 " for beam-beam '", trim(bez(ii)), "'"
-c$$$                  call prror(-1)
-c$$$               endif
-               
-            elseif ((abs(el_type).eq.23).or. ! crab cavity
-     &              (abs(el_type).eq.26).or. ! cc mult. kick order 2
-     &              (abs(el_type).eq.27).or. ! cc mult. kick order 3
-     &              (abs(el_type).eq.28)) then ! cc mult. kick order 4
-               if (att_name_s.eq."voltage") then ![MV]
-                  dynk_getvalue = ed(ii)
-               elseif (att_name_s.eq."frequency") then ![MHz]
-                  dynk_getvalue = ek(ii)
-               elseif (att_name_s.eq."phase") then ![rad]
-                  if (abs(el_type).eq.23) then
-                     dynk_getvalue = crabph(ii)
-                  elseif (abs(el_type).eq.26) then
-                     dynk_getvalue = crabph2(ii)
-                  elseif (abs(el_type).eq.27) then
-                     dynk_getvalue = crabph3(ii)
-                  elseif (abs(el_type).eq.28) then
-                     dynk_getvalue = crabph4(ii)
-                  endif
-               else
-+if cr
-                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(lout,*) "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for crab cavity '", trim(bez(ii)), "'"
-+ei
-+if .not.cr
-                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*)    "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for crab cavity '", trim(bez(ii)), "'"
-+ei
-                  call prror(-1)
-               endif
-            endif !el_type
-
-         endif !bez
-      enddo
-      
-      end function
-      
-      double precision function dynk_lininterp(x,xvals,yvals,datalen)
-      implicit none
-!-----------------------------------------------------------------------
-!
-!     A.Mereghetti, for the FLUKA Team and K.Sjobak for BE-ABP/HSS
-!     last modified: 29-10-2014
-!     
-!     Define a linear function with a set of x,y-coordinates xvals, yvals
-!     Return this function evaluated at the point x.
-!     The length of the arrays xvals and yvals should be given in datalen.
-!
-!     xvals should be in increasing order, if not then program is aborted.
-!     If x < min(xvals) or x>max(xvals), program is aborted.
-!     If datalen <= 0, program is aborted. 
-!     
-!-----------------------------------------------------------------------
-
-+if cr
-+ca crcoall
-+ei
-
-      double precision x, xvals(*),yvals(*)
-      integer datalen
-      intent(in) x,xvals,yvals,datalen
-      
-      integer ii
-      double precision dydx, y0
-      
-      !Sanity checks
-      if (datalen .le. 0) then
-+if cr
-         write(lout,*) "DYNK> **** ERROR in dynk_lininterp() ****"
-         write(lout,*) "DYNK> datalen was 0!"
-+ei
-+if .not.cr
-         write(*,*)    "DYNK> **** ERROR in dynk_lininterp() ****"
-         write(*,*)    "DYNK> datalen was 0!"
-+ei
-
-         call prror(-1)
-      endif
-      if ( x .lt. xvals(1) .or. x .gt. xvals(datalen) ) then
-+if cr
-         write(lout,*) "DYNK> **** ERROR in dynk_lininterp() ****"
-         write(lout,*) "x =",x, "outside range", xvals(1),xvals(datalen)
-+ei
-+if .not.cr
-         write(*,*)    "DYNK> **** ERROR in dynk_lininterp() ****"
-         write(*,*)    "x =",x, "outside range", xvals(1),xvals(datalen)
-+ei
-         call prror(-1)
-      endif
-
-      !Find the right indexes i1 and i2
-      ! Special case: first value at first point
-      if (x .eq. xvals(1)) then
-         dynk_lininterp = yvals(1)
-         return
-      endif
-      
-      do ii=1, datalen-1
-         if (xvals(ii) .ge. xvals(ii+1)) then
-+if cr
-            write (lout,*) "DYNK> **** ERROR in dynk_lininterp() ****"
-            write (lout,*) "DYNK> xvals should be in increasing order"
-            write (lout,*) "DYNK> xvals =", xvals(:datalen)
-+ei
-+if .not.cr
-            write (*,*)    "DYNK> **** ERROR in dynk_lininterp() ****"
-            write (*,*)    "DYNK> xvals should be in increasing order"
-            write (*,*)    "DYNK> xvals =", xvals(:datalen)
-+ei
-            call prror(-1)
-         endif
-         
-         if (x .le. xvals(ii+1)) then
-            ! we're in the right interval
-            dydx = (yvals(ii+1)-yvals(ii)) / (xvals(ii+1)-xvals(ii))
-            y0   = yvals(ii) - dydx*xvals(ii)
-            dynk_lininterp = dydx*x + y0
-            return
-         endif
-      enddo
-      
-      !We didn't return yet: Something wrong
-+if cr
-      write (lout,*) "DYNK> ****ERROR in dynk_lininterp() ****"
-      write (lout,*) "DYNK> Reached the end of the function"
-      write (lout,*) "DYNK> This should not happen, "//
-     &               "please contact developers"
-+ei
-+if .not.cr
-      write (*,*)    "DYNK> ****ERROR in dynk_lininterp() ****"
-      write (*,*)    "DYNK> Reached the end of the function"
-      write (*,*)    "DYNK> This should not happen, "//
-     &               "please contact developers"
-+ei
-      call prror(-1)
-
-      end function
-      
-+dk cadcum
-      subroutine cadcum
-!
-!-----------------------------------------------------------------------
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 13-06-2014
-!     calculate dcum, as done in linopt and when parsing BLOCs (daten):
-!         lengths of thick lens elements are taken on the curvilinear
-!         reference system; thus, no difference between the length
-!         of SBENDs and the one of RBENDs, as they are both the ARC one;
-!     for future needs:
-!                ds=two/ed(ix)*asin(el(ix)*ed(ix)/two)
-!     always in main code
-!-----------------------------------------------------------------------
-!
-      implicit none
-
-+ca parpro
-+ca parnum
-+ca common
-+ca dbdcum
-+ca save
-
-!     temporary variables
-      double precision tmpdcum, ds
-      integer ientry, jentry, kentry, ix
-
-      write(*,*)''
-      write(*,10010)
-      write(*,*)''
-      write(*,*)' CALL TO CADCUM'
-      write(*,*)''
-
-!     initialise cumulative length
-      tmpdcum=zero
-
-!     loop all over the entries in the accelerator structure
-      do ientry=1,iu
-        ix=ic(ientry)
-        if(ix.gt.nblo) then
-!         SINGLE ELEMENT
-          ix=ix-nblo
-          if ( el(ix).gt.zero ) tmpdcum=tmpdcum+el(ix)
-        else
-!         BLOC: iterate over elements
-          do jentry=1,mel(ix)
-            kentry=mtyp(ix,jentry)
-            if( el(kentry).gt.zero ) tmpdcum=tmpdcum+el(kentry)
-          enddo
-        endif
-!       assign value of dcum
-        dcum(ientry)=tmpdcum
-!     go to next entry in the acclerator structure
-      enddo
-
-!     assign the last value to the closing MARKER:
-      dcum(iu+1)=tmpdcum
-
-      if ( print_dcum ) then
-!       a useful printout
-        write(*,10030)'ientry','ix','name            ','dcum [m]'
-        write(*,10020) 0,-1,'START           ',dcum(0)
-        do ientry=1,iu
-          ix=ic(ientry)
-          if(ix.gt.nblo) then
-!            SINGLE ELEMENT
-             ix=ix-nblo
-             write(*,10020) ientry,ix,bez(ix),dcum(ientry)
-          else
-!            BLOC
-             write(*,10020) ientry,ix,bezb(ix),dcum(ientry)
-          endif
-        enddo
-        write(*,10020) iu+1,-1,'END            ',dcum(iu+1)
-        write(*,*) ''
-      endif
-
-!     au revoir:
-      return
-10010 format(132('-'))
-10020 format(2(1x,i6),1x,a16,1x,f12.5)
-10030 format(2(1x,a6),1x,a16,1x,a12)
-      end subroutine
-!
 +dk linopt
       subroutine linopt(dpp)
 !-----------------------------------------------------------------------
@@ -47948,9 +41510,18 @@ c$$$               endif
 +if .not.collimat.and..not.bnlelens
       call writelin(nr,idum,etl,phi,t,1)
 +ei
-+if collimat.or.bnlelens
++if collimat.and..not.bnlelens
+      call writelin(nr,idum,etl,phi,t,1,k)
++ei
++if .not.collimat.and.bnlelens
 !GRDRHIC
+!Eric
       k=0
+      call writelin(nr,idum,etl,phi,t,1,k)
+!GRDRHIC
++ei
++if collimat.and.bnlelens
+!GRDRHIC
       call writelin(nr,idum,etl,phi,t,1,k)
 !GRDRHIC
 +ei
@@ -47988,28 +41559,26 @@ c$$$               endif
 !GRDRHIC
 +ei
 +if .not.collimat.and..not.bnlelens
-          if(ithick.eq.0.and.kz(jk).ne.0) then
-
-!           A.Mereghetti, for the FLUKA Team
-!           last modified: 17-07-2013
-!           this is somehow an un-desired situation (thin lens tracking, 
-!             with a non-drift element in a BLOC), but let's dump
-!             the available information (as done in the collimation version)
-            nr=nr+1
-            etl=etl+el(jk)
-            call writelin(nr,bez(jk),etl,phi,t,ix)
-            if(ntco.ne.0) then
-              if(mod(nr,ntco).eq.0) call cpltwis(bez(jk),t,etl,phi)
-            endif
-
-            goto 500
-          endif
+          if(ithick.eq.0.and.kz(jk).ne.0) goto 500
 +ei
-+if collimat.or.bnlelens
++if collimat.and..not.bnlelens
           if(ithick.eq.0.and.kz(jk).ne.0) then
-             call writelin(nr,bez(jk),etl,phi,t,ix,k)
+             call writelin(nr,bez(ix),etl,phi,t,ix,k)
              goto 500
           endif
++ei
++if .not.collimat.and.bnlelens
+          if(ithick.eq.0.and.kz(jk).ne.0) then
+             call writelin(nr,bez(ix),etl,phi,t,ix,k)
+             goto 500
+          endif
++ei
++if collimat.and.bnlelens
+          if(ithick.eq.0.and.kz(jk).ne.0) then
+             call writelin(nr,bez(ix),etl,phi,t,ix,k)
+             goto 500
+          endif
+!GRDRHIC
 +ei
 !--PURE DRIFTLENGTH
           etl=etl+el(jk)
@@ -48046,8 +41615,16 @@ c$$$               endif
 +if .not.collimat.and..not.bnlelens
           call writelin(nr,bez(jk),etl,phi,t,ix)
 +ei
-+if collimat.or.bnlelens
++if collimat.and..not.bnlelens
           call writelin(nr,bez(jk),etl,phi,t,ix,k)
++ei
++if .not.collimat.and.bnlelens
+!GRDRHIC
+          call writelin(nr,bez(jk),etl,phi,t,ix,k)
++ei
++if collimat.and.bnlelens
+          call writelin(nr,bez(jk),etl,phi,t,ix,k)
+!GRDRHIC
 +ei
           if(ntco.ne.0) then
             if(mod(nr,ntco).eq.0) call cpltwis(bez(jk),t,etl, phi)
@@ -48110,15 +41687,31 @@ c$$$               endif
 +if .not.collimat.and..not.bnlelens
           call writelin(nr,bez(jk),etl,phi,t,ix)
 +ei
-+if collimat.or.bnlelens
++if collimat.and..not.bnlelens
           call writelin(nr,bez(jk),etl,phi,t,ix,k)
++ei
++if .not.collimat.and.bnlelens
+!GRDRHIC
+          call writelin(nr,bez(jk),etl,phi,t,ix,k)
++ei
++if collimat.and.bnlelens
+          call writelin(nr,bez(jk),etl,phi,t,ix,k)
+!GRDRHIC
 +ei
           if(ntco.ne.0) then
             if(mod(nr,ntco).eq.0) call cpltwis(bez(jk),t,etl, phi)
           endif
   150   continue
-+if collimat.or.bnlelens
++if collimat.and..not.bnlelens
         call writelin(nr,bez(jk),etl,phi,t,ix,k)
++ei
++if collimat.and.bnlelens
+!GRDRHIC
+        call writelin(nr,bez(jk),etl,phi,t,ix,k)
++ei
++if .not.collimat.and.bnlelens
+        call writelin(nr,bez(jk),etl,phi,t,ix,k)
+!GRDRHIC
 +ei
         goto 500
 !--BETACALCULATION FOR SERIES OF BLOCKS
@@ -48177,10 +41770,18 @@ c$$$               endif
   180   phi(l)=phi(l)+dphi/pie
         nr=nr+1
 +if .not.collimat.and..not.bnlelens
-        call writelin(nr,bezb(ix),etl,phi,t,ix)
+          call writelin(nr,bezb(ix),etl,phi,t,ix)
 +ei
-+if collimat.or.bnlelens
-        call writelin(nr,bezb(ix),etl,phi,t,ix,k)
++if collimat.and..not.bnlelens
+          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
++ei
++if .not.collimat.and.bnlelens
+!GRDRHIC
+          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
++ei
++if collimat.and.bnlelens
+          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
+!GRDRHIC
 +ei
         if(ntco.ne.0) then
           if(mod(nr,ntco).eq.0) call cpltwis(bezb(ix),t,etl,phi)
@@ -48239,10 +41840,18 @@ c$$$               endif
   210   phi(l)=phi(l)+dphi/pie
         nr=nr+1
 +if .not.collimat.and..not.bnlelens
-        call writelin(nr,bezb(ix),etl,phi,t,ix)
+          call writelin(nr,bezb(ix),etl,phi,t,ix)
 +ei
-+if collimat.or.bnlelens
-        call writelin(nr,bezb(ix),etl,phi,t,ix,k)
++if collimat.and..not.bnlelens
+          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
++ei
++if .not.collimat.and.bnlelens
+!GRDRHIC
+          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
++ei
++if collimat.and.bnlelens
+          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
+!GRDRHIC
 +ei
         if(ntco.ne.0) then
           if(mod(nr,ntco).eq.0) call cpltwis(bezb(ix),t,etl,phi)
@@ -48256,26 +41865,27 @@ c$$$               endif
         dyy2=zero
         kpz=kp(ix)
 +if .not.collimat.and..not.bnlelens
-        if(kpz.eq.6) then
-
-!         A.Mereghetti, for the FLUKA Team
-!         last modified: 17-07-2013
-!         let's dump the available information (as done in the collimation
-!           version)
-          nr=nr+1
-          call writelin(nr,bez(ix),etl,phi,t,ix)
-          if(ntco.ne.0) then
-            if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
-          endif
-
-          goto 500
-        endif
+        if(kpz.eq.6) goto 500
 +ei
-+if collimat.or.bnlelens
++if collimat.and..not.bnlelens
         if(kpz.eq.6) then
-           call writelin(nr,bez(ix),etl,phi,t,ix,k)
+           call writelin(nr,bez(jk),etl,phi,t,ix,k)
            goto 500
         endif
++ei
++if collimat.and.bnlelens
+!GRDRHIC
+        if(kpz.eq.6) then
+           call writelin(nr,bez(jk),etl,phi,t,ix,k)
+           goto 500
+        endif
++ei
++if .not.collimat.and.bnlelens
+        if(kpz.eq.6) then
+           call writelin(nr,bez(jk),etl,phi,t,ix,k)
+           goto 500
+        endif
+!GRDRHIC
 +ei
         kzz=kz(ix)
         if(kzz.eq.20.and.nbeam.ge.1) then
@@ -48284,61 +41894,46 @@ c$$$               endif
 +if .not.collimat.and..not.bnlelens
           call writelin(nr,bez(ix),etl,phi,t,ix)
 +ei
-+if collimat.or.bnlelens
++if collimat.and..not.bnlelens
           call writelin(nr,bez(ix),etl,phi,t,ix,k)
 +ei
-!         A.Mereghetti, for the FLUKA Team
-!         last modified: 17-07-2013
-!         let's add coupling calculation
-          if(ntco.ne.0) then
-            if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
-          endif
-          goto 500
-
++if .not.collimat.and.bnlelens
+!GRDRHIC
+          call writelin(nr,bez(ix),etl,phi,t,ix,k)
++ei
++if collimat.and.bnlelens
+          call writelin(nr,bez(ix),etl,phi,t,ix,k)
+!GRDRHIC
++ei
         endif
 +ca trom01
 +ca trom03
 +ca trom06
-+if collimat.or.bnlelens
++if collimat.and..not.bnlelens
+        if(kzz.eq.0.or.kzz.eq.20.or.kzz.eq.22) then
+          call writelin(nr,bez(ix),etl,phi,t,ix,k)
+          goto 500
+        endif
++ei
++if collimat.and.bnlelens
 !GRDRHIC
         if(kzz.eq.0.or.kzz.eq.20.or.kzz.eq.22) then
           call writelin(nr,bez(ix),etl,phi,t,ix,k)
           goto 500
         endif
++ei
++if .not.collimat.and.bnlelens
+        if(kzz.eq.0.or.kzz.eq.20.or.kzz.eq.22) then
+          call writelin(nr,bez(ix),etl,phi,t,ix,k)
+          goto 500
+        endif
+!GRDRHIC
++ei
++if .not.collimat.and..not.bnlelens
+        if(kzz.eq.0.or.kzz.eq.20.or.kzz.eq.22) goto 500
 ! JBG RF CC Multipoles to 500
         if(kzz.eq.26.or.kzz.eq.27.or.kzz.eq.28) goto 500
         if(kzz.eq.-26.or.kzz.eq.-27.or.kzz.eq.-28) goto 500
-+ei
-+if .not.collimat.and..not.bnlelens
-        if( kzz.eq.0 ) then
-!         A.Mereghetti, for the FLUKA Team
-!         last modified: 17-07-2013
-!         let's dump the available information (as done in the collimation
-!           version)
-          nr=nr+1
-          etl=etl+el(ix)
-          call writelin(nr,bez(ix),etl,phi,t,ix)
-          if(ntco.ne.0) then
-            if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
-          endif
-          goto 500
-
-        endif
-        if ( kzz.eq.20 .or. kzz.eq.22 ) then
-!         A.Mereghetti, for the FLUKA Team
-!         last modified: 17-07-2013
-!         let's dump the available information (as done in the collimation
-!           version)
-          nr=nr+1
-          call writelin(nr,bez(ix),etl,phi,t,ix)
-          if(ntco.ne.0) then
-            if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
-          endif
-
-          goto 500
-        endif
-! JBG RF CC Multipoles to 500
-        if (abs(kzz).eq.26.or.abs(kzz).eq.27.or.abs(kzz).eq.28) goto 500
 +ei
         dyy1=zero
         dyy2=zero
@@ -48353,22 +41948,17 @@ c$$$               endif
         if(kzz.lt.0) goto 370
         goto(230,240,250,260,270,280,290,300,310,320,330,500,500,500,   &
      &      500,500,500,500,500,500,500,500,500,325,326,500,500,500),kzz
-
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 17-07-2013
-!       this is somehow an un-desired situation, but let's dump
-!         the available information (as done in the collimation version)
-        nr=nr+1
-        etl=etl+el(ix)
-+if .not.collimat.and..not.bnlelens
-        call writelin(nr,bez(ix),etl,phi,t,ix)
-+ei
-+if collimat.or.bnlelens
++if collimat.and..not.bnlelens
         call writelin(nr,bez(ix),etl,phi,t,ix,k)
 +ei
-        if(ntco.ne.0) then
-          if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
-        endif
++if collimat.and.bnlelens
+!GRDRHIC
+        call writelin(nr,bez(ix),etl,phi,t,ix,k)
++ei
++if .not.collimat.and.bnlelens
+        call writelin(nr,bez(ix),etl,phi,t,ix,k)
+!GRDRHIC
++ei
         goto 500
 !--HORIZONTAL DIPOLE
   230   ekk=ekk*c1e3
@@ -48495,24 +42085,21 @@ c$$$               endif
         nmz=nmu(ix)
         if(nmz.eq.0) then
           izu=izu+2*mmul
-          nr=nr+1
-+if collimat.or.bnlelens
++if collimat.and..not.bnlelens
 ! --> THAT'S THE IMPORTANT ONE !!!!
-          call writelin(nr,bez(ix),etl,phi,t,ix,k)
+         call writelin(nr,bez(jk),etl,phi,t,ix,k)
 +ei
-
-+if .not.collimat.and..not.bnlelens
-!         A.Mereghetti, for the FLUKA Team
-!         last modified: 17-07-2013
-!         let's dump the available information (as done in the collimation
-!           version)
-          call writelin(nr,bez(ix),etl,phi,t,ix)
++if collimat.and.bnlelens
+!GRDRHIC
+! --> THAT'S THE IMPORTANT ONE !!!!
+         call writelin(nr,bez(jk),etl,phi,t,ix,k)
 +ei
-          if(ntco.ne.0) then
-            if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
-          endif
-
-          goto 500
++if .not.collimat.and.bnlelens
+! --> THAT'S THE IMPORTANT ONE !!!!
+         call writelin(nr,bez(jk),etl,phi,t,ix,k)
+!GRDRHIC
++ei
+         goto 500
         endif
         im=irm(ix)
         r0a=one
@@ -48643,6 +42230,7 @@ c$$$               endif
             t(i,4)=(t(i,4)-t(i,3)*qu)-qv*t(i,1)                          !hr06
           endif
   490   continue
+        nr=nr+1
 !hr06   bexi=t(2,1)*t(2,1)+t(3,1)*t(3,1)
         bexi=t(2,1)**2+t(3,1)**2                                         !hr06
 !hr06   bezii=t(4,3)*t(4,3)+t(5,3)*t(5,3)
@@ -48663,12 +42251,19 @@ c$$$               endif
             write(34,10070) etl,bez(ix),kz(ix),ekk,bexi,bezii,phi
           endif
         endif
-        nr=nr+1
 +if .not.collimat.and..not.bnlelens
-        call writelin(nr,bez(ix),etl,phi,t,ix)
+          call writelin(nr,bez(ix),etl,phi,t,ix)
 +ei
-+if collimat.or.bnlelens
-        call writelin(nr,bez(ix),etl,phi,t,ix,k)
++if collimat.and..not.bnlelens
+          call writelin(nr,bez(ix),etl,phi,t,ix,k)
++ei
++if .not.collimat.and.bnlelens
+!GRDRHIC
+          call writelin(nr,bez(ix),etl,phi,t,ix,k)
++ei
++if collimat.and.bnlelens
+          call writelin(nr,bez(ix),etl,phi,t,ix,k)
+!GRDRHIC
 +ei
         if(ntco.ne.0) then
           if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
@@ -50016,7 +43611,7 @@ c$$$               endif
 +if .not.cr
             write(*,10000) ' SUSPECTED CORRECTOR: ',j
 +ei
-            call closeUnits
++ca close
 +if cr
       call abend('777                                               ')
 +ei
@@ -50441,7 +44036,7 @@ c$$$               endif
   115   continue
       endif
       if(kanf.ne.1) then
-!-- Re-saving of the starting point (UMSPEICHERUNG AUF DEN STARTPUNKT)
+!--UMSPEICHERUNG AUF DEN STARTPUNKT
         kanf1=kanf-1
         do 130 i=1,kanf1
           if(iorg.ge.0) ilfr(i)=mzu(i)
@@ -60015,7 +53610,7 @@ c$$$               endif
  900  write(*,910) p0
 +ei
  910  format(' (FUNC.GAUINV) INVALID INPUT ARGUMENT ',1pd20.13)
-      call closeUnits
++ca close
 +if cr
       call abend('                                                  ')
 +ei
@@ -64200,19 +57795,7 @@ c$$$     &           myalphay * cos(phiy))
       external ruth
 !
 !hr09 ecmsq = 2 * 0.93828d0 * plab
-+if .not.fluka
       ecmsq = (2d0 * 0.93828d0) * plab                                   !hr09
-+ei
-+if fluka
-
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 08-12-2014
-!     synch masses of proton and electron to values used by FLUKA
-!     inserted in main code by the 'fluka' compilation flag
-!     proton mass from PDG, 2014
-      ecmsq = (2d0 * 0.938272046d0) * plab                               !hr09
-
-+ei
 +if crlibm
 !hr09 xln15s=log_rn(0.15*ecmsq)
       xln15s=log_rn(0.15d0*ecmsq)                                        !hr09
@@ -65761,9 +59344,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       return
 !
 !                    Entry to output the "convenient" restart point
-!STRANGENESS: Entry point 'rluxat' not used,
-!             strange first argument "lout" (should be luxury level)
-!             This is not compatible with CR!
       entry rluxat(lout,inout,k1,k2)
       lout = luxlev
       inout = inseed
@@ -65795,7 +59375,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
          nskip = ndskip(luxlev)
 +if cr
          write(lout,'(A,I2,A,I4)')                                      &
-     &' RANLUX LUXURY LEVEL SET BY RLUXGO :',
+    &' RANLUX LUXURY LEVEL SET BY RLUXGO :',
 +ei
 +if .not.cr
          write(*,'(A,I2,A,I4)') ' RANLUX LUXURY LEVEL SET BY RLUXGO :', &
@@ -69680,6 +63260,8 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99,*) 'nvmoni ',nvmoni
       write(99,*) 'nvcorr ',nvcorr
       write(99,*) 'ncororb ',ncororb
+      write(99,*) 'apx ',apx
+      write(99,*) 'apz ',apz
       write(99,*) 'sigma0 ',sigma0
       write(99,*) 'iclo ',iclo
       write(99,*) 'ncorru ',ncorru
@@ -69752,6 +63334,13 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99,*) 'iffw ',iffw
       write(99,*) 'nprint ',nprint
       write(99,*) 'ndafi ',ndafi
+      write(99,*) 'irip ',irip
+      write(99,*) 'irco ',irco
+      write(99,*) 'ramp ',ramp
+      write(99,*) 'rfre ',rfre
+      write(99,*) 'rzph ',rzph
+      write(99,*) 'nrel ',nrel
+      write(99,*) 'nrturn ',nrturn
       write(99,*) 'qwsk ',qwsk
       write(99,*) 'betx ',betx
       write(99,*) 'betz ',betz
@@ -69815,6 +63404,9 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99,*) 'smi ',smi
       write(99,*) 'aai ',aai
       write(99,*) 'bbi ',bbi
+      write(99,*) 'rsmi ',rsmi
+      write(99,*) 'rfres ',rfres
+      write(99,*) 'rzphs ',rzphs
       write(99,*) 'ampt ',ampt
       write(99,*) 'tlim ',tlim
       write(99,*) 'tasm ',tasm
@@ -70183,6 +63775,8 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99) nvmoni
       write(99) nvcorr
       write(99) ncororb
+      write(99) apx
+      write(99) apz
       write(99) sigma0
       write(99) iclo
       write(99) ncorru
@@ -70255,6 +63849,13 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99) iffw
       write(99) nprint
       write(99) ndafi
+      write(99) irip
+      write(99) irco
+      write(99) ramp
+      write(99) rfre
+      write(99) rzph
+      write(99) nrel
+      write(99) nrturn
       write(99) qwsk
       write(99) betx
       write(99) betz
@@ -70318,6 +63919,9 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99) smi
       write(99) aai
       write(99) bbi
+      write(99) rsmi
+      write(99) rfres
+      write(99) rzphs
       write(99) ampt
       write(99) tlim
       write(99) tasm
@@ -70682,6 +64286,8 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99,100) 'nvmoni ',nvmoni
       write(99,100) 'nvcorr ',nvcorr
       write(99,100) 'ncororb ',ncororb
+      write(99,100) 'apx ',apx
+      write(99,100) 'apz ',apz
       write(99,100) 'sigma0 ',sigma0
       write(99,100) 'iclo ',iclo
       write(99,100) 'ncorru ',ncorru
@@ -70754,6 +64360,13 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99,100) 'iffw ',iffw
       write(99,100) 'nprint ',nprint
       write(99,100) 'ndafi ',ndafi
+      write(99,100) 'irip ',irip
+      write(99,100) 'irco ',irco
+      write(99,100) 'ramp ',ramp
+      write(99,100) 'rfre ',rfre
+      write(99,100) 'rzph ',rzph
+      write(99,100) 'nrel ',nrel
+      write(99,100) 'nrturn ',nrturn
       write(99,100) 'qwsk ',qwsk
       write(99,100) 'betx ',betx
       write(99,100) 'betz ',betz
@@ -70817,6 +64430,9 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99,100) 'smi ',smi
       write(99,100) 'aai ',aai
       write(99,100) 'bbi ',bbi
+      write(99,100) 'rsmi ',rsmi
+      write(99,100) 'rfres ',rfres
+      write(99,100) 'rzphs ',rzphs
       write(99,100) 'ampt ',ampt
       write(99,100) 'tlim ',tlim
       write(99,100) 'tasm ',tasm
@@ -70971,353 +64587,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       end
 !DUMPS
 +ei
-+dk flukadeck
-+if fluka
-
-      subroutine check_coupling_integrity
-!
-!-----------------------------------------------------------------------
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 17-07-2013
-!     check that an entrance MARKER is followed by an exit one in the
-!        accelerator sequence, even though not immediately
-!     inserted in main code by the 'fluka' compilation flag
-!-----------------------------------------------------------------------
-!
-      use mod_fluka
-      implicit none
-
-+ca parpro
-+ca common
-+ca commontr
-
-!     temporary variables
-      integer i1 , i2
-      integer ix1, ix2
-      integer istart, istop
-      logical lerr, lfound, lcurturn
-
-      lerr = .false.
-
-      write (*,*) ''
-      write (*,10010)
-      write (*,*) ''
-      write (*,*) ' CALL TO CHECK_COUPLING_INTEGRITY '
-      write (*,*) ' NB: only entrance/exit markers are listed;'
-      write (*,*) '     a single entry is by definition righteous'
-      write (*,*) ''
-      write (*,10020) 'entry type', 'name', 'ID SING EL',
-     &'ID struct', 'ID geom'
-      write (*,*) ''
-
-      i1=1
-      do while ( i1.le.iu )
-        if(ktrack(i1).ne.1) then
-!         SINGLE ELEMENT
-          ix1=ic(i1)-nblo
-          if ( fluka_type(ix1).eq.FLUKA_ENTRY ) then
-            write(*,10030) fluka_type(ix1), bez(ix1), ix1, i1,
-     &                     fluka_geo_index(ix1)
-            istart = i1+1
-            istop  = iu
-            lcurturn = .true.
-            lfound = .false.
- 1982       continue
-            do i2=istart,istop
-              if(ktrack(i2).ne.1) then
-!               SINGLE ELEMENT
-                ix2=ic(i2)-nblo
-                if ( fluka_type(ix2).eq.FLUKA_EXIT ) then
-                  if(fluka_geo_index(ix1).eq.fluka_geo_index(ix2))then
-                    write(*,10030) fluka_type(ix2), bez(ix2), ix2,
-     &                             i2, fluka_geo_index(ix2)
-                    i1 = i2 + 1
-                    lfound = .true.
-                    if ( lcurturn ) then
-                      exit
-                    else
-                      goto 1983
-                    endif
-                  else
-                    write(*,10030) fluka_type(ix2), bez(ix2), ix2,
-     &                             i2, fluka_geo_index(ix2)
-                    write(*,*) 'ERROR! un-matched geo index'
-                    write(*,*) ''
-                    lerr = .true.
-                  endif
-                elseif ( fluka_type(ix2).ne.FLUKA_NONE ) then
-                  write(*,*) 'ERROR! non-exit point when entrance is on'
-                  write(*,*) ''
-                  write(*,10030) fluka_type(ix2), bez(ix2), ix2,
-     &                           i2, fluka_geo_index(ix2)
-                  lerr = .true.
-                endif
-              endif
-            enddo
-            if ( .not. lfound ) then
-              if ( lcurturn ) then
-!               the exit marker was not found: maybe the fluka insertion
-!                  is across the end/beginning of the accelerator structure;
-!               -> restart the research, upstream of the entrance marker:
-                istart = 1
-                istop  = i1
-                lcurturn = .false.
-                goto 1982
-              else
-!               failing research:
-!               NB: in principle, this should never happen, but let's be picky
-                write(*,*)'ERROR! entrance point does not have the exit'
-                write(*,*)''
-                lerr = .true.
-              endif
-            endif
-          endif
-        endif
-
-!       go to next accelerator entry
-        i1 = i1+1
-      enddo
-
- 1983 continue
-      write (*,*) ''
-      write (*,*) ''
-      write (*,*) '        keys to FLUKA types:'
-      write (*,*) FLUKA_ELEMENT,' --> simple element'
-      write (*,*) FLUKA_ENTRY,' --> entrance point'
-      write (*,*) FLUKA_EXIT,' --> exit point'
-      write (*,*) ''
-      if ( lerr ) then
-        write(*,*) ' at least one inconsistency in flagging elements'
-        write(*,*) '    for coupling: please check carefully...'
-        call prror(-1)
-      endif
-
-!     au revoir:
-      return
-10010 format(132('-'))
-10020 format(1X,A10,1X,A4,12X,3(1X,A10))
-10030 format(1X,I10,1X,A16,3(1X,I10))
-      end subroutine
-
-      subroutine kernel_fluka_element( nturn, i, ix )
-!
-!-----------------------------------------------------------------------
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 07-02-2014
-!     'transport' subroutine, for a Fluka insertion corresponding to a
-!       single SINGLE ELEMENT, of non-zero length
-!     inserted in main code by the 'fluka' compilation flag
-!-----------------------------------------------------------------------
-!
-      use mod_fluka
-      implicit none
-
-+ca parpro
-+ca common
-+ca commonmn
-+ca commonm1
-+ca commontr
-
-!     interface variables:
-      integer nturn, i, ix
-
-!     temporary variables
-      integer ret, j
-      double precision eltot
-
-+ca save
-
-      eltot = fluka_synch_length( ix )
-
-      if (fluka_debug) then
-!        where are we?
-         write(fluka_log_unit,*)
-     &'# In fluka element of type ', fluka_type(ix)
-         write(fluka_log_unit,*)'#   i=', i
-         write(fluka_log_unit,*)'#   ix=', ix
-         write(fluka_log_unit,*)
-     &'#   fluka_geo_index=',fluka_geo_index(ix)
-         write(fluka_log_unit,*)'#   eltot=',eltot
-      end if
-
-      ret = fluka_send_receive( nturn, fluka_geo_index(ix), eltot, napx,&
-     &            xv(1,:), yv(1,:), xv(2,:), yv(2,:), sigmv, ejv )
-
-      if (ret.eq.-1) then
-         write(*,*) 
-     & '[Fluka] Error in Fluka communication in kernel_fluka_element...'
-         write(fluka_log_unit,*) 
-     & '# Error in Fluka communication in kernel_fluka_element...'
-         call prror(-1)
-      end if
-
-!     protons to be tracked
-      do j=1,napx
-!        Update values related to losses
-         nlostp(j) = j
-         pstop (j) = .false.
-!        Update variables depending on total energy
-         ejfv  (j) = sqrt((ejv(j)-pma)*(ejv(j)+pma))
-         rvv   (j) = (ejv(j)*e0f)/(e0*ejfv(j))
-         dpsv  (j) = (ejfv(j)-e0f)/e0f
-         oidpsv(j) = 1.0D+00/(1.0D+00+dpsv(j))
-         dpsv1 (j) = (dpsv(j)*1.0D+03)*oidpsv(j)
-      end do
-
-!     empty places
-      do j=napx+1,npart
-!        Update values related to losses
-         nlostp(j) = j
-         pstop (j) = .true.
-!        Update values related to momentum
-         ejv   (j) = 0.0D+00
-         rvv   (j) = 1.0D+00
-         ejfv  (j) = 0.0D+00
-         dpsv  (j) = 0.0D+00
-         oidpsv(j) = 1.0D+00
-         dpsv1 (j) = 0.0D+00
-      end do
-
-!     au revoir:
-      return
-      end subroutine
-
-      subroutine kernel_fluka_entrance( nturn, i, ix )
-!
-!-----------------------------------------------------------------------
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 07-02-2014
-!     'transport' subroutine, for the marker starting a Fluka insertion
-!     inserted in main code by the 'fluka' compilation flag
-!-----------------------------------------------------------------------
-!
-      use mod_fluka
-      implicit none
-
-+ca parpro
-+ca common
-+ca commonmn
-
-!     interface variables:
-      integer nturn, i, ix
-
-!     temporary variables
-      integer ret, j
-      double precision eltot
-
-+ca save
-
-      eltot = 0.0D+00
-
-      if (fluka_debug) then
-!        where are we?
-         write(fluka_log_unit,*)
-     &'# In fluka element of type ', fluka_type(ix)
-         write(fluka_log_unit,*)'#   i=', i
-         write(fluka_log_unit,*)'#   ix=', ix
-         write(fluka_log_unit,*)
-     &'#   fluka_geo_index=',fluka_geo_index(ix)
-         write(fluka_log_unit,*)'#   eltot=',eltot
-      end if
-
-      ret = fluka_send( nturn, fluka_geo_index(ix), eltot, napx,        &
-     &            xv(1,:), yv(1,:), xv(2,:), yv(2,:), sigmv, ejv )
-
-      if (ret.eq.-1) then
-         write(*,*) 
-     &'[Fluka] Error in Fluka communication in kernel_fluka_entrance...'
-         write(fluka_log_unit,*) 
-     &'# Error in Fluka communication in kernel_fluka_entrance...'
-         call prror(-1)
-      end if
-
-!     au revoir:
-      return
-      end subroutine
-
-      subroutine kernel_fluka_exit( nturn, i, ix )
-!
-!-----------------------------------------------------------------------
-!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
-!     last modified: 07-02-2014
-!     'transport' subroutine, for the marker closing a Fluka insertion
-!     inserted in main code by the 'fluka' compilation flag
-!-----------------------------------------------------------------------
-!
-      use mod_fluka
-      implicit none
-
-+ca parpro
-+ca common
-+ca commonmn
-+ca commonm1
-+ca commontr
-
-!     interface variables:
-      integer nturn, i, ix
-
-!     temporary variables
-      integer ret, j
-      double precision eltot
-
-+ca save
-
-      eltot = fluka_synch_length( ix )
-
-      if (fluka_debug) then
-!        where are we?
-         write(fluka_log_unit,*)
-     &'# In fluka element of type ', fluka_type(ix)
-         write(fluka_log_unit,*)'#   i=', i
-         write(fluka_log_unit,*)'#   ix=', ix
-         write(fluka_log_unit,*)
-     &'#   fluka_geo_index=',fluka_geo_index(ix)
-         write(fluka_log_unit,*)'#   eltot=',eltot
-      end if
-
-      ret = fluka_receive( nturn, fluka_geo_index(ix), eltot, napx,     &
-     &            xv(1,:), yv(1,:), xv(2,:), yv(2,:), sigmv, ejv )
-
-      if (ret.eq.-1) then
-         write(*,*) 
-     & '[Fluka] Error in Fluka communication in kernel_fluka_exit...'
-         write(fluka_log_unit,*) 
-     & '# Error in Fluka communication in kernel_fluka_exit...'
-         call prror(-1)
-      end if
-
-!     protons to be tracked
-      do j=1,napx
-!        Update values related to losses
-         nlostp(j) = j
-         pstop (j) = .false.
-!        Update variables depending on total energy
-         ejfv  (j) = sqrt((ejv(j)-pma)*(ejv(j)+pma))
-         rvv   (j) = (ejv(j)*e0f)/(e0*ejfv(j))
-         dpsv  (j) = (ejfv(j)-e0f)/e0f
-         oidpsv(j) = 1.0D+00/(1.0D+00+dpsv(j))
-         dpsv1 (j) = (dpsv(j)*1.0D+03)*oidpsv(j)
-      end do
-
-!     empty places
-      do j=napx+1,npart
-!        Update values related to losses
-         nlostp(j) = j
-         pstop (j) = .true.
-!        Update values related to momentum
-         ejv   (j) = 0.0D+00
-         rvv   (j) = 1.0D+00
-         ejfv  (j) = 0.0D+00
-         dpsv  (j) = 0.0D+00
-         oidpsv(j) = 1.0D+00
-         dpsv1 (j) = 0.0D+00
-      end do
-
-!     au revoir:
-      return
-      end subroutine
-
-+ei
 +dk hdf5K 
 +if hdf5
 !>
@@ -71401,7 +64670,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
           !
           !Create the data space with unlimited length.
           !
-          maxdims = (/9, H5S_UNLIMITED_F/)
+          maxdims = (/INT(9,HSIZE_T), H5S_UNLIMITED_F/)
           CALL h5screate_simple_f(h5rank, h5dims, h5space_id, &
             h5error, maxdims)
           !
@@ -71731,7 +65000,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !           boosted yp event
            bgypdb(choice) = z(2)
            bgEdb(choice) = new4MomCoord(1) ! boosted energy
- DEBUG: 
+! DEBUG: 
 !         write(684,*) bgxpdb(choice),bgypdb(choice),bgEdb(choice),      &
 !     &     new4MomCoord
 ! END DEBUG
@@ -72103,14 +65372,14 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
          b2=b2+b(j)*b(j)
         enddo
         if (b2>0) then
-         b2inv=1/b2
+      	 b2inv=1/b2
         else
-         b2inv=0
-                endif
+      	 b2inv=0
+		  endif
         g=1.0/sqrt(1.0-b2) ! relativistic gamma for the boost
 !         write(*,*) "DEBUG, g: ",g, v0, xp,yp,E,mass
 
-                lorentzmatrix(1,1)=g /g
+		lorentzmatrix(1,1)=g /g
       do j=2,4 
        lorentzmatrix(1,j)=g /g
         lorentzmatrix(1,j)=-b(j-1)*g /g
