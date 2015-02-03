@@ -225,13 +225,13 @@
      &iclo6,iclo6r,icode,icoe,icomb,icomb0,iconv,icow,icr,idam,idfor,   &
      &idis,idp,ierro,iffw,ifh,iicav,il,ilin,imad,imbb,                  &
      &imc,imtr,iorg,iout,                                               &
-     &ipos,ipr,iprint,ipt,iq,iqmod,iqmod6,iratioe,irco,ird,ire,ires,    &
-     &irew,irip,irm,irmod2,ise,ise1,ise2,ise3,isea,iskew,iskip,istw,    &
+     &ipos,ipr,iprint,ipt,iq,iqmod,iqmod6,iratioe,ird,ire,ires,         &
+     &irew,irm,irmod2,ise,ise1,ise2,ise3,isea,iskew,iskip,istw,         &
      &isub,itco,itcro,itf,ithick,ition,itionc,itqv,its6d,iu,iver,ivox,  &
      &ivoz,iwg,ixcav,izu0,kanf,kp,kpa,kwtype,kz,lhc,m21,m22,m23,mblo,   &
      &mbloz,mcut,mel,mesa,mmac,mout2,mp,mper,mstr,msym,mtyp,mzu,napx,   &
      &napxo,nbeam,nch,ncororb,ncorrep,ncorru,ncy,ndafi,nde,nhcorr,      &
-     &nhmoni,niu,nlin,nmu,npp,nprint,nqc,nre,nrel,nrr,nrturn,nskew,     &
+     &nhmoni,niu,nlin,nmu,npp,nprint,nqc,nre,nrr,nskew,                 &
      &nstart,nstop,nt,nta,ntco,nte,ntwin,nu,numl,numlr,nur,nvcorr,      &
      &nvmoni,nwr, nturn1, nturn2, nturn3, nturn4,numlcp,numlmax,nnuml
       double precision a,ak0,aka,alfx,alfz,amp0,aper,apx,apz,ape,bbcu,  &
@@ -241,7 +241,7 @@
      &dsm0,dtr,e0,ed,ej,ejf,ek,el,elbe,emitx,emity,emitz,extalign,      &
      &exterr,eui,euii,gammar,hsy,hsyc,pac,pam,parbe,parbe14,partnum,    &
      &phas,phas0,phasc,pi,pi2,pisqrt,pma,ptnfac,qs,qw0,qwsk,qx0,qxt,qz0,&
-     &qzt,r00,rad,ramp,rat,ratio,ratioe,rfre,rrtr,rtc,rts,rvf,rzph,     &
+     &qzt,r00,rad,rat,ratio,ratioe,rrtr,rtc,rts,rvf,                    &
      &sigcor,sige,sigma0,sigman,sigman2,sigmanq,sigmoff,sigz,sm,ta,tam1,&
      &tam2,tiltc,tilts,tlen,totl,track6d,xpl,xrms,zfz,zpl,zrms,wirel,   &
      &acdipph, crabph, bbbx, bbby, bbbs,                                &
@@ -299,8 +299,6 @@
      &nstart,nstop,iskip,iconv,imad
       common/posti1/ipos,iav,iwg,ivox,ivoz,ires,ifh,toptit(5)
       common/posti2/kwtype,itf,icr,idis,icow,istw,iffw,nprint,ndafi
-      common/ripp/irip,irco,ramp(nele),rfre(nele),rzph(nele),nrel(nele)
-      common/ripp2/nrturn
       common/skew/qwsk(2),betx(2),betz(2),alfx(2),alfz(2),iskew,nskew(6)
       common/pawc/hmal(nplo)
       common/tit/sixtit,commen,ithick
@@ -360,13 +358,12 @@
       double precision aml6,edcor
       common/sixdim/aml6(6,6),edcor(2)
 +cd commonxz
-      double precision aai,ampt,bbi,damp,rfres,rsmi,rzphs,smi,smizf,xsi,&
+      double precision aai,ampt,bbi,damp,smi,smizf,xsi,                 &
      &zsi
       integer napxto
       real tlim,time0,time1,time2,time3,trtime
       common/xz/xsi(nblz),zsi(nblz),smi(nblz),smizf(nblz),              &
      &aai(nblz,mmul),bbi(nblz,mmul)
-      common/rfres/rsmi(nblz),rfres(nblz),rzphs(nblz)
       common/damp/damp,ampt
       common/ttime/tlim,time0,time1,time2,time3,trtime,napxto
 +cd commonta
@@ -1275,7 +1272,7 @@ C     Store the SET statements
      &rts,ire,ipr,irmod2,dtr,nre,nur,nch,nqc,npp,nrr,nu,dphix,dphiz,qx0,&
      &qz0,dres,dfft,cma1,cma2,nstart,nstop,iskip,iconv,imad,ipos,iav,   &
      &iwg,ivox,ivoz,ires,ifh,toptit,kwtype,itf,icr,idis,icow,istw,iffw, &
-     &nprint,ndafi,irip,irco,ramp,rfre,rzph,nrel,nrturn,qwsk,betx,betz, &
+     &nprint,ndafi,qwsk,betx,betz,                                      &
      &alfx,alfz,iskew,nskew,hmal,sixtit,commen,ithick,clo6,clop6,dki,   &
      &sigman,sigman2,sigmanq,clobeam,beamoff,parbe,track6d,ptnfac,      &
      &sigz,sige,partnum,parbe14,emitx,emity,emitz,gammar,nbeam,ibbc,    &
@@ -1287,7 +1284,7 @@ C     Store the SET statements
      &as,at,a2,al,sigm,dps,idz,dp1,itra,                                &
 +ei
      &x,y,bet0,alf0,clo,clop,cro,is,ichrom,nnumxv,xsi,zsi,smi,aai,      &
-     &bbi,rsmi,rfres,rzphs,ampt,tlim,tasm,preda,idial,nord,nvar,        &
+     &bbi,ampt,tlim,tasm,preda,idial,nord,nvar,                         &
      &nvar2,nsix,ncor,ipar,nordf,                                       &
      &nvarf,nord1,ndimf,idptr,inorm,imod1,imod2,                        &
      &icorr,nctype,namp,nmom,nmom1,nmom2,weig1,weig2,dpmax,coel,        &
@@ -12999,8 +12996,8 @@ cc2008
      &xang,xstr,xpl0,xplane,xrms0,zpl0,zrms0
       character*16 sing,stru,prin,trac,diff,sync,ende,bloc,comm
       character*16 fluc,chro,tune,iter,limi,orbi,deco
-      character*16 beze,bez0,go,rect,elli,comb,sear,subr,reso,bezext
-      character*16 free,geom,cavi,disp
+      character*16 beze,bez0,go,rect,elli,comb,sear,subr
+      character*16 free,geom,cavi,disp,reso,bezext
       character*16 idat,next,mult,line,init,ic0,imn,icel,irel
       character*16 iss,iqq,iele,ilm,ilm0,idum,corr,norm
       character*16 kl,kr,orga,post,ripp,beam,trom
@@ -13209,8 +13206,6 @@ cc2008
       irmod2=0
       iorg=0
       ise=0
-      irip=0
-      irco=0
       iskew=0
       preda=c1m38
    90 read(3,10010,end=1530,iostat=ierro) idat,ihead
@@ -16847,62 +16842,21 @@ cc2008
 !-----------------------------------------------------------------------
 !  POWER SUPPLY RIPPLE
 !-----------------------------------------------------------------------
- 1290 irip=1
+ 1290 continue
+      write(*,*)
+      write(*,*) "     old RIPP module is not supported anymore"
+      write(*,*) "     ignoring all concerned lines"
+      write(*,*)
+
  1300 read(3,10020,end=1530,iostat=ierro) ch
       if(ierro.gt.0) call prror(58)
+
+      write(*,*) 'ignoring line:'
+      write(*,*) ch
+
       lineno3=lineno3+1
       if(ch(1:1).eq.'/') goto 1300
       if(ch(:4).eq.next) goto 110
-      call intepr(1,1,ch,ch1)
-      irco=irco+1
-      if(irco.gt.nele) call prror(51)
-+if fio
-+if crlibm
-      call enable_xp()
-+ei
-      read(ch1,*,round='nearest')                                       &
-     & idat,ram,rfr,rph,nrturn
-+if crlibm
-      call disable_xp()
-+ei
-+ei
-+if .not.fio
-+if .not.crlibm
-      read(ch1,*) idat,ram,rfr,rph,nrturn
-+ei
-+if crlibm
-      call splitfld(errno,3,lineno3,nofields,nf,ch1,fields)
-      if (nf.gt.0) then
-        read(fields(1),*) idat
-        nf=nf-1
-      endif
-      if (nf.gt.0) then
-        ram=fround(errno,fields,2)
-        nf=nf-1
-      endif
-      if (nf.gt.0) then
-        rfr=fround(errno,fields,3)
-        nf=nf-1
-      endif
-      if (nf.gt.0) then
-        rph=fround(errno,fields,4)
-        nf=nf-1
-      endif
-      if (nf.gt.0) then
-        read(fields(5),*) nrturn
-        nf=nf-1
-      endif
-+ei
-+ei
-      do 1310 j=1,il
-      if(idat.eq.bez(j)) then
-        nrel(irco)=j
-        ramp(j)=ram
-        rfre(j)=rfr
-        rzph(j)=rph
-        goto 1300
-      endif
- 1310 continue
       goto 1300
 !-----------------------------------------------------------------------
 !  DECOUPLING ROUTINE
@@ -18171,22 +18125,6 @@ cc2008
 +if .not.cr
       write(*,10170) itcro,dsm0,dech,de0,ded,dsi
 +ei
-      if(irip.eq.1) then
-+if cr
-      write(lout,10230)
-+ei
-+if .not.cr
-      write(*,10230)
-+ei
-      do 1510 i=1,irco
-        j=nrel(i)
-+if cr
- 1510 write(lout,10240) bez(j),ramp(j),rfre(j),rzph(j),nrturn
-+ei
-+if .not.cr
- 1510 write(*,10240) bez(j),ramp(j),rfre(j),rzph(j),nrturn
-+ei
-      endif
 +if cr
       write(lout,10130)
 +ei
@@ -18318,9 +18256,6 @@ cc2008
 10200 format(t10,'PROGRAM MODE : FREE FORMAT INPUT --READ FROM ',       &
      &'EXTRA GEOMETRY STRENGTH FILE--')
 10220 format(t10,i4,2(' ',d15.8),5x,2(' ',d15.8))
-10230 format(//131('-')//t10,'DATA BLOCK RIPPLE OF POWER SUPPLIES'//    &
-     &t10,'ELEMENT',6x,'AMPLITUDE',9x,'FREQUENCY' ,9x,'STARTPHASE',9x,  &
-     &'INI. TURNNUMBER'/t10,62('-')/)
 10250 format(t10,'NUMBER OF DIFFERENT BLOCKS',t50,i3/ t10,              &
      &'BLOCKS PER PERIOD',t49,i5//)
 10290 format(t10,'MORE THAN ',i5,' COMBINATIONS SPECIFIED'/)
@@ -24520,9 +24455,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         xsi(i)=zero
         zsi(i)=zero
         smi(i)=zero
-        rsmi(i)=zero
-        rfres(i)=zero
-        rzphs(i)=zero
    10 continue
       do 20 i=1,mmul
         cr(i)=zero
@@ -25297,21 +25229,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     call dumpbin('ado 260',260,260)
 !     call abend('ado 260                                           ')
 +ei
-      if(irip.eq.1) then
-        do 280 i=1,iu
-          ix=ic(i)
-          if(ix.le.nblo) goto 280
-          ix=ix-nblo
-          do 270 j=1,irco
-            jj=nrel(j)
-            if(ix.eq.jj) then
-              rsmi(i)=ramp(jj)
-              rfres(i)=rfre(jj)
-              rzphs(i)=rzph(jj)
-            endif
-  270     continue
-  280   continue
-      endif
+
 !hr05 napx=napx*imc*mmac
       napx=(napx*imc)*mmac                                               !hr05
 +if cr
@@ -25597,7 +25515,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &(ia,5,6), tas(ia,6,1),tas(ia,6,2),tas(ia,6,3),tas(ia,6,4),tas     &
      &(ia,6,5), tas(ia,6,6),                                            &
      &dble(mmac),dble(nms(ia)),dble(izu0),                              &
-     &dble(numlr),sigcor,dpscor,dble(nrturn),zero,zero,zero,            &
+     &dble(numlr),sigcor,dpscor,zero,zero,zero,zero,                    &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
@@ -25645,7 +25563,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &(ia,5,5), tas(ia,5,6), tas(ia,6,1),tas(ia,6,2),tas(ia,6,3),tas    &
      &(ia,6,4),tas(ia,6,5), tas(ia,6,6),                                &
      &dble(mmac),dble(nms(ia)),dble(izu0),                              &
-     &dble(numlr),sigcor,dpscor,dble(nrturn),zero,zero,zero,            &
+     &dble(numlr),sigcor,dpscor,zero,zero,zero,zero,                    &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
      &zero,zero,zero,zero,zero,zero,zero,zero,zero,zero,                &
@@ -26349,7 +26267,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         ktrack(i)=11
 +ca stra01
         goto 290
-   60   if(abs(smiv(1,i)).le.pieni.and.abs(ramp(ix)).le.pieni) then ! ramp(ix) from ripple module
+   60   if(abs(smiv(1,i)).le.pieni) then
           ktrack(i)=31
           goto 290
         endif
@@ -26582,6 +26500,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       nwri=nwr(3)
 !hr01 if(nwri.eq.0) nwri=numl+numlr+1
       if(nwri.eq.0) nwri=(numl+numlr)+1                                  !hr01
+
+!     A.Mereghetti, for the FLUKA Team
+!     last modified: 17-07-2013
+!     save original kicks
+!     always in main code
+      if (ldynk) call dynk_pretrack
+
       if(idp.eq.0.or.ition.eq.0) then
         write(*,*) ''
         write(*,*) 'Calling thin4d subroutine'
@@ -27976,9 +27901,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
            call dynk_apply(n)
         endif
 
-        if(irip.eq.1) call ripple(n)
         if(mod(numx,nwri).eq.0) call writebin(nthinerr)
         if(nthinerr.ne.0) return
+
 +if cr
 !  does not call CRPOINT if restart=.true.
 !  (and note that writebin does nothing if restart=.true.
@@ -29005,7 +28930,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         if ( ldynk ) then
            call dynk_apply(n)
         endif
-        if(irip.eq.1) call ripple(n)
+
         if(mod(numx,nwri).eq.0) call writebin(nthinerr)
         if(nthinerr.ne.0) return
 +if cr
@@ -31763,7 +31688,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
        call APPENDREADING(hdfpid,hdfturn,hdfs,hdfx,hdfxp,hdfy,hdfyp,    &
      &                    hdfdee,hdftyp)
 +ei
-+if .not.hdf5  
++if .not.hdf5
 !                write(38,'(1x,i8,1x,i4,1x,f7.1,4(1x,e11.3))')           &     
           write(38,'(1x,i8,1x,i4,1x,f8.2,4(1x,e11.5),1x,e11.3,1x,i4)')   &
 !          write(38,'(1x,i8,1x,i4,1x,f8.2,5(1x,e11.3),1x,i4)')           &
@@ -31772,7 +31697,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &xv(2,j),yv(2,j),(ejv(j)-myenom)/myenom,                           &
      &secondary(j)+tertiary(j)+other(j)
 !     2          ITURN,SAMPL(ie),XJ,XPJ,YJ,YPJ
-+ei              
++ei
               endif
 !GRD
 !GRD-SR,09-02-2006 => freeing unit, file no longer needed
@@ -32167,7 +32092,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !
       if (dowrite_dist.and.(ie.eq.iu).and.(n.eq.numl)) then
         open(unit=9998, file='distn.dat')
-        write(9998,*) ! Assumed wrong unit number in FLUKA code
+        write(9998,*)
      &'# 1=x 2=xp 3=y 4=yp 5=z 6 =E'
         do j = 1, napx
           write(9998,'(6(1X,E15.7))') (xgrd(j)-torbx(1))/1d3,           &
@@ -32175,7 +32100,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &(ypgrd(j)-torbyp(1))/1d3,sigmvgrd(j),ejfvgrd(j)
 !     2             , S(J)
         end do
-        close(9998) ! Assumed wrong unit number in FLUKA code
+        close(9998)
       endif
 !
 !GRD
@@ -32520,13 +32445,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
            call dynk_apply(n)
         endif
 
-        if(irip.eq.1) call ripple(n)
         if(n.le.nde(1)) nwri=nwr(1)
         if(n.gt.nde(1).and.n.le.nde(2)) nwri=nwr(2)
         if(n.gt.nde(2)) nwri=nwr(3)
         if(nwri.eq.0) nwri=numl+numlr+1
         if(mod(numx,nwri).eq.0) call writebin(nthinerr)
         if(nthinerr.ne.0) return
+
 +if cr
 !  does not call CRPOINT if restart=.true.
 !  (and note that writebin does nothing if restart=.true.
@@ -32987,53 +32912,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
   660 continue
       return
       end
-      subroutine ripple(n)
-!-----------------------------------------------------------------------
-!
-!  F. SCHMIDT
-!-----------------------------------------------------------------------
-      implicit none
-+if cr
-+ca crcoall
-+ei
-+if crlibm
-+ca crlibco
-+ei
-      integer i,n,nripple
-+ca parpro
-+ca parnum
-+ca common
-+ca commons
-+ca commont1
-+ca commondl
-+ca commonxz
-+ca commonta
-+ca commonmn
-+ca commonm1
-+ca commontr
-+if bnlelens
-+ca rhicelens
-+ei
-+ca save
-!-----------------------------------------------------------------------
-      nripple=nrturn+n
-      do 20 i=1,iu
-        if(abs(rsmi(i)).gt.pieni) then
-+if crlibm
-!hr01     smiv(1,i)=rsmi(i)*cos_rn(two*pi*(nripple-1)/rfres(i)+rzphs(i))
-          smiv(1,i)=rsmi(i)*cos_rn(((two*pi)*dble(nripple-1))/rfres(i)  &!hr01
-     &     +rzphs(i))                                                    !hr01
-+ei
-+if .not.crlibm
-!hr01     smiv(1,i)=rsmi(i)*cos(two*pi*(nripple-1)/rfres(i)+rzphs(i))
-          smiv(1,i)=rsmi(i)*cos(((two*pi)*dble(nripple-1))/rfres(i)     &!hr01
-     &     +rzphs(i))                                                    !hr01
-+ei
-+ca stra02
-        endif
-   20 continue
-      return
-      end
+
       subroutine writebin(nthinerr)
 !-----------------------------------------------------------------------
 !
@@ -33797,7 +33676,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         ktrack(i)=11
 +ca stra01
         goto 290
-   60   if(abs(smiv(1,i)).le.pieni.and.abs(ramp(ix)).le.pieni) then ! ramp(ix) from ripple module
+   60   if(abs(smiv(1,i)).le.pieni) then
           ktrack(i)=31
           goto 290
         endif
@@ -34163,9 +34042,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
            call dynk_apply(n)
         endif
 
-          if(irip.eq.1) call ripple(n)
           if(mod(numx,nwri).eq.0) call writebin(nthinerr)
           if(nthinerr.ne.0) return
+
 +if cr
 !  does not call CRPOINT if restart=.true.
 !  (and note that writebin does nothing if restart=.true.
@@ -34563,7 +34442,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
 !----------------------------
 
-  470       continue
+  470     continue
+
 +ca lostpart
   480     continue
           call lostpart(nthinerr)
@@ -34694,9 +34574,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
            call dynk_apply(n)
         endif
 
-          if(irip.eq.1) call ripple(n)
           if(mod(numx,nwri).eq.0) call writebin(nthinerr)
           if(nthinerr.ne.0) return
+
 +if cr
 !  does not call CRPOINT if restart=.true.
 !  (and note that writebin does nothing if restart=.true.
@@ -35357,13 +35237,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
            call dynk_apply(n)
         endif
 
-          if(irip.eq.1) call ripple(n)
           if(n.le.nde(1)) nwri=nwr(1)
           if(n.gt.nde(1).and.n.le.nde(2)) nwri=nwr(2)
           if(n.gt.nde(2)) nwri=nwr(3)
           if(nwri.eq.0) nwri=numl+numlr+1
           if(mod(numx,nwri).eq.0) call writebin(nthinerr)
           if(nthinerr.ne.0) return
+
 +if cr
 !  does not call CRPOINT if restart=.true.
 !  (and note that writebin does nothing if restart=.true.
@@ -35385,6 +35265,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca timefct
 +ei
             endif
+
 !----------count 56
             goto(20,40,740,500,500,500,500,500,500,500,60,80,100,120,   &
      &140,160,180,200,220,240,290,310,330,350,370,390,410,430,          &
@@ -37330,7 +37211,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !--MULTIPOLE WITH THEIR RANDOM VALUES ADDED
       izu=0
       do 60 i=1,iu
-        rsmi(i)=zero
         ix=ic(i)
         if(ix.le.nblo) goto 60
         ix=ix-nblo
@@ -37341,16 +37221,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         izu=mzu(i)+1
         smizf(i)=zfz(izu)*ek(ix)
         smi(i)=sm(ix)+smizf(i)
-        if(irip.eq.1) then
-          do 40 j=1,irco
-            jj=nrel(j)
-            if(ix.eq.jj) then
-              rsmi(i)=ramp(jj)
-              rfres(i)=rfre(jj)
-              rzphs(i)=rzph(jj)
-            endif
-   40     continue
-        endif
         izu=izu+1
         xsi(i)=xpl(ix)+zfz(izu)*xrms(ix)
         izu=izu+1
@@ -37897,7 +37767,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
       ncorru=0
       ncorrep=0
-      nrturn=0
       iexact=0
       ithick=0
       ierro=0
@@ -37970,8 +37839,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       icow=0
       istw=0
       iffw=0
-      irip=0
-      irco=0
       idial=0
       nord=0
       nvar=0
@@ -38163,7 +38030,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         nmu(i)=0
         kpa(i)=0
         isea(i)=0
-        nrel(i)=0
         ncororb(i)=0
         iratioe(i)=0
         itionc(i)=0
@@ -38186,9 +38052,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         ape(1,i)=c1e6
         ape(2,i)=c1e6
         ape(3,i)=c1e12
-        ramp(i)=zero
-        rfre(i)=zero
-        rzph(i)=zero
+
         ratioe(i)=one
         hsyc(i)=zero
         phasc(i)=zero
@@ -38272,9 +38136,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         zsi(i)=zero
         smi(i)=zero
         smizf(i)=zero
-        rsmi(i)=zero
-        rfres(i)=zero
-        rzphs(i)=zero
         do i1=1,mmul
           aai(i,i1)=zero
           bbi(i,i1)=zero
@@ -42007,7 +41868,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 10490 format(t10,'ONLY UP TO 3 SUBRESONANCES CAN BE COMPENSATED')
 10500 format(t10,'THE MULTIPOLE ORDER FOR THE SUBRESONANCE COMPENSATION'&
      &,' SHOULD NOT EXCEED THE VALUE 9')
-10510 format(t10,'PROBLEMS WITH FILE 3 WITH DYNAMIC KIKS') !WAS: TOO MANY RIPPLE ELEMENTS
+10510 format(t10,'PROBLEMS WITH FILE 3 WITH DYNAMIC KIKS')
 10520 format(t10,'MAXIMUM ORDER OF THE ONE TURN MAP IS ',i4, /,         &
      &' NEMA HAS TO BE LARGER THAN NORD')
 10530 format(t10,'# OF VARIABLES -NV- OF THE ONE TURN MAP IS NOT',      &
@@ -44682,7 +44543,6 @@ c$$$               endif
       call prror(-1)
 
       end function
-
 +dk linopt
       subroutine linopt(dpp)
 !-----------------------------------------------------------------------
@@ -45277,8 +45137,7 @@ c$$$               endif
 +if .not.collimat.and..not.bnlelens
         if(kzz.eq.0.or.kzz.eq.20.or.kzz.eq.22) goto 500
 ! JBG RF CC Multipoles to 500
-        if(kzz.eq.26.or.kzz.eq.27.or.kzz.eq.28) goto 500
-        if(kzz.eq.-26.or.kzz.eq.-27.or.kzz.eq.-28) goto 500
+        if (abs(kzz).eq.26.or.abs(kzz).eq.27.or.abs(kzz).eq.28) goto 500
 +ei
         dyy1=zero
         dyy2=zero
@@ -66682,13 +66541,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99,*) 'iffw ',iffw
       write(99,*) 'nprint ',nprint
       write(99,*) 'ndafi ',ndafi
-      write(99,*) 'irip ',irip
-      write(99,*) 'irco ',irco
-      write(99,*) 'ramp ',ramp
-      write(99,*) 'rfre ',rfre
-      write(99,*) 'rzph ',rzph
-      write(99,*) 'nrel ',nrel
-      write(99,*) 'nrturn ',nrturn
       write(99,*) 'qwsk ',qwsk
       write(99,*) 'betx ',betx
       write(99,*) 'betz ',betz
@@ -66752,9 +66604,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99,*) 'smi ',smi
       write(99,*) 'aai ',aai
       write(99,*) 'bbi ',bbi
-      write(99,*) 'rsmi ',rsmi
-      write(99,*) 'rfres ',rfres
-      write(99,*) 'rzphs ',rzphs
       write(99,*) 'ampt ',ampt
       write(99,*) 'tlim ',tlim
       write(99,*) 'tasm ',tasm
@@ -67197,13 +67046,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99) iffw
       write(99) nprint
       write(99) ndafi
-      write(99) irip
-      write(99) irco
-      write(99) ramp
-      write(99) rfre
-      write(99) rzph
-      write(99) nrel
-      write(99) nrturn
       write(99) qwsk
       write(99) betx
       write(99) betz
@@ -67267,9 +67109,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99) smi
       write(99) aai
       write(99) bbi
-      write(99) rsmi
-      write(99) rfres
-      write(99) rzphs
       write(99) ampt
       write(99) tlim
       write(99) tasm
@@ -67708,13 +67547,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99,100) 'iffw ',iffw
       write(99,100) 'nprint ',nprint
       write(99,100) 'ndafi ',ndafi
-      write(99,100) 'irip ',irip
-      write(99,100) 'irco ',irco
-      write(99,100) 'ramp ',ramp
-      write(99,100) 'rfre ',rfre
-      write(99,100) 'rzph ',rzph
-      write(99,100) 'nrel ',nrel
-      write(99,100) 'nrturn ',nrturn
       write(99,100) 'qwsk ',qwsk
       write(99,100) 'betx ',betx
       write(99,100) 'betz ',betz
@@ -67778,9 +67610,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       write(99,100) 'smi ',smi
       write(99,100) 'aai ',aai
       write(99,100) 'bbi ',bbi
-      write(99,100) 'rsmi ',rsmi
-      write(99,100) 'rfres ',rfres
-      write(99,100) 'rzphs ',rzphs
       write(99,100) 'ampt ',ampt
       write(99,100) 'tlim ',tlim
       write(99,100) 'tasm ',tasm
