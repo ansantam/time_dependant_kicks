@@ -161,7 +161,7 @@
 +ei
 +if collimat
 +if beamgas
-      parameter(nele=50000,nblo=10000,nper=16,nelb=140,nblz=200000,         &
+      parameter(nele=50000,nblo=10000,nper=16,nelb=140,nblz=200000,     &
      &nzfz = 300000,mmul = 11)
 +ei
 +if .not.beamgas
@@ -198,6 +198,7 @@
       parameter(c1m13 = 1.0d-13,c1m15 = 1.0d-15)
       parameter(c1m18 = 1.0d-18,c1m21 = 1.0d-21,c1m24 = 1.0d-24)
       parameter(c1m36 = 1.0d-36,c1m38 = 1.0d-38)
+!     electron mass from PDG, 2002
       parameter(pmap = 938.271998d0,pmae = .510998902d0)
       parameter(crade = 2.817940285d-15, clight = 2.99792458d8)
 +cd parbeam
@@ -1045,6 +1046,107 @@
       common/materia/mat
       common/sindif/xpsd,zpsd,psd
       common/cdpodx/dpodx
+!
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!
++cd   comgetfields
+
+!     A.Mereghetti, for the FLUKA Team
+!     last modified: 29-08-2014
+!     some variables / parameters for a more flexible parsing of input lines
+!     always in main code
+
+*     parameters for the parser
+      integer getfields_n_max_fields, getfields_l_max_string
+      parameter ( getfields_n_max_fields = 10  ) ! max number of returned fields
+      parameter ( getfields_l_max_string = 132 ) ! max len of parsed line and its fields
+
+*     array of fields
+      character getfields_fields
+     &     ( getfields_n_max_fields )*( getfields_l_max_string )
+*     number of identified fields
+      integer getfields_nfields
+*     length of each what:
+      integer getfields_lfields( getfields_n_max_fields )
+*     an error flag
+      logical getfields_lerr
+
+!
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!
++cd   comdynk
+
+!     A.Mereghetti, for the FLUKA Team,
+!     K.Sjobak and A. Santamaria, BE-ABP/HSS
+!     last modified: 30/10-2014
+!     
+!     COMMON for dynamic kicks (DYNK)
+!     always in main code
+!     
+!     See TWIKI for documentation
+!
+
+
+*     general-purpose variables
+      logical ldynk            ! dynamic kick requested, i.e. DYNK input bloc issued in the fort.3 file
+      logical ldynkdebug       ! print debug messages in main output
+      logical ldynkfileopen    ! Is dynksets.dat already open?
+      logical ldynkfiledisable ! Disable writing dynksets.dat?
+
+C     Store the FUN statements
+      integer maxfuncs_dynk, maxdata_dynk, maxstrlen_dynk
+      parameter (maxfuncs_dynk=100,maxdata_dynk=50000,maxstrlen_dynk=20)
+
+      integer funcs_dynk (maxfuncs_dynk,5) ! 1 row/FUN, cols are: 
+                                           ! (1) = function name in fort.3 (points within cexpr_dynk),
+                                           ! (2) = indicates function type
+                                           ! (3,4,5) = arguments (often pointing within other arrays {i|f|c}expr_dynk)
+      integer iexpr_dynk (maxdata_dynk)                  ! Data for DYNK FUNs
+      double precision fexpr_dynk (maxdata_dynk)         ! Data for DYNK FUNs
+      character(maxstrlen_dynk) cexpr_dynk(maxdata_dynk) ! Data for DYNK FUNs (\0 initialized in comdynk)
+      
+      integer nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk !Number of used positions in arrays
+            
+C     Store the SET statements
+      integer maxsets_dynk
+      parameter (maxsets_dynk=200)
+      integer sets_dynk(maxsets_dynk, 4) ! 1 row/SET, cols are:
+                                         ! (1) = function index (points within funcs_dynk)
+                                         ! (2) = first turn num. where it is active
+                                         ! (3) =  last turn num. where it is active
+                                         ! (4) = Turn shift - number added to turn before evaluating the FUN
+      character(maxstrlen_dynk) csets_dynk (maxsets_dynk,2) ! 1 row/SET (same ordering as sets_dynk), cols are:
+                                                            ! (1) element name
+                                                            ! (2) attribute name
+
+      integer nsets_dynk ! Number of used positions in arrays
+      
+      character(maxstrlen_dynk) csets_unique_dynk (maxsets_dynk,2) !Similar to csets_dynk,
+                                                                   ! but only one entry per elem/attr
+      double precision fsets_origvalue_dynk(maxsets_dynk) ! Store original value from dynk
+      integer nsets_unique_dynk ! Number of used positions in arrays
+
+!--Storing the right izu for multipoles in dynk
+      integer dynk_izuIndex
+      dimension dynk_izuIndex(nele)
+      
+!     fortran COMMON declaration follows padding requirements
+      common /dynkComGen/ ldynk, ldynkdebug,
+     &     ldynkfileopen, ldynkfiledisable
+
+      common /dynkComExpr/ funcs_dynk,
+     &     iexpr_dynk, fexpr_dynk, cexpr_dynk,
+     &     nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk
+
+      common /dynkComSet/ sets_dynk, csets_dynk, nsets_dynk
+      common /dynkComUniqueSet/
+     &     csets_unique_dynk, fsets_origvalue_dynk, nsets_unique_dynk
+     
+      common /dynkComReinitialize/ dynk_izuIndex
+
+!
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!
 +cd timefct
 +if crlibm
           expt =  exp_rn(-dble(n)/tcnst35(i))
@@ -1283,6 +1385,43 @@
 !     call dumpbin('abeamcou',2,22)
 !     call abend('after beam coupling                               ')
 +ei
++cd multini
+!-- Initialize multipoles, combining settings from fort.2 with
+!-- coefficients from MULT and random values from FLUC.
+!-- Used in program maincr and from initialize_elements.
+      r0=ek(ix)
+      if(abs(r0).le.pieni) goto 150 ! label 150 - just after this code
+      nmz=nmu(ix)
+      if(nmz.eq.0) then
+         izu=izu+2*mmul
+         goto 150
+      endif
+      im=irm(ix)
+      r0a=one
+      do k=1,nmz
+         izu=izu+1
+!     hr05         aaiv(k,m,i)=ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k))/r0a
+         aaiv(k,m,i)=(ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k)))/r0a !hr05
++if time
+!     hr05         aaiv35(k,m,i)=ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k))/r0a
+         aaiv35(k,m,i)=(ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k)))/r0a !hr05
++ei
+         aai(i,k)=aaiv(k,m,i)
+         izu=izu+1
+!     hr05         bbiv(k,m,i)=ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k))/r0a
+         bbiv(k,m,i)=(ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k)))/r0a !hr05
++if time
+!     hr05         bbiv35(k,m,i)=ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k))/r0a
+         bbiv35(k,m,i)=(ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k)))/r0a !hr05
++ei
+         bbi(i,k)=bbiv(k,m,i)
+
+         r0a=r0a*r0
+      enddo
+      
+      izu=izu+2*mmul-2*nmz
+!------------------------------------------------------------------------------------
+
 +cd alignf
 +if .not.tilt
 *FOX  XL=X(1)-XS ;
@@ -5713,8 +5852,6 @@
               r2b(j)=two*(sigman2(2,imbb(i))-sigman2(1,imbb(i)))
 +cd beama1
               rb(j)=sqrt(r2b(j))
-              if(j.eq.1) then
-              endif
 !hr03         rkb(j)=strack(i)*pisqrt/rb(j)
               rkb(j)=(strack(i)*pisqrt)/rb(j)                            !hr03
 +cd beama2
@@ -8066,7 +8203,7 @@ cc2008
 +if .not.collimat.and..not.bnlelens
           call writelin(nr,bez(ix),etl,phi,t,ix)
 +ei
-+if collimat.and..not.bnlelens
++if collimat.or.bnlelens
           call writelin(nr,bez(ix),etl,phi,t,ix,k)
 +ei
 +if .not.collimat.and.bnlelens
@@ -9491,98 +9628,7 @@ cc2008
       open(100,file='arrays',form='unformatted')
 +ei
 +ei
-+cd close
-!-----------------------------------------------------------------------
-!--CLOSE(DATA FILES
-      close(2)
-      close(3)
-      close(4)
-      close(7)
-      close(8)
-      close(9)
-      close(10)
-      close(11)
-      close(12)
-      close(13)
-      close(14)
-      close(15)
-      close(16)
-      close(17)
-      close(18)
-      close(19)
-      close(20)
-      close(21)
-      close(22)
-      close(23)
-      close(24)
-      close(25)
-      close(26)
-      close(27)
-      close(32)
-      close(33)
-      close(34)
-+if time
-      close(35)
-+ei
-+if .not.bnlelens
-      close(59)
-      close(60)
-      close(61)
-      close(62)
-      close(63)
-      close(64)
-      close(65)
-      close(66)
-      close(67)
-      close(68)
-      close(69)
-      close(70)
-      close(71)
-      close(72)
-      close(73)
-      close(74)
-      close(75)
-      close(76)
-      close(77)
-      close(78)
-      close(79)
-      close(80)
-      close(81)
-      close(82)
-      close(83)
-      close(84)
-      close(85)
-      close(86)
-      close(87)
-      close(88)
-      close(89)
-      close(90)
-+ei
-      close(98)
-+if bnlelens
-!GRDRHIC
-!GRD-042008
-+if .not.boinc 
-      close(51)
-      close(52)
-      close(53)
-      close(97)
-+ei
-      close(54)
-!GRDRHIC
-!GRD-042008
-+ei
-+if hdf5
-      call CLOSEHDF5()
-+ei
-+if debug
-      close(99)
-      close(100)
-!Eric....and more to come
-      close(110)
-      close(111)
-! Missing +ei!!!
-+ei
+
 +cd rvet0
 !hr03 e0f=sqrt(e0*e0-pma*pma)
       e0f=sqrt(e0**2-pma**2)                                             !hr03
@@ -9765,6 +9811,116 @@ cc2008
       integer i
       end
 +ei
++dk close
+      subroutine closeUnits
+      implicit none
++ca parpro
++ca common
++ca comdynk
+      integer i
+      logical lopen
+!-----------------------------------------------------------------------
+!--CLOSE(DATA FILES
+      close(2)
+      close(3)
+      close(4)
+      close(7)
+      close(8)
+      close(9)
+      close(10)
+      close(11)
+      close(12)
+      close(13)
+      close(14)
+      close(15)
+      close(16)
+      close(17)
+      close(18)
+      close(19)
+      close(20)
+      close(21)
+      close(22)
+      close(23)
+      close(24)
+      close(25)
+      close(26)
+      close(27)
+      close(32)
+      close(33)
+      close(34)
++if time
+      close(35)
++ei
++if .not.bnlelens.and..not.fluka
+      close(59)
+      close(60)
+      close(61)
+      close(62)
+      close(63)
+      close(64)
+      close(65)
+      close(66)
+      close(67)
+      close(68)
+      close(69)
+      close(70)
+      close(71)
+      close(72)
+      close(73)
+      close(74)
+      close(75)
+      close(76)
+      close(77)
+      close(78)
+      close(79)
+      close(80)
+      close(81)
+      close(82)
+      close(83)
+      close(84)
+      close(85)
+      close(86)
+      close(87)
+      close(88)
+      close(89)
+      close(90)
++ei
+      close(98)
++if bnlelens
+!GRDRHIC
+!GRD-042008
++if .not.boinc
+      close(51)
+      close(52)
+      close(53)
+      close(97)
++ei
+      close(54)
+!GRDRHIC
+!GRD-042008
++ei
++if hdf5
+      call CLOSEHDF5()
++ei
++if debug
+      close(99)
+      close(100)
+!Eric....and more to come
+      close(110)
+      close(111)
++ei
+
+!     A.Mereghetti, for the FLUKA Team
+!     last modified: 02-09-2014
+!     close units for logging dynks
+!     always in main code
+      if (ldynkfileopen) then
+         close(665)
+      endif
+
+      return
+      end subroutine
+
 +dk cor_ord
       subroutine coruord
 !-----------------------------------------------------------------------
@@ -9983,7 +10139,7 @@ cc2008
 +if .not.cr
           write(*,10040) ifail
 +ei
-+ca close
+          call closeUnits
 +if cr
       call abend('                                                  ')
 +ei
@@ -10282,7 +10438,7 @@ cc2008
 +if .not.cr
           write(*,10000)
 +ei
-+ca close
+          call closeUnits
 +if cr
       call abend('Problem with data in fort.23')
 +ei
@@ -11117,7 +11273,7 @@ cc2008
 +if .not.cr
           write(*,10040) ifail
 +ei
-+ca close
+          call closeUnits
 +if cr
       call abend('                                                  ')
 +ei
@@ -11414,7 +11570,7 @@ cc2008
 +if .not.cr
           write(*,10000)
 +ei
-+ca close
+          call closeUnits
 +if cr
       call abend('                                                  ')
 +ei
@@ -11441,7 +11597,7 @@ cc2008
 +if .not.cr
           write(*,10000)
 +ei
-+ca close
+          call closeUnits
 +if cr
       call abend('                                                  ')
 +ei
@@ -12890,6 +13046,8 @@ cc2008
 +if bnlelens
 +ca rhicelens
 +ei
++ca comdynk
+
       dimension icel(ncom,20),iss(2),iqq(5)
       dimension beze(nblo,nelb),ilm(nelb),ilm0(40),bez0(nele),ic0(10)
       dimension extaux(40),bezext(nblz)
@@ -12903,7 +13061,16 @@ cc2008
       data rect,elli,comb,free,geom,cavi,beam,trom                      &
      &/'RE','EL','COMB','FREE','GEOM','CAV','BEAM','TROM'/
       data idum,kl,kr,orga,norm,corr/' ','(',')','ORGA','NORM','CORR'/
-      data coll/'COLL'/
+      data coll /'COLL'/
+!     A.Mereghetti, for the FLUKA Team
+!     last modified: 17-07-2013
+!     brand new input block for dynamic kicks
+!     always in main code
+      character*16 dynk
+      data dynk /'DYNK'/
+
++ca   comgetfields
+
 +ca save
 !-----------------------------------------------------------------------
       if(mmul.lt.10.or.mmul.gt.20) call prror(85)
@@ -13137,12 +13304,20 @@ cc2008
 !GRD
       if(idat.eq.coll) goto 1285
 !GRD
+
+!     A.Mereghetti, for the FLUKA Team
+!     last modified: 17-07-2013
+!     brand new input block for dynamic kicks
+!     always in main code
+      if(idat.eq.dynk) goto 2200
+
       if(idat.eq.next) goto 110
       if(idat.eq.ende) goto 771
       call prror(15)
 !-----------------------------------------------------------------------
 !  DATENBLOCK SINGLE ELEMENTS
 !  ELLEMENTLISTE
+!  imod = 1 if geometry in fort.3 (FREE), imod = 2 if in fort.2 (GEOM)
 !-----------------------------------------------------------------------
   120 i=1
   130 if(imod.eq.1) then
@@ -13249,24 +13424,6 @@ cc2008
         ed(i)=ed(i)/two
         ek(i)=ek(i)/two
       endif
-!--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
-      if((kz(i).eq.4.or.kz(i).eq.5).and.abs(el(i)).gt.pieni)            &
-     &ed(i)=-1d0*ed(i)                                                   !hr05
-!hr05&ed(i)=-ed(i)
-!--THIN LENS
-      if(kz(i).eq.11.and.abs(el(i)+one).le.pieni) then
-        dki(i,1) = ed(i)
-        dki(i,3) = ek(i)
-        ed(i) = one
-        ek(i) = one
-        el(i) = zero
-      else if(kz(i).eq.11.and.abs(el(i)+two).le.pieni) then
-        dki(i,2) = ed(i)
-        dki(i,3) = ek(i)
-        ed(i) = one
-        ek(i) = one
-        el(i) = zero
-      endif
 !--CAVITIES
       if(abs(kz(i)).eq.12) then
         if(abs(ed(i)).gt.pieni.and.abs(ek(i)).gt.pieni) then
@@ -13274,8 +13431,7 @@ cc2008
           itionc(i)=kz(i)/abs(kz(i))
           kp(i)=6
         endif
-        phasc(i)=el(i)
-        el(i)=zero
+        ! More in initialize_element()
       endif
 !--WIRE
       if(abs(kz(i)).eq.15) then
@@ -13294,71 +13450,15 @@ cc2008
            el(i)=0d0                                                     !hr05
         endif
       endif
-!--CRABCAVITY
-      if(abs(kz(i)).eq.23) then
-        if(abs(ed(i)).le.pieni) then
-           kz(i)=0
-!hr05      ed(i)=0
-           ed(i)=0d0                                                     !hr05
-!hr05      ek(i)=0
-           ek(i)=0d0                                                     !hr05
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        else
-           crabph(i)=el(i)
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        endif
-      endif
-! JBG RF CC Multipoles
-!--CC Mult kick order 2
-      if(abs(kz(i)).eq.26) then
-        if(abs(ed(i)).le.pieni) then
-           kz(i)=0
-!hr05      ed(i)=0
-           ed(i)=0d0                                                     !hr05
-!hr05      ek(i)=0
-           ek(i)=0d0                                                     !hr05
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        else
-           crabph2(i)=el(i)
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        endif
-      endif
-!--CC Mult kick order 3
-      if(abs(kz(i)).eq.27) then
-        if(abs(ed(i)).le.pieni) then
-           kz(i)=0
-!hr05      ed(i)=0
-           ed(i)=0d0                                                     !hr05
-!hr05      ek(i)=0
-           ek(i)=0d0                                                     !hr05
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        else
-           crabph3(i)=el(i)
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        endif
-      endif
-!--CC Mult kick order 4
-      if(abs(kz(i)).eq.28) then
-        if(abs(ed(i)).le.pieni) then
-           kz(i)=0
-!hr05      ed(i)=0
-           ed(i)=0d0                                                     !hr05
-!hr05      ek(i)=0
-           ek(i)=0d0                                                     !hr05
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        else
-           crabph4(i)=el(i)
-!hr05      el(i)=0
-           el(i)=0d0                                                     !hr05
-        endif
-      endif
+!----------------------------------------
+! Handled by initialize_element subroutine:
+!-----------------------------------------
+!--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
+!--THIN LENS
+!--CAVITIES (12/-12) (set phasc)
+!--CRABCAVITY (23/-23) / CC multipoles order 2/3/4 (+/- 23/26/27/28)
+      call initialize_element(i,.true.)
+
 !--ACDIPOLE
       if(abs(kz(i)).eq.16) then
         if(abs(ed(i)).le.pieni) then
@@ -13482,6 +13582,7 @@ cc2008
       goto 170
 !-----------------------------------------------------------------------
 !  BLOCK DEFINITIONS
+!  imod = 1 if geometry in fort.3 (FREE), imod = 2 if in fort.2 (GEOM)
 !-----------------------------------------------------------------------
   190 if(imod.eq.1) then
   200   read(3,10020,end=1530,iostat=ierro) ch
@@ -13555,6 +13656,7 @@ cc2008
       goto 220
 !-----------------------------------------------------------------------
 !  STRUCTURE INPUT
+!  imod = 1 if geometry in fort.3 (FREE), imod = 2 if in fort.2 (GEOM)
 !-----------------------------------------------------------------------
   320 i=0
   330 do 340 k=1,40
@@ -13575,6 +13677,7 @@ cc2008
       endif
       if(ch(:4).eq.next) goto 110
       i2=1
+      ! Look for repetition with syntax N( ... )
       do 420 ii=1,80
         if(ch(ii:ii).eq.kl) then
           if(ii.gt.1) then
@@ -14801,6 +14904,7 @@ cc2008
       if(ierro.gt.0) call prror(58)
       lineno3=lineno3+1
       if(ch(1:1).eq.'/') goto 740
+      ! Get first data line: name, R_0, \delta_0
       call intepr(1,1,ch,ch1)
 +if fio
 +if crlibm
@@ -14832,11 +14936,14 @@ cc2008
       endif
 +ei
 +ei
+      ! Renaming variables?
       i=1
       r0a=one
       im=im+1
       benkc(im)=benki
       r00(im)=r0
+      ! Find single element which matches the name, set its
+      ! irm from the MULT block counter im.
       do 750 j=1,il
       if(imn.eq.bez(j)) then
         irm(j)=im
@@ -14855,6 +14962,7 @@ cc2008
 +if .not.cr
       write(*,10210) imn,r0,benki
 +ei
+      ! Read data lines: B_n rms-B_n A_n rms-A_n
   770 bk0d=zero
       bkad=zero
       ak0d=zero
@@ -14899,6 +15007,8 @@ cc2008
       endif
 +ei
 +ei
+      ! Set nmu for the current single element (j)
+      ! to the currently highest multipole seen (i)
       if(abs(bk0d).gt.pieni.or.abs(bkad).gt.pieni                       &
      &.or.abs(ak0d).gt.pieni.or.abs(akad).gt.pieni) nmu(j)=i
 +if cr
@@ -14918,7 +15028,7 @@ cc2008
       i=i+1
       r0a=r0a*r0
       if(i.gt.mmul+1) call prror(105)
-      if(ch(:4).ne.next) goto 770
+      if(ch(:4).ne.next) goto 770 ! loop
 +if cr
       write(lout,10380)
 +ei
@@ -14934,6 +15044,7 @@ cc2008
       if(ierro.gt.0) call prror(58)
       lineno3=lineno3+1
       if(ch(1:1).eq.'/') goto 790
+      ! Read izu0, mmac, mout, mcut
       ch1(:nchars+3)=ch(:nchars)//' / '
 +if fio
 +if crlibm
@@ -14952,6 +15063,7 @@ cc2008
 +if vvector
       if(mmac.gt.nmac) call prror(55)
 +ei
+      !Generate normal distributed random numbers into zfz
       call recuin(izu0,irecuin)
       call ranecu(zfz,nzfz,mcut)
       rsum=zero
@@ -14989,6 +15101,8 @@ cc2008
 +if .not.cr
       write(*,10130)
 +ei
+      ! Set flags mout1, mout2, mount3, mout4 depending on mout
+      ! Enables/disables different functionality
       if(mout.ge.8) mout4=1
       if(mout.eq.7.or.mout.eq.15) then
         mout1=1
@@ -15010,6 +15124,8 @@ cc2008
       else if(mout.eq.1.or.mout.eq.9) then
         mout1=1
       endif
+      
+      ! Reads from fort.16 IF mout1==1
       if(mout1.eq.1) then
 +if cr
         write(lout,*)
@@ -15030,12 +15146,13 @@ cc2008
 +if .not.cr
         write(*,*)
 +ei
-        iexread=0
+        iexread=0 ! Reading regular multipoles(1) or skew components (2)
         ifiend16=0
         iexnum=0
         read(16,10020,end=861)
         rewind 16
-        do 860 i=1,mper*mbloz
+
+        do 860 i=1,mper*mbloz ! Loop over all structure elements
           ix=ic(i)
           if(ix.gt.nblo) then
             ix=ix-nblo
@@ -15048,7 +15165,7 @@ cc2008
               else
                 goto 820
               endif
-              call intepr(3,1,ch,ch1)
+              call intepr(3,1,ch,ch1) ! Read the name of element
 ! ilm0 are character strings, should be OK
               read(ch1,*) ilm0(1)
               iexnum=iexnum+1
@@ -15077,6 +15194,8 @@ cc2008
      &extaux(18)
               lineno16=lineno16+1
               read(16,*,end=870,iostat=ierro) extaux(19),extaux(20)
+
+              
               lineno16=lineno16+1
               read(16,*,end=870,iostat=ierro) extaux(21),extaux(22),    &
      &extaux(23)
@@ -15219,7 +15338,7 @@ cc2008
                 if(bez(ix).eq.bezext(j)) call prror(80)
   830         continue
   840         continue
-            endif
+            endif ! closing if(iexread.eq.0) then
             if(ilm0(1).eq.bez(ix)) then
 +if debug
 !             call warr('ilm0(1)',0d0,1,i,0,0)
@@ -16021,6 +16140,7 @@ cc2008
       call disable_xp()
 +ei
 +ei
+
 +if .not.fio
 +if .not.crlibm
       read(ch1,*) idat,irel,apxx,apzz
@@ -17600,6 +17720,164 @@ cc2008
         if(j1.lt.6) goto 1740
       enddo
       goto 1700
+
+!-----------------------------------------------------------------------
+!  DYNAMIC KICKS
+!  A.Mereghetti, for the FLUKA Team
+!  K.Sjobak & A. Santamaria, BE-ABP/HSS
+!  last modified: 21-01-2014
+!  always in main code
+!-----------------------------------------------------------------------
+ 2200 read(3,10020,end=1530,iostat=ierro) ch
+      if(ierro.gt.0) call prror(51)
+
+      if(ch(1:1).eq.'/') goto 2200 ! skip comment line
+
+      ! Which type of block? Look at start of string (no leading blanks allowed)
+
+      if (ch(:4).eq."DEBU") then
+         ldynkdebug = .true.
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &        "DYNK> DYNK block debugging is ON"
+         goto 2200 !loop DYNK
+         
+      else if (ch(:6).eq."NOFILE") then
+         ldynkfiledisable = .true.
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &        "DYNK> Disabled writing dynksets.dat"
+         goto 2200 !loop DYNK
+         
+      else if (ch(:3).eq."FUN") then
+         call getfields_split( ch, getfields_fields, getfields_lfields,
+     &        getfields_nfields, getfields_lerr )
+         if ( getfields_lerr ) call prror(51)
+         if (ldynkdebug) then
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*)
++ei
+     &           "DYNKDEBUG> Got a FUN block, len=",
+     &           len(ch), ": '", ch, "'"
+            do ii=1,getfields_nfields
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNKDEBUG> Field(",ii,") ='",
+     &              getfields_fields(ii)(1:getfields_lfields(ii)),"'"
+            enddo
+         endif
+         call dynk_parseFUN(getfields_fields,
+     &        getfields_lfields, getfields_nfields)
+         goto 2200 !loop DYNK
+
+      else if (ch(:3).eq."SET") then
+         call getfields_split( ch, getfields_fields, getfields_lfields,
+     &        getfields_nfields, getfields_lerr )
+         if ( getfields_lerr ) call prror(51)
+         if (ldynkdebug) then
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*)
++ei
+     &           "DYNKDEBUG> Got a SET block, len=",
+     &           len(ch), ": '", ch, "'"
+            do ii=1,getfields_nfields
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNKDEBUG> Field(",ii,") ='",
+     &              getfields_fields(ii)(1:getfields_lfields(ii)),"'"
+            enddo
+         endif
+         call dynk_parseSET(getfields_fields,
+     &        getfields_lfields, getfields_nfields)
+         goto 2200 !loop DYNK
+
+      else if (ch(:4).eq.next) then
+         if (ldynkdebug) then
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*)
++ei
+     &           "DYNKDEBUG> Finished parsing DYNK block"
+            call dynk_dumpdata
+         endif
+         if (ldynk) then
++if cr
+            write (lout,*)
+            write (lout,*) "******************************************"
+            write (lout,*) "** More than one DYNK block encountered **"
+            write (lout,*) "******************************************"
++ei
++if .not.cr
+            write (*,*)
+            write (*,*) "******************************************"
+            write (*,*) "** More than one DYNK block encountered **"
+            write (*,*) "******************************************"
++ei
+            call prror(51)
+         else
+            ldynk = .true.
+         endif
+         call dynk_inputsanitycheck
+         goto 110 ! loop BLOCK
+
+      else
++if cr
+         write (lout,*)
+         write (lout,*) "*******************************************"
+         write (lout,*) "ERROR while parsing DYNK block in fort.3"
+         write (lout,*)
+     &        "Expected keywords FUN, SET, DEBU, NOFILE or NEXT"
+         write (lout,*) "Got ch:"
+         write (lout,*) "'"//ch//"'"
+         write (lout,*) "*******************************************"
++ei
++if .not.cr
+         write (*,*)
+         write (*,*) "*******************************************"
+         write (*,*) "ERROR while parsing DYNK block in fort.3"
+         write (*,*) "Expected keywords FUN, SET, DEBU, NOFILE or NEXT"
+         write (*,*) "Got ch:"
+         write (*,*) "'"//ch//"'"
+         write (*,*) "*******************************************"
++ei
+         call prror(51)
+      endif
+      ! Should never arrive here
++if .not.cr
+      write (*,*) "*****************************"
+      write (*,*) "*LOGIC ERROR IN PARSING DYNK*"
+      write (*,*) "*****************************"
++ei
++if cr
+      write (lout,*) "*****************************"
+      write (lout,*) "*LOGIC ERROR IN PARSING DYNK*"
+      write (lout,*) "*****************************"
++ei
+      call prror(51)
 !-----------------------------------------------------------------------
   771 if(napx.ge.1) then
         if(e0.lt.pieni.or.e0.le.pma) call prror(27)
@@ -17935,6 +18213,7 @@ cc2008
 !hr05 if(2*mmac*imc*napx.gt.npart) call prror(54)
       if(((2*mmac)*imc)*napx.gt.npart) call prror(54)                    !hr05
 +ei
+
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
       return
@@ -18280,6 +18559,357 @@ cc2008
       ch1(i2:i3)=ch(i1:nchars)//' / '
       return
       end
+
+      subroutine getfields_split( tmpline, getfields_fields,
+     &         getfields_lfields, getfields_nfields, getfields_lerr)
+!
+!-----------------------------------------------------------------------
+!     A.Mereghetti, for the FLUKA Team
+!     last modified: 27-08-2014
+!     parse a line and split it into its fields
+!       fields are returned as 0-terminated and padded string
+!     always in main code
+!-----------------------------------------------------------------------
+!
+      implicit none
++ca   comgetfields
+      
+      character tmpline*( getfields_l_max_string )
+
+      intent(in) tmpline
+      intent(out) getfields_fields, getfields_lfields,
+     &     getfields_nfields, getfields_lerr
+      
+*     runtime variables
+      integer ii, jj
+      logical lchar
+      integer lenstr, istart
+
+*     initialise output variables
+      getfields_lerr = .false.
+      getfields_nfields=0
+      do ii=1,getfields_n_max_fields
+         do jj=1,getfields_l_max_string
+            getfields_fields(ii)(jj:jj) = char(0) ! ZERO terminate/pad
+         enddo
+         getfields_lfields(ii)=0
+      enddo
+
+*     parse the line
+      lchar = .false.
+      do ii=1, getfields_l_max_string
+         if ( tmpline(ii:ii) .eq. ' ' ) then
+*           blank char
+            if ( lchar ) then
+*              end of a string: record it
+               getfields_lfields(getfields_nfields)          = lenstr
+               getfields_fields (getfields_nfields)
+     &              (1:getfields_lfields(getfields_nfields)) =
+     &              tmpline(istart:
+     &               istart+getfields_lfields(getfields_nfields))
+               lchar = .false.
+            endif
+         else
+*           non-blank char
+            if ( .not. lchar ) then
+*              a new what starts
+               getfields_nfields = getfields_nfields +1
+               if ( getfields_nfields.gt.getfields_n_max_fields ) then
+                  write (*,*) ' error! too many fields in line:'
+                  write (*,*) tmpline
+                  write (*,*) ' please increase getfields_n_max_fields'
+                  getfields_lerr = .true.
+                  goto 1982
+               endif
+               istart = ii
+               lchar = .true.
+               lenstr = 0
+            endif
+            lenstr = lenstr+1
+         endif
+      enddo
+
+ 1982 return
+
+      end subroutine
+      
+      subroutine initialize_element(ix,lfirst)
+!
+!-----------------------------------------------------------------------
+!     K.Sjobak & A.Santamaria, BE-ABP/HSS
+!     last modified: 16-12-2014
+!     Initialize a lattice element with index elIdx,
+!     such as done when reading fort.2 (GEOM) and in DYNK.
+!     
+!     Never delete an element from the lattice, even if it is not making a kick.
+!     If the element is not recognized, do nothing (for now).
+!-----------------------------------------------------------------------
+!
+      implicit none
+      
+      integer, intent(in) :: ix
+      logical, intent(in) :: lfirst
+
+      integer im, izu, k, m, nmz, r0, r0a !needed to use multini
+
++ca parpro !needed for common
++ca parnum !zero
++ca common
++ca commonmn
++ca commontr
++ca commonxz
++ca comdynk
+      
+      !Set the element to true when initialized - some elements need to be present in fort.2 and then later changed
+      logical, save :: lisinit(nele) = .false.
+      integer i
+
+!--Nonlinear Elements
+      if(kz(ix).eq.1) then
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)             ! Also done in envar() which is called from clorb()
+                 smiv(1,i)=sm(ix)+smizf(i) ! Also done in program maincr
+                 smi(i)=smiv(1,i)          ! Also done in program maincr
++ca stra01                                 ! Also done in trauthin()/trauthick()
+               endif
+            enddo
+         endif
+
+      elseif(kz(ix).eq.2) then
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
+                 smi(i)=smiv(1,i)
++ca stra02
+               endif
+            enddo
+         endif
+      elseif(kz(ix).eq.3) then
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
+                 smi(i)=smiv(1,i)
++ca stra03
+               endif
+            enddo
+         endif
+
+      elseif((kz(ix).eq.4).and.
+     &   abs(el(ix)).gt.pieni) then
+         ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
+                 smi(i)=smiv(1,i)
++ca stra04
+               endif
+            enddo
+         endif
+
+      elseif((kz(ix).eq.5).and.
+     &   abs(el(ix)).gt.pieni) then
+         ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
+                 smi(i)=smiv(1,i)
++ca stra05
+               endif
+            enddo
+         endif
+
+      elseif(kz(ix).eq.6) then
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
+                 smi(i)=smiv(1,i)
++ca stra06
+               endif
+            enddo
+         endif
+
+      elseif(kz(ix).eq.7) then
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
+                 smi(i)=smiv(1,i)
++ca stra07
+               endif
+            enddo
+         endif
+
+      elseif(kz(ix).eq.8) then
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
+                 smi(i)=smiv(1,i)
++ca stra08
+               endif
+            enddo
+         endif
+
+      elseif(kz(ix).eq.9) then
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
+                 smi(i)=smiv(1,i)
++ca stra09
+               endif
+            enddo
+         endif
+
+      elseif(kz(ix).eq.10) then
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                 sm(ix)=ed(ix)
+                 smiv(1,i)=sm(ix)+smizf(i)
+                 smi(i)=smiv(1,i)
++ca stra10
+               endif
+            enddo
+         endif
+
+!--Multipoles
+      elseif(kz(ix).eq.11) then
+         ! Special case, moved from daten():
+         if (abs(el(ix)+one).le.pieni) then
+            dki(ix,1) = ed(ix)
+            dki(ix,3) = ek(ix)
+            ed(ix) = one
+            ek(ix) = one
+            el(ix) = zero
+         else if(abs(el(ix)+two).le.pieni) then
+            dki(ix,2) = ed(ix)
+            dki(ix,3) = ek(ix)
+            ed(ix) = one
+            ek(ix) = one
+            el(ix) = zero
+         endif
+         
+         !All multipoles:
+         if(.not.lfirst) then
+            do i=1,iu
+               if ( ic(i)-nblo.eq.ix ) then
+                  !--Initialize smiv as usual
+                  sm(ix)=ed(ix)
+                  smiv(m,i)=sm(ix)+smizf(i)
+                  smi(i)=smiv(m,i)
+
+                  !--Using the right izu & setting aaiv, bbiv (see multini)
+                  izu = dynk_izuIndex(ix)
++ca multini !Also in program maincr()
+ 150              continue ! needs to be after a multini block
+
+                  ! From trauthin() -- TODO: Check that it matches TRAUTHICK
+                  r0=ek(ix)
+                  nmz=nmu(ix)
+                  if(abs(r0).le.pieni.or.nmz.eq.0) then
+                     if(abs(dki(ix,1)).le.pieni .and.
+     &                    abs(dki(ix,2)).le.pieni) then
+                        ktrack(i)=31
+                     else if(abs(dki(ix,1)).gt.pieni .and.
+     &                       abs(dki(ix,2)).le.pieni) then
+                        if(abs(dki(ix,3)).gt.pieni) then
+                           ktrack(i)=33
++ca stra11
+                        else
+                           ktrack(i)=35
++ca stra12
+                        endif
+                     else if(abs(dki(ix,1)).le.pieni .and.
+     &                       abs(dki(ix,2)).gt.pieni) then
+                        if(abs(dki(ix,3)).gt.pieni) then
+                           ktrack(i)=37
++ca stra13
+                        else
+                            ktrack(i)=39
++ca stra14
+                        endif
+                     endif
+                  else
+                     if(abs(dki(ix,1)).le.pieni .and.
+     &                    abs(dki(ix,2)).le.pieni) then
+                        ktrack(i)=32
+                     else if(abs(dki(ix,1)).gt.pieni .and.
+     &                       abs(dki(ix,2)).le.pieni) then
+                        if(abs(dki(ix,3)).gt.pieni) then
+                           ktrack(i)=34
++ca stra11
+                        else
+                           ktrack(i)=36
++ca stra12
+                        endif
+                     else if(abs(dki(ix,1)).le.pieni .and.
+     &                       abs(dki(ix,2)).gt.pieni) then
+                        if(abs(dki(ix,3)).gt.pieni) then
+                           ktrack(i)=38
++ca stra13
+                        else
+                           ktrack(i)=40
++ca stra14
+                        endif
+                     endif
+                  endif
+               endif
+            enddo
+         endif
+!--Cavities (BROKEN)
+      elseif(abs(kz(ix)).eq.12) then !Some 1st time initialization in daten()
+c$$$         ! TODO: If we try to change a cavity with DYNK, we will always get the ELSE -> prror(-1)
+c$$$         ! Oops...
+c$$$         if (lfirst) then
+c$$$            lisinit(ix)=.true.
+c$$$         elseif ( .not. lisinit(ix) ) then !not lfirst and not lisinit
+c$$$            call prror(-1)
+c$$$         else !not lfirst
+c$$$            call prror(-1)
+c$$$         endif
+         ! Moved from daten:
+         phasc(ix)=el(ix)
+         el(ix)=zero
+!--Crab Cavities
+      elseif(abs(kz(ix)).eq.23) then
+         !Moved from daten()
+         crabph(ix)=el(ix)
+         el(ix)=0d0
+!--CC Mult kick order 2
+      elseif(abs(kz(ix)).eq.26) then
+         !Moved from daten()
+         crabph2(ix)=el(ix)
+         el(ix)=0d0
+!--CC Mult kick order 3
+      elseif(abs(kz(ix)).eq.27) then
+         !Moved from daten()
+         crabph3(ix)=el(ix)
+         el(ix)=0d0
+!--CC Mult kick order 4
+      else if(abs(kz(ix)).eq.28) then
+         !Moved from daten()
+         crabph4(ix)=el(ix)
+         el(ix)=0d0
+      endif
+      
+      end subroutine
+
 +if crlibm
       subroutine splitfld(errno,nunit,lineno,nfields,nf,chars,fields)
       implicit none
@@ -18811,6 +19441,8 @@ C Should get me a NaN
 !hr05   r(j) = real(iz)*4.656613e-10
         r(j) = dble(iz)*4.656613d-10                                     !hr05
    20 continue
+
+C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sigmas):
 +if crlibm
 !hr05 rvec0 = ((-two*log_rn(r(1)))**half)*cos_rn(two*pi*r(2))
 !     rvec0 = (((-1d0*two)*log_rn(r(1)))**half)*cos_rn((two*pi)*r(2))    !hr05
@@ -23504,6 +24136,7 @@ C Should get me a NaN
 +if cr
 +ca crco
 +ei
++ca comdynk
       integer i,itiono,i1,i2,i3,ia,ia2,iar,iation,ib,ib0,ib1,ib2,ib3,id,&
      &idate,ie,ig,ii,ikk,im,imonth,iposc,irecuin,itime,ix,izu,j,j2,jj,  &
      &jm,k,kpz,kzz,l,lkk,ll,m,mkk,ncorruo,ncrr,nd,nd2,ndafi2,           &
@@ -24169,6 +24802,8 @@ C Should get me a NaN
 !     call dumpbin('asearch',95,995)
 !     call abend('asearch                                           ')
 +ei
+
+        !! Initialize kicks
         izu=0
         do 150 i=1,iu
 +if debug
@@ -24184,8 +24819,8 @@ C Should get me a NaN
           if(iorg.lt.0) mzu(i)=izu
           izu=mzu(i)+1
           smizf(i)=zfz(izu)*ek(ix)
-          smiv(m,i)=sm(ix)+smizf(i)
-          smi(i)=smiv(m,i)
+          smiv(m,i)=sm(ix)+smizf(i) ! Also in initalize_element!
+          smi(i)=smiv(m,i)          ! Also in initalize_element!
 +if debug
 !         call warr('smizf(i)',smizf(i),i,0,0,0)
 !         call warr('smiv(m,i)',smiv(m,i),m,i,0,0)
@@ -24205,37 +24840,13 @@ C Should get me a NaN
             write(31,'(a16,1p,d19.11,2d14.6,d17.9)') bez(ix),           &
      &zfz(izu-2),zfz(izu-1),zfz(izu),extalign(i,3)
           endif
+         
+!-- MULTIPOLE BLOCK
           if(kzz.eq.11) then
-            r0=ek(ix)
-            if(abs(r0).le.pieni) goto 150
-            nmz=nmu(ix)
-            if(nmz.eq.0) then
-              izu=izu+2*mmul
-              goto 150
-            endif
-            im=irm(ix)
-            r0a=one
-            do 140 k=1,nmz
-              izu=izu+1
-!hr05         aaiv(k,m,i)=ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k))/r0a
-              aaiv(k,m,i)=(ed(ix)*(ak0(im,k)+zfz(izu)*aka(im,k)))/r0a    !hr05
-+if time
-!hr05         aaiv35(k,m,i)=ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k))/r0a
-             aaiv35(k,m,i)=(ed(ix)*(ak0(im,k)+zfz35(izu)*aka(im,k)))/r0a !hr05
-+ei
-              aai(i,k)=aaiv(k,m,i)
-              izu=izu+1
-!hr05         bbiv(k,m,i)=ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k))/r0a
-              bbiv(k,m,i)=(ed(ix)*(bk0(im,k)+zfz(izu)*bka(im,k)))/r0a    !hr05
-+if time
-!hr05         bbiv35(k,m,i)=ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k))/r0a
-             bbiv35(k,m,i)=(ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k)))/r0a !hr05
-+ei
-              bbi(i,k)=bbiv(k,m,i)
-  140       r0a=r0a*r0
-            izu=izu+2*mmul-2*nmz
+             dynk_izuIndex(ix)=izu
++ca multini
           endif
-  150   continue
+ 150   continue
 +if debug
 !     call dumpbin('ado 150',150,150)
 !     call abend('ado 150                                           ')
@@ -25454,7 +26065,7 @@ C Should get me a NaN
 !     call dumpbin('THE END',999,9999)
 !     call dumpzfz('THE END',9,9)
 +ei
-+ca close
+      call closeUnits
 +if cr
       call abend('                                                  ')
 +ei
@@ -25641,6 +26252,7 @@ C Should get me a NaN
 +if bnlelens
 +ca rhicelens
 +ei
++ca comdynk
 +ca save
 !-----------------------------------------------------------------------
       do 5 i=1,npart
@@ -25737,7 +26349,7 @@ C Should get me a NaN
         ktrack(i)=11
 +ca stra01
         goto 290
-   60   if(abs(smiv(1,i)).le.pieni.and.abs(ramp(ix)).le.pieni) then
+   60   if(abs(smiv(1,i)).le.pieni.and.abs(ramp(ix)).le.pieni) then ! ramp(ix) from ripple module
           ktrack(i)=31
           goto 290
         endif
@@ -25806,10 +26418,11 @@ C Should get me a NaN
         ktrack(i)=55
         goto 290
 !--solenoid
-  146   continue 
+  146   continue
 +ca solenoid
         ktrack(i)=56
         goto 290
+!--Multipole block
   150   r0=ek(ix)
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
@@ -25970,6 +26583,9 @@ C Should get me a NaN
 !hr01 if(nwri.eq.0) nwri=numl+numlr+1
       if(nwri.eq.0) nwri=(numl+numlr)+1                                  !hr01
       if(idp.eq.0.or.ition.eq.0) then
+        write(*,*) ''
+        write(*,*) 'Calling thin4d subroutine'
+        write(*,*) ''
         call thin4d(nthinerr)
       else
 !hr01   hsy(3)=c1m3*hsy(3)*ition
@@ -25979,6 +26595,9 @@ C Should get me a NaN
           if(kz(jj).eq.12) hsyc(jj)=(c1m3*hsyc(jj))*dble(itionc(jj))     !hr01
   310   continue
         if(abs(phas).ge.pieni) then
+          write(*,*) ''
+          write(*,*) 'Calling thin6dua subroutine'
+          write(*,*) ''
           call thin6dua(nthinerr)
         else
 +if collimat
@@ -26875,6 +27494,9 @@ C Should get me a NaN
 !FOR FAST TRACKING CHECKS
 !       open(unit=999,file='checkturns.dat')
 !
+          write(*,*) ''
+          write(*,*) 'Calling thin6d subroutine'
+          write(*,*) ''
           call thin6d(nthinerr)
 !
 !++  Save particle offsets to a file
@@ -27241,8 +27863,12 @@ C Should get me a NaN
      &j, sampl(j),torbx(j), torby(j)
       end do
       close(99)
-+ei
+
++ei ! endif collimat
 +if .not.collimat
+          write(*,*) ''
+          write(*,*) 'Calling thin6d subroutine'
+          write(*,*) ''
           call thin6d(nthinerr)
         endif
       endif
@@ -27300,6 +27926,7 @@ C Should get me a NaN
 +ca rhicelens
 +ca bnlio
 +ei
++ca comdynk
 +ca save
 !-----------------------------------------------------------------------
       nthinerr=0
@@ -27340,6 +27967,15 @@ C Should get me a NaN
 !       call graphic_progress(n,numl)
 +ei
         numx=n-1
+
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
+
         if(irip.eq.1) call ripple(n)
         if(mod(numx,nwri).eq.0) call writebin(nthinerr)
         if(nthinerr.ne.0) return
@@ -27360,11 +27996,12 @@ C Should get me a NaN
 +if time
 +ca timefct
 +ei
-!---------count:43
-          goto(10,630,740,630,630,630,630,630,630,630,30,50,70,90,110,  &
-     &130,150,170,190,210,420,440,460,480,500,520,540,560,580,600,      &
-     &620,390,230,250,270,290,310,330,350,370,680,700,720,630,748,      &
-     &630,630,630,630,630,745,746,751,752,753,754),ktrack(i)
+          goto(10,  630,  740, 630, 630, 630, 630, 630, 630, 630, !10
+     &         30,  50,   70,   90, 110, 130, 150, 170, 190, 210, !20
+     &         420, 440, 460,  480, 500, 520, 540, 560, 580, 600, !30
+     &         620, 390, 230,  250, 270, 290, 310, 330, 350, 370, !40
+     &         680, 700, 720,  630, 748, 630, 630, 630, 630, 630, !50
+     &         745, 746, 751,  752, 753, 754),ktrack(i)
           goto 630
    10     stracki=strack(i)
           if(iexact.eq.0) then
@@ -27723,6 +28360,7 @@ C Should get me a NaN
 !----------------------------
 
   620     continue
+
 +ca lostpart
   630   continue
         call lostpart(nthinerr)
@@ -27814,6 +28452,7 @@ C Should get me a NaN
 +ca rhicelens
 +ca bnlio
 +ei
++ca comdynk
 +ca save
 !-----------------------------------------------------------------------
 +if fast
@@ -28357,7 +28996,15 @@ C Should get me a NaN
 +if collimat
        iturn=n
 +ei
-       numx=n-1
+        numx=n-1
+
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
         if(irip.eq.1) call ripple(n)
         if(mod(numx,nwri).eq.0) call writebin(nthinerr)
         if(nthinerr.ne.0) return
@@ -28370,7 +29017,7 @@ C Should get me a NaN
 +if collimat
         totals=0d0
 +ei
-      do 650 i=1,iu
+        do 650 i=1,iu
 +if collimat
         ie=i
 !!     SR, 10-08-2005 - My format to writer down particle distributions
@@ -28519,15 +29166,26 @@ C Should get me a NaN
      &640,410,250,270,290,310,330,350,370,390,680,700,720,730,748,      &
      &650,650,650,650,650,745,746,751,752,753,754,755,758,756,759,757,  &
      &760),ktrack(i)
-          goto 650
 +ei
 +if collimat
-          goto(10,30,740,650,650,650,650,650,650,650,50,70,90,110,130,  &
-     &150,170,190,210,230,440,460,480,500,520,540,560,580,600,620,      &
-     &640,410,250,270,290,310,330,350,370,390,680,700,720,730,748,      &
-     &650,650,650,650,650,745,746),myktrack
-          goto 650
+!          if (myktrack .eq. 1) then !BLOCK of linear elements
+!             write (*,*) "Kick for element", i,ix, "[BLOCK]"
+!          else
+!             write(*,*) "Kick for element", i,ix,bez(ix),myktrack,kp(ix)
+!          endif
+          goto(10,  30, 740, 650, 650, 650, 650, 650, 650, 650, !10
+     &         50,  70,  90, 110, 130, 150, 170, 190, 210, 230, !20
+     &        440, 460, 480, 500, 520, 540, 560, 580, 600, 620, !30
+     &        640, 410, 250, 270, 290, 310, 330, 350, 370, 390, !40
+     &        680, 700, 720, 730, 748, 650, 650, 650, 650, 650, !50
+     &        745, 746, 751, 752, 753, 754, 755, 758, 756, 759, !60
+     &        757, 760 ),myktrack
+          write (*,*) "WARNING: Non-handled element in thin6d()!",
+     &                " i=", i, "ix=", ix, "myktrack=",  myktrack,
+     &                " bez(ix)='", bez(ix),"' SKIPPED"
 +ei
+          goto 650
+
    10     stracki=strack(i)
 +if collimat
 !==========================================
@@ -30218,7 +30876,7 @@ C Should get me a NaN
               if ( part_hit(j).eq.(10000*ie+iturn) ) then
                 if (part_impact(j).lt.-0.5d0) then
 +if cr
-                  write(lout,*) 'ERR>  Found invalid impact parameter!' &
+                  write(lout,*) 'ERR>  Found invalid impact parameter!',&
      &                  part_impact(j)
 +ei
 +if .not.cr
@@ -31508,15 +32166,16 @@ C Should get me a NaN
 !++  Write final distribution
 !
       if (dowrite_dist.and.(ie.eq.iu).and.(n.eq.numl)) then
-        open(unit=99, file='distn.dat')
-        write(99,*)                                                     &
-     &'# 1=x 2=xp 3=y 4=yp'
+        open(unit=9998, file='distn.dat')
+        write(9998,*) ! Assumed wrong unit number in FLUKA code
+     &'# 1=x 2=xp 3=y 4=yp 5=z 6 =E'
         do j = 1, napx
-          write(99,'(5(1X,E15.7))') xgrd(j), xpgrd(j),                  &
-     &ygrd(j), ypgrd(j)
+          write(9998,'(6(1X,E15.7))') (xgrd(j)-torbx(1))/1d3,           &
+     &(xpgrd(j)-torbxp(1))/1d3, (ygrd(j)-torby(1))/1d3,                 &
+     &(ypgrd(j)-torbyp(1))/1d3,sigmvgrd(j),ejfvgrd(j)
 !     2             , S(J)
         end do
-        close(99)
+        close(9998) ! Assumed wrong unit number in FLUKA code
       endif
 !
 !GRD
@@ -31808,6 +32467,7 @@ C Should get me a NaN
 +ca rhicelens
 +ca bnlio
 +ei
++ca comdynk
 +ca save
 !-----------------------------------------------------------------------
 +if fast
@@ -31851,6 +32511,15 @@ C Should get me a NaN
 !       call graphic_progress(n,numl)
 +ei
         numx=n-1
+
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
+
         if(irip.eq.1) call ripple(n)
         if(n.le.nde(1)) nwri=nwr(1)
         if(n.gt.nde(1).and.n.le.nde(2)) nwri=nwr(2)
@@ -32299,6 +32968,7 @@ C Should get me a NaN
 !----------------------------
 
   640     continue
+
 +ca lostpart
   650   continue
         call lostpart(nthinerr)
@@ -33030,6 +33700,7 @@ C Should get me a NaN
 +ca commontr
 +ca beamdim
       dimension nbeaux(nbb)
++ca comdynk
 +ca save
 !-----------------------------------------------------------------------
       do 5 i=1,npart
@@ -33126,7 +33797,7 @@ C Should get me a NaN
         ktrack(i)=11
 +ca stra01
         goto 290
-   60   if(abs(smiv(1,i)).le.pieni.and.abs(ramp(ix)).le.pieni) then
+   60   if(abs(smiv(1,i)).le.pieni.and.abs(ramp(ix)).le.pieni) then ! ramp(ix) from ripple module
           ktrack(i)=31
           goto 290
         endif
@@ -33199,6 +33870,7 @@ C Should get me a NaN
 +ca solenoid
         ktrack(i)=56
         goto 290
+!--Multipole block
   150   r0=ek(ix)
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
@@ -33357,7 +34029,17 @@ C Should get me a NaN
   300 continue
       nwri=nwr(3)
       if(nwri.eq.0) nwri=numl+numlr+1
+
+!     A.Mereghetti, for the FLUKA Team
+!     last modified: 17-07-2013
+!     save original kicks
+!     always in main code
+      if (ldynk) call dynk_pretrack
+
       if(idp.eq.0.or.ition.eq.0) then
+        write(*,*) ''
+        write(*,*) 'Calling thck4d subroutine'
+        write(*,*) ''
         call thck4d(nthinerr)
       else
 !hr01   hsy(3)=c1m3*hsy(3)*ition
@@ -33367,8 +34049,14 @@ C Should get me a NaN
           if(kz(jj).eq.12) hsyc(jj)=(c1m3*hsyc(jj))*dble(itionc(jj))     !hr01
   310   continue
         if(abs(phas).ge.pieni) then
+          write(*,*) ''
+          write(*,*) 'Calling thck6dua subroutine'
+          write(*,*) ''
           call thck6dua(nthinerr)
         else
+          write(*,*) ''
+          write(*,*) 'Calling thck6d subroutine'
+          write(*,*) ''
           call thck6d(nthinerr)
         endif
       endif
@@ -33423,6 +34111,7 @@ C Should get me a NaN
 +ca rhicelens
 +ca bnlio
 +ei
++ca comdynk
 +ca save
 !-----------------------------------------------------------------------
       nthinerr=0
@@ -33465,6 +34154,15 @@ C Should get me a NaN
 !       call graphic_progress(n,numl)
 +ei
           numx=n-1
+
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
+
           if(irip.eq.1) call ripple(n)
           if(mod(numx,nwri).eq.0) call writebin(nthinerr)
           if(nthinerr.ne.0) return
@@ -33937,6 +34635,7 @@ C Should get me a NaN
 !GRDRHIC
 !GRD-042008
 +ei
++ca comdynk
 +ca save
 +if debug
 !-----------------------------------------------------------------------
@@ -33986,6 +34685,15 @@ C Should get me a NaN
 !       call graphic_progress(n,numl)
 +ei
           numx=n-1
+
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
+
           if(irip.eq.1) call ripple(n)
           if(mod(numx,nwri).eq.0) call writebin(nthinerr)
           if(nthinerr.ne.0) return
@@ -34499,7 +35207,8 @@ C Should get me a NaN
 
 !----------------------------
 
-  490       continue
+  490     continue
+
 +ca lostpart
 +if debug
   500 continue
@@ -34596,6 +35305,7 @@ C Should get me a NaN
 +ca rhicelens
 +ca bnlio
 +ei
++ca comdynk
 +ca save
 !-----------------------------------------------------------------------
       nthinerr=0
@@ -34638,6 +35348,15 @@ C Should get me a NaN
 !       call graphic_progress(n,numl)
 +ei
           numx=n-1
+
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
+
           if(irip.eq.1) call ripple(n)
           if(n.le.nde(1)) nwri=nwr(1)
           if(n.gt.nde(1).and.n.le.nde(2)) nwri=nwr(2)
@@ -34666,7 +35385,7 @@ C Should get me a NaN
 +ca timefct
 +ei
             endif
-!----------count 44
+!----------count 56
             goto(20,40,740,500,500,500,500,500,500,500,60,80,100,120,   &
      &140,160,180,200,220,240,290,310,330,350,370,390,410,430,          &
      &450,470,490,260,520,540,560,580,600,620,640,660,680,700,720       &
@@ -35092,7 +35811,8 @@ C Should get me a NaN
 
 !----------------------------
 
-  490       continue
+  490     continue
+
 +ca lostpart
   500     continue
           call lostpart(nthinerr)
@@ -37003,7 +37723,7 @@ C Should get me a NaN
   160 continue
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
-+ca close
+      call closeUnits
 +if cr
       call abend('                                                  ')
 +ei
@@ -37128,6 +37848,7 @@ C Should get me a NaN
 +if bnlelens
 +ca rhicelens
 +ei
++ca comdynk
 +ca save
 !-----------------------------------------------------------------------
 !
@@ -37459,6 +38180,7 @@ C Should get me a NaN
         zrms(i)=zero
         benkc(i)=zero
         r00(i)=zero
+
         apx(i)=c1e3
         apz(i)=c1e3
         ape(1,i)=c1e6
@@ -37635,6 +38357,37 @@ C Should get me a NaN
       do i=1,mcor
         smida_da(i)=0
       enddo
+!--DYNAMIC KICKS--------------------------------------------------------
+!     A.Mereghetti, for the FLUKA Team
+!     last modified: 03-09-2014
+!     initialise common
+!     always in main code
+!     - general-purpose variables
+      ldynk = .false.
+      ldynkdebug = .false.
+      ldynkfileopen = .false.
+      ldynkfiledisable = .false.
+      
+      nfuncs_dynk = 0
+      niexpr_dynk = 0
+      nfexpr_dynk = 0
+      ncexpr_dynk = 0
+
+      do i=1,maxdata_dynk
+         do j=1,maxstrlen_dynk
+            cexpr_dynk(i)(j:j) = char(0)
+         enddo
+      enddo
+      
+      nsets_dynk = 0
+
+      do i=1, maxsets_dynk
+         do j=1, maxstrlen_dynk
+            csets_dynk(i,1)(j:j) = char(0)
+            csets_dynk(i,2)(j:j) = char(0)
+         enddo
+      enddo
+!
 !-----------------------------------------------------------------------
       return
       end
@@ -41159,7 +41912,7 @@ C Should get me a NaN
 +ei
  1870 continue
 !-----------------------------------------------------------------------
-+ca close
+      call closeUnits
 +if cr
       call abend('                                                  ')
 +ei
@@ -41254,7 +42007,7 @@ C Should get me a NaN
 10490 format(t10,'ONLY UP TO 3 SUBRESONANCES CAN BE COMPENSATED')
 10500 format(t10,'THE MULTIPOLE ORDER FOR THE SUBRESONANCE COMPENSATION'&
      &,' SHOULD NOT EXCEED THE VALUE 9')
-10510 format(t10,'TOO MANY RIPPLE ELEMENTS')
+10510 format(t10,'PROBLEMS WITH FILE 3 WITH DYNAMIC KIKS') !WAS: TOO MANY RIPPLE ELEMENTS
 10520 format(t10,'MAXIMUM ORDER OF THE ONE TURN MAP IS ',i4, /,         &
      &' NEMA HAS TO BE LARGER THAN NORD')
 10530 format(t10,'# OF VARIABLES -NV- OF THE ONE TURN MAP IS NOT',      &
@@ -41338,6 +42091,2598 @@ C Should get me a NaN
 11050 format(t10,'THE INPUT ORDER OF MULTIPOLES IS LARGER THAN THE ',   &
      &'MAXIMUM ALLOWED ORDER MMUL: ',i4)
       end
++dk dynkancil
+
+      subroutine dynk_parseFUN( getfields_fields,
+     &                          getfields_lfields,getfields_nfields )
+!
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 30-10-2014
+!     parse FUN lines in the fort.3 input file, 
+!     store it in COMMON block dynkComExpr.
+!-----------------------------------------------------------------------
+!     
+      implicit none
++ca parpro      
++ca comdynk
++ca comgetfields
++if cr
++ca crcoall
++ei
+
+      intent(in) getfields_fields, getfields_lfields, getfields_nfields
+      
+      ! Temp variables
+      integer ii, stat, t
+      double precision x,y,               ! FILE, FILELIN
+     &                 x1,x2,y1,y2,deriv, ! LINSEG, QUADSEG,
+     &                 tinj,Iinj,Inom,A,D,R,te,                 !PELP (input)
+     &                 derivI_te,I_te,bexp,aexp, t1,I1, td,tnom !PELP (calc)
+      
+      ! define function return type
+      integer dynk_findFUNindex
+      
+      if (nfuncs_dynk+1 .gt. maxfuncs_dynk) then
++if cr
+         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+         write (lout,*) "Maximum number of FUN exceeded, please" //
+     &        "parameter maxfuncs_dynk."
+         write (lout,*) "Current value of maxfuncs_dynk:",maxfuncs_dynk
++ei
++if .not.cr
+         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
+         write (*,*)    "Maximum number of FUN exceeded, please" //
+     &        "parameter maxfuncs_dynk."
+         write (*,*)    "Current value of maxfuncs_dynk:",maxfuncs_dynk
++ei
+         call prror(51)
+      endif
+      
+      ! ! ! ! ! ! ! ! ! ! ! ! ! !
+      ! Which type of function? !
+      ! ! ! ! ! ! ! ! ! ! ! ! ! !
+
+      !!! System functions: #0-19 !!!
+      select case ( getfields_fields(3)(1:getfields_lfields(3)) )
+      case ("GET")
+         ! GET: Store the value of an element/value
+
+         call dynk_checkargs(getfields_nfields,5,
+     &        "FUN funname GET elementName attribute" )
+         call dynk_checkspace(0,1,3)
+         
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 0           !TYPE (GET)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk  )(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         cexpr_dynk(ncexpr_dynk+1)(1:getfields_lfields(4)) = !ELEMENT_NAME
+     &        getfields_fields(4)(1:getfields_lfields(4))
+         cexpr_dynk(ncexpr_dynk+2)(1:getfields_lfields(5)) = !ATTRIBUTE_NAME
+     &        getfields_fields(5)(1:getfields_lfields(5))
+         ncexpr_dynk = ncexpr_dynk+2
+         
+         fexpr_dynk(nfexpr_dynk) = -1.0 !Initialize a place in the array to store the value
+         
+         if (getfields_lfields(2) .gt. 16) then ! length of BEZ elements
++if cr
+            write (lout,*) "*************************************"
+            write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+            write (lout,*) "SET FUN got an element name with     "
+            write (lout,*) "length =", getfields_lfields(4), "> 16."
+            write (lout,*) "The name was: '",getfields_fields(4)
+     &                                    (1:getfields_lfields(4)),"'"
+            write (lout,*) "*************************************"
++ei
++if .not.cr
+            write (*,*) "*************************************"
+            write (*,*) "ERROR in DYNK block parsing (fort.3):"
+            write (*,*) "SET FUN got an element name with     "
+            write (*,*) "length =", getfields_lfields(4), "> 16."
+            write (*,*) "The name was: '",getfields_fields(4)
+     &                                    (1:getfields_lfields(4)),"'"
+            write (*,*) "*************************************"
++ei
+            call prror(51)
+         end if
+
+      case ("FILE")
+         ! FILE: Load the contents from a file
+         ! File format: two ASCII columns of numbers,
+         ! first  column = turn number (all turns should be there, starting from 1)
+         ! second column = value (as a double)
+
+         call dynk_checkargs(getfields_nfields,4,
+     &        "FUN funname FILE filename" )
+         call dynk_checkspace(0,0,2)
+         
+         ! Set pointers to start of funs data blocks (nfexpr_dynk handled when reading data)
+         nfuncs_dynk = nfuncs_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk   !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 1             !TYPE (FILE)
+         funcs_dynk(nfuncs_dynk,3) = ncexpr_dynk+1 !Filename (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk+1 !Data     (in fexpr_dynk)
+         funcs_dynk(nfuncs_dynk,5) = -1            !Below: Length of file
+         ! Store data
+         cexpr_dynk(ncexpr_dynk  )(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         cexpr_dynk(ncexpr_dynk+1)(1:getfields_lfields(4)) = !FILE NAME
+     &        getfields_fields(4)(1:getfields_lfields(4))
+         ncexpr_dynk = ncexpr_dynk+1
+         
+         !Open the file
+         open(unit=664,file=cexpr_dynk(ncexpr_dynk),action='read',
+     &        iostat=stat)
+         if (stat .ne. 0) then
++if cr
+            write(lout,*) "DYNK> dynk_parseFUN():FILE"
+            write(lout,*) "DYNK> Error opening file '",
+     &           cexpr_dynk(ncexpr_dynk), "'"
++ei
++if .not.cr
+            write(*,*)    "DYNK> dynk_parseFUN():FILE"
+            write(*,*)    "DYNK> Error opening file '",
+     &           cexpr_dynk(ncexpr_dynk), "'"
++ei
+            call prror(51)
+         endif
+
+         ii = 0 !Number of data lines read
+         do
+            read(664,*, iostat=stat) t,y
+            if (stat .ne. 0) exit !EOF
+
+            ii = ii+1
+            if (t .ne. ii) then
++if cr
+               write(lout,*) "DYNK> dynk_parseFUN():FILE"
+               write(lout,*) "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(lout,*) "DYNK> Missing turn number", ii,
+     &              ", got turn", t
++ei
++if .not.cr
+               write(*,*)    "DYNK> dynk_parseFUN():FILE"
+               write(*,*)    "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(*,*)    "DYNK> Missing turn number", ii,
+     &              ", got turn", t
++ei
+               call prror(51)
+            endif
+            if (nfexpr_dynk+1 .gt. maxdata_dynk) then
++if cr
+               write(lout,*) "DYNK> dynk_parseFUN():FILE"
+               write(lout,*) "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(lout,*) "DYNK> Ran out of memory in fexpr_dynk ",
+     &              "in turn", t
+               write(lout,*) "DYNK> Please increase maxdata_dynk."
++ei
++if .not.cr
+               write(*,*)    "DYNK> dynk_parseFUN():FILE"
+               write(*,*)    "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(*,*)    "DYNK> Ran out of memory in fexpr_dynk ",
+     &              "in turn", t
+               write(*,*)    "DYNK> Please increase maxdata_dynk."
++ei
+               call prror(51)
+            endif
+            
+            nfexpr_dynk = nfexpr_dynk+1
+            fexpr_dynk(nfexpr_dynk) = y
+         enddo
+         funcs_dynk(nfuncs_dynk,5) = ii
+         
+         close(664)
+
+      case ("FILELIN")
+         ! FILELIN: Load the contents from a file, linearly interpolate
+         ! File format: two ASCII columns of numbers,
+         ! first  column = turn number (as a double)
+         ! second column = value (as a double)
+
+         call dynk_checkargs(getfields_nfields,4,
+     &        "FUN funname FILELIN filename" )
+         call dynk_checkspace(0,0,2)
+
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk   !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 2             !TYPE (FILELIN)
+         funcs_dynk(nfuncs_dynk,3) = ncexpr_dynk+1 !Filename (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk+1 !Data     (in fexpr_dynk)
+         funcs_dynk(nfuncs_dynk,5) = -1            !Below: Length of file (number of x,y sets)
+         ! Store data
+         cexpr_dynk(ncexpr_dynk  )(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         cexpr_dynk(ncexpr_dynk+1)(1:getfields_lfields(4)) = !FILE NAME
+     &        getfields_fields(4)(1:getfields_lfields(4))
+         ncexpr_dynk = ncexpr_dynk+1
+         
+         !Open the file
+         open(unit=664,file=cexpr_dynk(ncexpr_dynk),action='read',
+     &        iostat=stat)
+         if (stat .ne. 0) then
++if cr
+            write(lout,*) "DYNK> dynk_parseFUN():FILELIN"
+            write(lout,*) "DYNK> Error opening file '",
+     &           cexpr_dynk(ncexpr_dynk), "'"
++ei
++if .not.cr
+            write(*,*)    "DYNK> dynk_parseFUN():FILELIN"
+            write(*,*)    "DYNK> Error opening file '",
+     &           cexpr_dynk(ncexpr_dynk), "'"
++ei
+            call prror(51)
+         endif
+         ! Find the size of the file
+         ii = 0 !Number of data lines read
+         do
+            read(664,*, iostat=stat) x,y
+            if (stat .ne. 0) exit !EOF
+            
+            if (ii.gt.0 .and. x.le. x2) then !Insane: Decreasing x
++if cr
+               write (lout,*) "DYNK> dynk_parseFUN():FILELIN"
+               write (lout,*) "DYNK> Error while reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write (lout,*) "DYNK> x values must "//
+     &              "be in increasing order"
++ei
++if .not.cr
+               write (*,*)    "DYNK> dynk_parseFUN():FILELIN"
+               write (*,*)    "DYNK> Error while reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write (*,*)    "DYNK> x values must "//
+     &              "be in increasing order"
++ei
+               call prror(-1)
+            endif
+            x2 = x
+            
+            ii = ii+1
+         enddo
+         t = ii
+         rewind(664)
+         
+         if (nfexpr_dynk+2*t .gt. maxdata_dynk) then
++if cr
+            write (lout,*) "DYNK> dynk_parseFUN():FILELIN"
+            write (lout,*) "DYNK> Error reading file '",
+     &           cexpr_dynk(ncexpr_dynk),"'"
+            write (lout,*) "DYNK> Not enough space in fexpr_dynk,"//
+     &           " need", 2*t
+            write (lout,*) "DYNK> Please increase maxdata_dynk"
++ei
++if .not.cr
+            write (*,*)    "DYNK> dynk_parseFUN():FILELIN"
+            write (*,*)    "DYNK> Error reading file '",
+     &           cexpr_dynk(ncexpr_dynk),"'"
+            write (*,*)    "DYNK> Not enough space in fexpr_dynk,"//
+     &           " need", 2*t
+            write (*,*)    "DYNK> Please increase maxdata_dynk"
++ei
+            call prror(51)
+         endif
+
+         !Read the file
+         ii = 0
+         do
+            read(664,*, iostat=stat) x,y
+            if (stat .ne. 0) then !EOF
+               if (ii .ne. t) then
++if cr
+                  write (lout,*) "DYNK> dynk_parseFUN():FILELIN"
+                  write (lout,*) "DYNK> Unexpected when reading file '",
+     &                 cexpr_dynk(ncexpr_dynk),"'"
+                  write (lout,*) "DYNK> ii=",ii,"t=",t
+
++ei
++if .not.cr
+                  write (*,*)    "DYNK> dynk_parseFUN():FILELIN"
+                  write (*,*)    "DYNK> Unexpected when reading file '",
+     &                 cexpr_dynk(ncexpr_dynk),"'"
+                  write (*,*)    "DYNK> ii=",ii,"t=",t
++ei
+                  call prror(51)
+               endif
+               exit
+            endif
+            !Current line number
+            ii = ii+1
+            
+            fexpr_dynk(nfexpr_dynk + ii    ) = x
+            fexpr_dynk(nfexpr_dynk + ii + t) = y
+         enddo
+         
+         nfexpr_dynk = nfexpr_dynk + 2*t
+         funcs_dynk(nfuncs_dynk,5) = t
+         close(664)
+
+      case ("RANDG")
+         ! RANDG: Gausian random number with mu, sigma, and optional cutoff
+         
+         call dynk_checkargs(getfields_nfields,8,
+     &        "FUN funname RANDG seed1 seed2 mu sigma cut" )
+         call dynk_checkspace(5,2,1)
+         
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         niexpr_dynk = niexpr_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 6           !TYPE (RANDG)
+         funcs_dynk(nfuncs_dynk,3) = niexpr_dynk !seed1, seed2, mcut (in iexpr_dynk)
+         funcs_dynk(nfuncs_dynk,4) = nfexpr_dynk !mu, sigma (in fexpr_dynk)
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        iexpr_dynk(niexpr_dynk) ! seed1 (initial)
+         read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &        iexpr_dynk(niexpr_dynk+1) ! seed2 (initial)
+         read(getfields_fields(6)(1:getfields_lfields(6)),*)
+     &        fexpr_dynk(nfexpr_dynk) ! mu
+         read(getfields_fields(7)(1:getfields_lfields(7)),*)
+     &        fexpr_dynk(nfexpr_dynk+1) ! sigma
+         read(getfields_fields(8)(1:getfields_lfields(8)),*)
+     &        iexpr_dynk(niexpr_dynk+2) ! mcut
+         iexpr_dynk(niexpr_dynk+3) = 0 ! seed1 (current)
+         iexpr_dynk(niexpr_dynk+4) = 0 ! seed2 (current)
+         niexpr_dynk = niexpr_dynk+4
+         nfexpr_dynk = nfexpr_dynk+1
+         if (iexpr_dynk(niexpr_dynk) .lt. 0) then
+            !mcut < 0
++if cr
+            write (lout,*) "DYNK> dynk_parseFUN():RANDG"
+            write (lout,*) "DYNK> ERROR in DYNK block parsing (fort.3)"
+            write (lout,*) "DYNK> mcut must be >= 0"
++ei
++if .not.cr
+            write (*,*)    "DYNK> dynk_parseFUN():RANDG"
+            write (*,*)    "DYNK> ERROR in DYNK block parsing (fort.3)"
+            write (*,*)    "DYNK> mcut must be >= 0"
++ei
+            call prror(51)
+         endif
+
+      !!! Operators: #20-39 !!!
+      case("ADD","SUB","MUL","DIV","POW")
+         ! Two-argument operators  y = OP(f1, f2)
+
+         call dynk_checkargs(getfields_nfields,5,
+     &        "FUN funname {ADD|SUB|MUL|DIV|POW} funname1 funname2")
+         call dynk_checkspace(0,0,1)
+         
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         select case (getfields_fields(3)(1:getfields_lfields(3)))
+         case ("ADD")
+            funcs_dynk(nfuncs_dynk,2) = 20 !TYPE (ADD)
+         case ("SUB")
+            funcs_dynk(nfuncs_dynk,2) = 21 !TYPE (SUB)
+         case ("MUL")
+            funcs_dynk(nfuncs_dynk,2) = 22 !TYPE (MUL)
+         case ("DIV")
+            funcs_dynk(nfuncs_dynk,2) = 23 !TYPE (DIV)
+         case ("POW")
+            funcs_dynk(nfuncs_dynk,2) = 24 !TYPE (POW)
+         case default
++if cr
+            write (lout,*) "DYNK> dynk_parseFUN() : 2-arg function"
+            write (lout,*) "DYNK> non-recognized type in inner switch"
++ei
++if .not.cr
+            write (*,*)    "DYNK> dynk_parseFUN() : 2-arg function"
+            write (*,*)    "DYNK> non-recognized type in inner switch"
++ei
+            call prror(51)
+         end select
+         funcs_dynk(nfuncs_dynk,3) = 
+     &        dynk_findFUNindex( getfields_fields(4)
+     &                           (1:getfields_lfields(4)), 1) !Index to f1
+         funcs_dynk(nfuncs_dynk,4) = 
+     &        dynk_findFUNindex( getfields_fields(5)
+     &                           (1:getfields_lfields(5)), 1) !Index to f2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         ! Sanity check
+         if (funcs_dynk(nfuncs_dynk,3) .eq. -1 .or. 
+     &       funcs_dynk(nfuncs_dynk,4) .eq. -1) then
++if cr
+            write (lout,*) "*************************************"
+            write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+            write (lout,*) "TWO ARG OPERATOR wanting functions '",
+     &           getfields_fields(4)(1:getfields_lfields(4)), "' and '", 
+     &           getfields_fields(5)(1:getfields_lfields(5)), "'"
+            write (lout,*) "Calculated indices:",
+     &           funcs_dynk(nfuncs_dynk,3), funcs_dynk(nfuncs_dynk,4)
+            write (lout,*) "One or both of these are not known (-1)."
+            write (lout,*) "*************************************"
++ei
++if .not.cr
+            write (*,*)    "*************************************"
+            write (*,*)    "ERROR in DYNK block parsing (fort.3):"
+            write (*,*)    "TWO ARG OPERATOR wanting functions '",
+     &           getfields_fields(4)(1:getfields_lfields(4)), "' and '",
+     &           getfields_fields(5)(1:getfields_lfields(5)), "'"
+            write (*,*)    "Calculated indices:",
+     &           funcs_dynk(nfuncs_dynk,3), funcs_dynk(nfuncs_dynk,4)
+            write (*,*)    "One or both of these are not known (-1)."
+            write (*,*)    "*************************************"
++ei
+            call dynk_dumpdata
+            call prror(51)
+         end if
+
+      case ("MINUS","SQRT","SIN","COS","LOG","LOG10","EXP")
+         ! One-argument operators  y = OP(f1)
+
+         call dynk_checkargs(getfields_nfields,4,
+     &        "FUN funname {MINUS|SQRT|SIN|COS|LOG|LOG10|EXP} funname")
+         call dynk_checkspace(0,0,1)
+         
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         select case ( getfields_fields(3)(1:getfields_lfields(3)) )
+         case ("MINUS")
+            funcs_dynk(nfuncs_dynk,2) = 30 !TYPE (MINUS)
+         case ("SQRT")
+            funcs_dynk(nfuncs_dynk,2) = 31 !TYPE (SQRT)
+         case ("SIN")
+            funcs_dynk(nfuncs_dynk,2) = 32 !TYPE (SIN)
+         case ("COS")
+            funcs_dynk(nfuncs_dynk,2) = 33 !TYPE (COS)
+         case ("LOG")
+            funcs_dynk(nfuncs_dynk,2) = 34 !TYPE (LOG)
+         case ("LOG10")
+            funcs_dynk(nfuncs_dynk,2) = 35 !TYPE (LOG10)
+         case ("EXP")
+            funcs_dynk(nfuncs_dynk,2) = 36 !TYPE (EXP)
+         case default
++if cr
+            write (lout,*) "DYNK> dynk_parseFUN() : 1-arg function"
+            write (lout,*) "DYNK> non-recognized type in inner switch?"
++ei
++if .not.cr
+            write (*,*)    "DYNK> dynk_parseFUN() : 1-arg function"
+            write (*,*)    "DYNK> non-recognized type in inner switch?"
++ei
+            call prror(51)
+         end select
+         funcs_dynk(nfuncs_dynk,3) = 
+     &        dynk_findFUNindex(getfields_fields(4)
+     &        (1:getfields_lfields(4)), 1)       !Index to f1
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         ! Sanity check
+         if (funcs_dynk(nfuncs_dynk,3) .eq. -1) then
++if cr
+            write (lout,*) "*************************************"
+            write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+            write (lout,*) "SINGLE OPERATOR FUNC wanting function '",
+     &           getfields_fields(4)(1:getfields_lfields(4)), "'"
+            write (lout,*) "Calculated index:",
+     &           funcs_dynk(nfuncs_dynk,3)
+            write (lout,*) "One or both of these are not known (-1)."
+            write (lout,*) "*************************************"
++ei
++if .not.cr
+            write (*,*)    "*************************************"
+            write (*,*)    "ERROR in DYNK block parsing (fort.3):"
+            write (*,*)    "SINGLE OPERATOR FUNC wanting function '",
+     &           getfields_fields(4)(1:getfields_lfields(4)), "'"
+            write (*,*)    "Calculated index:",
+     &           funcs_dynk(nfuncs_dynk,3)
+            write (*,*)    "One or both of these are not known (-1)."
+            write (*,*)    "*************************************"
++ei
+            call dynk_dumpdata
+            call prror(51)
+         end if
+
+      !!! Polynomial & Elliptical functions: # 40-59 !!!
+      case("CONST")   
+         ! CONST: Just a constant value
+         
+         call dynk_checkargs(getfields_nfields,4,
+     &        "FUN funname CONST value" )
+         call dynk_checkspace(0,1,1)
+         
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 40          !TYPE (CONST)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        fexpr_dynk(nfexpr_dynk) ! value
+
+      case ("TURN")
+         ! TURN: Just the current turn number
+         
+         call dynk_checkargs(getfields_nfields,3,
+     &        "FUN funname TURN" )
+         call dynk_checkspace(0,0,1)
+         
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 41          !TYPE (TURN)
+         funcs_dynk(nfuncs_dynk,3) = -1          !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+
+      case ("LIN")
+         ! LIN: Linear ramp y = dy/dt*T+b
+         
+         call dynk_checkargs(getfields_nfields,5,
+     &        "FUN funname LIN dy/dt b" )
+         call dynk_checkspace(0,2,1)
+
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 42          !TYPE (LIN)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        fexpr_dynk(nfexpr_dynk) ! dy/dt
+         read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &        fexpr_dynk(nfexpr_dynk+1) ! b
+         nfexpr_dynk = nfexpr_dynk + 1
+
+      case ("LINSEG")
+         ! LINSEG: Linear ramp between points (x1,y1) and (x2,y2)
+         
+         call dynk_checkargs(getfields_nfields,7,
+     &        "FUN funname LINSEG x1 x2 y1 y2" )
+         call dynk_checkspace(0,4,1)
+
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 43          !TYPE (LINSEG)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        fexpr_dynk(nfexpr_dynk)   ! x1
+         read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &        fexpr_dynk(nfexpr_dynk+1) ! x2
+         read(getfields_fields(6)(1:getfields_lfields(6)),*)
+     &        fexpr_dynk(nfexpr_dynk+2) ! y1
+         read(getfields_fields(7)(1:getfields_lfields(7)),*)
+     &        fexpr_dynk(nfexpr_dynk+3) ! y2
+         nfexpr_dynk = nfexpr_dynk + 3
+         
+         if (fexpr_dynk(nfexpr_dynk) .eq. fexpr_dynk(nfexpr_dynk+1))then
++if cr
+            write (lout,*) "ERROR in DYNK block parsing (fort.3)"
+            write (lout,*) "LINSEG: x1 and x2 must be different."
++ei
++if .not.cr
+            write (*,*)    "ERROR in DYNK block parsing (fort.3)"
+            write (*,*)    "LINSEG: x1 and x2 must be different."
++ei
+            call prror(51)
+         endif
+         
+      case ("QUAD")
+         ! QUAD: Quadratic ramp y = a*T^2 + b*T + c
+         
+         call dynk_checkargs(getfields_nfields,6,
+     &        "FUN funname QUAD a b c" )
+         call dynk_checkspace(0,3,1)
+
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 44          !TYPE (QUAD)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        fexpr_dynk(nfexpr_dynk)   ! a
+         read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &        fexpr_dynk(nfexpr_dynk+1) ! b
+         read(getfields_fields(6)(1:getfields_lfields(6)),*)
+     &        fexpr_dynk(nfexpr_dynk+2) ! c
+         nfexpr_dynk = nfexpr_dynk + 2
+
+      case ("QUADSEG")
+         ! QUADSEG: Quadratic ramp y = a*T^2 + b*T + c,
+         ! input as start point (x1,y1), end point (x2,y2), derivative at at x1
+         
+         call dynk_checkargs(getfields_nfields,8,
+     &        "FUN funname QUADSEG x1 x2 y1 y2 deriv" )
+         call dynk_checkspace(0,8,1)
+
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 45          !TYPE (QUADSEG)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         
+         read(getfields_fields(4)(1:getfields_lfields(4)),*) x1
+         read(getfields_fields(5)(1:getfields_lfields(5)),*) x2
+         read(getfields_fields(6)(1:getfields_lfields(6)),*) y1
+         read(getfields_fields(7)(1:getfields_lfields(7)),*) y2
+         read(getfields_fields(8)(1:getfields_lfields(8)),*) deriv
+         
+         if (x1 .eq. x2) then
++if cr
+            write (lout,*) "ERROR in DYNK block parsing (fort.3)"
+            write (lout,*) "QUADSEG: x1 and x2 must be different."
++ei
++if .not.cr
+            write (*,*)    "ERROR in DYNK block parsing (fort.3)"
+            write (*,*)    "QUADSEG: x1 and x2 must be different."
++ei
+            call prror(51)
+         endif
+         
+         ! Compute a:
+         fexpr_dynk(nfexpr_dynk) = deriv/(x1-x2)
+     &        + (y2-y1)/((x1-x2)**2)
+         ! Compute b:
+         fexpr_dynk(nfexpr_dynk+1) = (y2-y1)/(x2-x1)
+     &        - (x1+x2)*fexpr_dynk(nfexpr_dynk)
+         ! Compute c:
+         fexpr_dynk(nfexpr_dynk+2) = y1 + (
+     &        - x1**2 * fexpr_dynk(nfexpr_dynk)
+     &        - x1    * fexpr_dynk(nfexpr_dynk+1) )
+         
+         ! Store input data:
+         fexpr_dynk(nfexpr_dynk+3) = x1
+         fexpr_dynk(nfexpr_dynk+4) = x2
+         fexpr_dynk(nfexpr_dynk+5) = y1
+         fexpr_dynk(nfexpr_dynk+6) = y2
+         fexpr_dynk(nfexpr_dynk+7) = deriv
+
+         nfexpr_dynk = nfexpr_dynk + 7
+         
+      !!! Trancedental functions: #60-79 !!!
+      case ("SINF")
+         ! SINF: Sin functions y = A*sin(omega*T+phi)
+         
+         call dynk_checkargs(getfields_nfields,6,
+     &        "FUN funname SINF amplitude omega phase" )
+         call dynk_checkspace(0,3,1)
+
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 60          !TYPE (SINF)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         
+         read(getfields_fields(4)(1:getfields_lfields(4)),*)
+     &        fexpr_dynk(nfexpr_dynk) !A
+         read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &        fexpr_dynk(nfexpr_dynk+1) !omega
+         read(getfields_fields(6)(1:getfields_lfields(6)),*)
+     &        fexpr_dynk(nfexpr_dynk+2) !phi
+         nfexpr_dynk = nfexpr_dynk + 2         
+
+      case ("PELP")
+         ! PELP: Parabolic/exponential/linear/parabolic
+         ! From "Field Computation for Accelerator Magnets:
+         ! Analytical and Numerical Methods for Electromagnetic Design and Optimization"
+         ! By Dr.-Ing. Stephan Russenschuck
+         ! Appendix C: "Ramping the LHC Dipoles"
+         
+         call dynk_checkargs(getfields_nfields,10,
+     &        "FUN funname PELP tinj Iinj Inom A D R te" )
+         call dynk_checkspace(0,13,1) !!...
+
+         ! Set pointers to start of funs data blocks
+         nfuncs_dynk = nfuncs_dynk+1
+         nfexpr_dynk = nfexpr_dynk+1
+         ncexpr_dynk = ncexpr_dynk+1
+         ! Store pointers
+         funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
+         funcs_dynk(nfuncs_dynk,2) = 80          !TYPE (PELP)
+         funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
+         funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
+         funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
+         ! Store data
+         cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
+     &        getfields_fields(2)(1:getfields_lfields(2))
+         
+         !Read and calculate parameters
+         read(getfields_fields(4) (1:getfields_lfields( 4)),*) tinj
+         read(getfields_fields(5) (1:getfields_lfields( 5)),*) Iinj
+         read(getfields_fields(6) (1:getfields_lfields( 6)),*) Inom
+         read(getfields_fields(7) (1:getfields_lfields( 7)),*) A
+         read(getfields_fields(8) (1:getfields_lfields( 8)),*) D
+         read(getfields_fields(9) (1:getfields_lfields( 9)),*) R
+         read(getfields_fields(10)(1:getfields_lfields(10)),*) te
+                  
+         derivI_te = A*(te-tinj)                 ! nostore
+         I_te      = (A/2.0)*(te-tinj)**2 + Iinj ! nostore
+         bexp      = derivI_te/I_te
+         aexp      = exp(-bexp*te)*I_te
+         t1        = log(R/(aexp*bexp))/bexp
+         I1        = aexp*exp(bexp*t1)
+         td        = (Inom-I1)/R + (t1 - R/(2*D))
+         tnom      = td + R/D
+         
+         if (ldynkdebug) then
++if cr
+         write (lout,*) "DYNKDEBUG> *** PELP SETTINGS: ***"
+         write (lout,*) "DYNKDEBUG> tinj =", tinj
+         write (lout,*) "DYNKDEBUG> Iinj =", Iinj
+         write (lout,*) "DYNKDEBUG> Inom =", Inom
+         write (lout,*) "DYNKDEBUG> A    =", A
+         write (lout,*) "DYNKDEBUG> D    =", D
+         write (lout,*) "DYNKDEBUG> R    =", R
+         write (lout,*) "DYNKDEBUG> te   =", te
+         write (lout,*) "DYNKDEBUG> "
+         write (lout,*) "DYNKDEBUG> derivI_te =", derivI_te
+         write (lout,*) "DYNKDEBUG> I_te      =", I_te
+         write (lout,*) "DYNKDEBUG> bexp      =", bexp
+         write (lout,*) "DYNKDEBUG> aexp      =", aexp
+         write (lout,*) "DYNKDEBUG> t1        =", t1
+         write (lout,*) "DYNKDEBUG> I1        =", I1
+         write (lout,*) "DYNKDEBUG> td        =", td
+         write (lout,*) "DYNKDEBUG> tnom      =", tnom
+         write (lout,*) "DYNKDEBUG> **********************"
++ei
++if .not.cr
+         write (*,*)    "DYNKDEBUG> *** PELP SETTINGS: ***"
+         write (*,*)    "DYNKDEBUG> tinj =", tinj
+         write (*,*)    "DYNKDEBUG> Iinj =", Iinj
+         write (*,*)    "DYNKDEBUG> Inom =", Inom
+         write (*,*)    "DYNKDEBUG> A    =", A
+         write (*,*)    "DYNKDEBUG> D    =", D
+         write (*,*)    "DYNKDEBUG> R    =", R
+         write (*,*)    "DYNKDEBUG> te   =", te
+         write (*,*)    "DYNKDEBUG> "
+         write (*,*)    "DYNKDEBUG> derivI_te =", derivI_te
+         write (*,*)    "DYNKDEBUG> I_te      =", I_te
+         write (*,*)    "DYNKDEBUG> bexp      =", bexp
+         write (*,*)    "DYNKDEBUG> aexp      =", aexp
+         write (*,*)    "DYNKDEBUG> t1        =", t1
+         write (*,*)    "DYNKDEBUG> I1        =", I1
+         write (*,*)    "DYNKDEBUG> td        =", td
+         write (*,*)    "DYNKDEBUG> tnom      =", tnom
+         write (*,*)    "DYNKDEBUG> **********************"
++ei
+         endif
+         
+         if (.not. (tinj .lt. te .and.
+     &                te .lt. t1 .and.
+     &                t1 .lt. td .and.
+     &                td .lt. tnom ) ) then
++if cr
+            WRITE(lout,*) "DYNK> ********************************"
+            WRITE(lout,*) "DYNK> ERROR***************************"
+            write(lout,*) "DYNK> PELP: Order of times not correct"
+            WRITE(lout,*) "DYNK> ********************************"
++ei
++if .not.cr
+            WRITE(*,*)    "DYNK> ********************************"
+            WRITE(*,*)    "DYNK> ERROR***************************"
+            write(*,*)    "DYNK> PELP: Order of times not correct"
+            WRITE(*,*)    "DYNK> ********************************"
++ei
+            call prror(51)
+         endif
+         
+         !Store: Times
+         fexpr_dynk(nfexpr_dynk)    = tinj
+         fexpr_dynk(nfexpr_dynk+ 1) = te
+         fexpr_dynk(nfexpr_dynk+ 2) = t1
+         fexpr_dynk(nfexpr_dynk+ 3) = td
+         fexpr_dynk(nfexpr_dynk+ 4) = tnom
+         !Store: Parameters / section1 (parabola)
+         fexpr_dynk(nfexpr_dynk+ 5) = Iinj
+         fexpr_dynk(nfexpr_dynk+ 6) = A
+         !Store: Parameters / section2 (exponential)
+         fexpr_dynk(nfexpr_dynk+ 7) = aexp
+         fexpr_dynk(nfexpr_dynk+ 8) = bexp
+         !Store: Parameters / section3 (linear)
+         fexpr_dynk(nfexpr_dynk+ 9) = I1
+         fexpr_dynk(nfexpr_dynk+10) = R
+         !Store: Parameters / section4 (parabola)
+         fexpr_dynk(nfexpr_dynk+11) = D
+         fexpr_dynk(nfexpr_dynk+12) = Inom
+         
+         nfexpr_dynk = nfexpr_dynk + 12
+         
+      case default
+         ! UNKNOWN function
++if cr
+         write (lout,*) "*************************************"
+         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+         write (lout,*) "Unkown function to dynk_parseFUN()   "
+         write (lout,*) "Got fields:"
+         do ii=1,getfields_nfields
+            write (lout,*) "Field(",ii,") ='",
+     &           getfields_fields(ii)(1:getfields_lfields(ii)),"'"
+         enddo
+         write (lout,*) "*************************************"
++ei
++if .not.cr
+         write (*,*)    "*************************************"
+         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
+         write (*,*)    "Unkown function to dynk_parseFUN()   "
+         write (*,*)    "Got fields:"
+         do ii=1,getfields_nfields
+            write (*,*)    "Field(",ii,") ='",
+     &           getfields_fields(ii)(1:getfields_lfields(ii)),"'"
+         enddo
+         write (*,*)    "*************************************"
++ei
+
+         call dynk_dumpdata
+         call prror(51)
+      end select
+
+      end subroutine
+
+      subroutine dynk_checkargs(nfields,nfields_expected,funsyntax)
+      implicit none
+      integer nfields, nfields_expected
+      character(*) funsyntax
+      intent(in) nfields, nfields_expected, funsyntax
+      
+      if (nfields .ne. nfields_expected) then
+         write (*,*) "ERROR in DYNK block parsing (fort.3)"
+         write (*,*) "The function expected",nfields_expected,
+     &               "arguments, got",nfields
+         write (*,*) "Expected syntax:"
+         write (*,*) funsyntax(:)
+         call prror(51)
+      endif
+      end subroutine
+
+      subroutine dynk_checkspace(iblocks,fblocks,cblocks)
+      implicit none
+      integer iblocks,fblocks,cblocks
+      intent(in) iblocks,fblocks,cblocks
++ca parpro
++ca comdynk      
+
++if cr
++ca crcoall
++ei
+
+      if ( (niexpr_dynk+iblocks .gt. maxdata_dynk) .or.
+     &     (nfexpr_dynk+fblocks .gt. maxdata_dynk) .or.
+     &     (ncexpr_dynk+cblocks .gt. maxdata_dynk) ) then
++if cr
+         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+         write (lout,*) "Max number of maxdata_dynk to be exceeded"
+         write (lout,*) "niexpr_dynk:", niexpr_dynk
+         write (lout,*) "nfexpr_dynk:", nfexpr_dynk
+         write (lout,*) "ncexpr_dynk:", ncexpr_dynk
++ei
++if .not.cr
+         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
+         write (*,*)    "Max number of maxdata_dynk to be exceeded"
+         write (*,*)    "niexpr_dynk:", niexpr_dynk
+         write (*,*)    "nfexpr_dynk:", nfexpr_dynk
+         write (*,*)    "ncexpr_dynk:", ncexpr_dynk
++ei
+         call prror(51)
+      endif
+      end subroutine
+      
+      subroutine dynk_parseSET(getfields_fields,
+     &     getfields_lfields,getfields_nfields)
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 15-10-2014
+!     parse SET lines in the fort.3 input file, 
+!     store it in COMMON block dynkComExpr.
+!-----------------------------------------------------------------------
+      implicit none
++ca parpro
++ca comdynk
++ca comgetfields
+
++if cr
++ca crcoall
++ei
+
+      integer ii
+      
+      integer dynk_findFUNindex
+
+      if (nsets_dynk+1 .gt. maxsets_dynk) then
++if cr
+         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+         write (lout,*) "Maximum number of SET exceeded, ",
+     &               "please increase parameter maxsets_dynk."
+         write (lout,*) "Current value of maxsets_dynk:", maxsets_dynk
++ei
++if .not.cr
+         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
+         write (*,*)    "Maximum number of SET exceeded, ",
+     &                  "please increase parameter maxsets_dynk."
+         write (*,*)    "Current value of maxsets_dynk:", maxsets_dynk
++ei
+         call prror(51)
+      endif
+
+      if (getfields_nfields .ne. 7) then
++if cr
+         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+         write (lout,*) "Expected 6 fields on line while parsing SET."
+         write (lout,*) "Correct syntax:"
+         write (lout,*) "SET element_name attribute_name function_name",
+     &                  " startTurn endTurn turnShift"
+         write (lout,*) "got field:"
+         do ii=1,getfields_nfields
+            write (lout,*) "Field(",ii,") ='",
+     &           getfields_fields(ii)(1:getfields_lfields(ii)),"'"
+         enddo
++ei
++if .not.cr
+         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
+         write (*,*)    "Expected 6 fields on line while parsing SET."
+         write (*,*)    "Correct syntax:"
+         write (*,*)    "SET element_name attribute_name function_name",
+     &                  " startTurn endTurn turnShift"
+         write (*,*)    "got field:"
+         do ii=1,getfields_nfields
+            write (*,*)    "Field(",ii,") ='",
+     &           getfields_fields(ii)(1:getfields_lfields(ii)),"'"
+         enddo
++ei
+         call prror(51)
+      endif
+
+      nsets_dynk = nsets_dynk + 1
+
+      sets_dynk(nsets_dynk,1) =
+     &     dynk_findFUNindex( getfields_fields(4)
+     &     (1:getfields_lfields(4)), 1 ) ! function_name -> function index
+      if ( sets_dynk(nsets_dynk,1) .eq. -1 ) then
++if cr
+         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+         write (lout,*) "specified function ",
+     &        "'",getfields_fields(4)
+     &        (1:getfields_lfields(4)),"' not found."
++ei
++if .not.cr
+         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
+         write (*,*)    "specified function ",
+     &        "'",getfields_fields(4)
+     &        (1:getfields_lfields(4)),"' not found."
++ei
+         call prror(51)
+      endif
+      read(getfields_fields(5)(1:getfields_lfields(5)),*)
+     &     sets_dynk(nsets_dynk,2) ! startTurn
+      read(getfields_fields(6)(1:getfields_lfields(6)),*)
+     &     sets_dynk(nsets_dynk,3) ! endTurn
+      read(getfields_fields(7)(1:getfields_lfields(7)),*)
+     &     sets_dynk(nsets_dynk,4) ! turnShift
+
+      csets_dynk(nsets_dynk,1)(1:getfields_lfields(2)) =
+     &     getfields_fields(2)(1:getfields_lfields(2)) ! element_name
+      csets_dynk(nsets_dynk,2)(1:getfields_lfields(3)) =
+     &     getfields_fields(3)(1:getfields_lfields(3)) ! attribute_name
+      
+      ! Sanity check
+      if (sets_dynk(nsets_dynk,1).eq.-1) then
++if cr
+         write (lout,*) "*************************************"
+         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+         write (lout,*) "SET wanting function '",
+     &        getfields_fields(4)(1:getfields_lfields(4)), "'"
+         write (lout,*) "Calculated index:", sets_dynk(nsets_dynk,1)
+         write (lout,*) "This function is not known."
+         write (lout,*) "*************************************"
++ei
++if .not.cr
+         write (*,*)    "*************************************"
+         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
+         write (*,*)    "SET wanting function '",
+     &        getfields_fields(4)(1:getfields_lfields(4)), "'"
+         write (*,*)    "Calculated index:", sets_dynk(nsets_dynk,1)
+         write (*,*)    "This function is not known."
+         write (*,*)    "*************************************"
++ei
+         call prror(51)
+      endif
+      if (getfields_lfields(2) .gt. 16) then
+         ! length of elements in BEZ array is 16
++if cr
+         write (lout,*) "*************************************"
+         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+         write (lout,*) "SET got an element name with length =",
+     &        getfields_lfields(2), "> 16."
+         write (lout,*) "The name was: '",
+     &        getfields_fields(2)(1:getfields_lfields(2)),"'"
+         write (lout,*) "*************************************"
++ei
++if .not.cr
+         write (*,*)    "*************************************"
+         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
+         write (*,*)    "SET got an element name with length =",
+     &        getfields_lfields(2), "> 16."
+         write (*,*)    "The name was: '",
+     &        getfields_fields(2)(1:getfields_lfields(2)),"'"
+         write (*,*)    "*************************************"
++ei
+         call prror(51)
+      end if
+      if (sets_dynk(nsets_dynk,2) .gt. sets_dynk(nsets_dynk,3) ) then
++if cr
+         write (lout,*) "*************************************"
+         write (lout,*) "ERROR in DYNK block parsing (fort.3):"
+         write (lout,*) "SET got first turn num > last turn num"
+         write (lout,*) "first=",sets_dynk(nsets_dynk,2)
+         write (lout,*) "last =",sets_dynk(nsets_dynk,3)
+         write (lout,*) "SET #", nsets_dynk
+         write (lout,*) "*************************************"
++ei
++if .not.cr
+         write (*,*)    "*************************************"
+         write (*,*)    "ERROR in DYNK block parsing (fort.3):"
+         write (*,*)    "SET got first turn num > last turn num"
+         write (*,*)    "first=",sets_dynk(nsets_dynk,2)
+         write (*,*)    "last =",sets_dynk(nsets_dynk,3)
+         write (*,*)    "SET #", nsets_dynk
+         write (*,*)    "*************************************"
++ei
+         call prror(51)
+      end if
+      end subroutine
+
+      integer function dynk_findFUNindex(funName, startfrom)
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 14-10-2014
+!     Find and return the index in the ifuncs array to the
+!      function with name funName, which should be zero-padded.
+!     Return -1 if nothing was found.
+!-----------------------------------------------------------------------
+      implicit none
++ca parpro
++ca comdynk
+
+      character(maxstrlen_dynk) funName
+      integer startfrom
+      intent(in) funName, startfrom
+
+      integer ii
+      
+      dynk_findFUNindex = -1
+
+      do ii=startfrom, nfuncs_dynk
+         if (cexpr_dynk(funcs_dynk(ii,1)).eq.funName) then
+            dynk_findFUNindex = ii
+            exit ! break loop
+         endif
+      end do
+      
+      end function
+
+      integer function dynk_findSETindex
+     &     (element_name, att_name, startfrom)
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 23-10-2014
+!     Find and return the index in the sets array to the set which
+!     matches element_name and att_name, which should be zero-padded.
+!     Return -1 if nothing was found.
+!-----------------------------------------------------------------------
+      implicit none
++ca parpro
++ca comdynk
+      character(maxstrlen_dynk) element_name, att_name
+      integer startfrom
+      intent(in) element_name, att_name, startfrom
+      
+      integer ii
+      
+      dynk_findSETindex = -1
+      
+      do ii=startfrom, nsets_dynk
+         if ( csets_dynk(ii,1) .eq. element_name .and.
+     &        csets_dynk(ii,2) .eq. att_name ) then
+            dynk_findSETindex = ii
+            exit                ! break loop
+         endif
+      enddo
+      
+      end function
+      
+      subroutine dynk_inputsanitycheck
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 14-10-2014
+!     Check that DYNK block input in fort.3 was sane
+!-----------------------------------------------------------------------
+      implicit none
++ca parpro
++ca comdynk
++if cr
++ca crcoall
++ei
+      ! functions
+      integer dynk_findFUNindex , dynk_findSETindex
+
+      integer ii, jj
+      logical sane
+      sane = .true.
+      
+      ! Check that there are no doubly-defined function names
+      do ii=1, nfuncs_dynk-1
+         jj = dynk_findFUNindex(cexpr_dynk(funcs_dynk(ii,1)),ii+1)
+         if ( jj.ne. -1) then
+            sane = .false.
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*) 
++ei
+     &           "DYNK> Insane: function ", 
+     &           ii, "has the same name as", jj
+         end if
+      end do
+      
+      ! Check that no SETS work on same elem/att at same time
+      do ii=1, nsets_dynk-1
+         jj = ii
+         do while (.true.)
+            jj = dynk_findSETindex(csets_dynk(ii,1),
+     &                             csets_dynk(ii,2),jj+1)
+            if (jj .eq. -1) exit ! next outer loop
+            if ( sets_dynk(jj,2) .le. sets_dynk(ii,2) .and.
+     &           sets_dynk(jj,3) .ge. sets_dynk(ii,2) ) then
+               sane = .false.
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*) 
++ei
+     &              "DYNK> Insane: Lower edge of SET #", jj,
+     &         "=", sets_dynk(jj,2)," <= lower edge of SET #",ii,
+     &         "=", sets_dynk(ii,2),"; and also higer edge of SET #",jj,
+     &         "=", sets_dynk(jj,3)," >= lower edge of SET #", ii
+            else if (sets_dynk(jj,3) .ge. sets_dynk(ii,3) .and.
+     &               sets_dynk(jj,2) .le. sets_dynk(ii,3) ) then
+               sane = .false.
++if cr
+               write(lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNK> Insane: Upper edge of SET #", jj,
+     &         "=", sets_dynk(jj,3)," >= upper edge of SET #",ii,
+     &         "=", sets_dynk(ii,3),"; and also lower edge of SET #",jj,
+     &         "=", sets_dynk(jj,2)," <= upper edge of SET #", ii
+            endif
+         enddo
+      enddo
+      if (.not. sane) then
++if cr
+         write (lout,*) "****************************************"
+         write (lout,*) "*******DYNK input was insane************"
+         write (lout,*) "****************************************"
++ei
++if .not.cr
+         write (*,*)    "****************************************"
+         write (*,*)    "*******DYNK input was insane************"
+         write (*,*)    "****************************************"
++ei
+         call dynk_dumpdata
+         call prror(-11)
+      else if (sane .and. ldynkdebug) then
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &        "DYNK> DYNK input was sane"
+      end if
+      end subroutine
+
+      subroutine dynk_dumpdata
+!----------------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 14-10-2014
+!     Dump arrays with DYNK FUN and SET data to the std. output for debugging
+!----------------------------------------------------------------------------
+      implicit none
++ca parpro      
++ca comdynk
++if cr
++ca crcoall
++ei
+      character(maxstrlen_dynk) dynk_stringzerotrim
+
+      integer ii
++if cr
+      write(lout,*)
++ei
++if .not.cr
+      write(*,*)
++ei      
+     &     "**************** DYNK parser knows: ****************"
+
++if cr
+      write (lout,*) "OPTIONS:"
+      write (lout,*) " ldynk            =", ldynk
+      write (lout,*) " ldynkdebug       =", ldynkdebug
+      write (lout,*) " ldynkfiledisable =", ldynkfiledisable
+      write (lout,*) " ldynkfileopen    =", ldynkfileopen
++ei
++if .not.cr
+      write (*,*)    "OPTIONS:"
+      write (*,*)    " ldynk            =", ldynk
+      write (*,*)    " ldynkdebug       =", ldynkdebug
+      write (*,*)    " ldynkfiledisable =", ldynkfiledisable
+      write (*,*)    " ldynkfileopen    =", ldynkfileopen
++ei
+
++if cr
+      write (lout,*) "FUN:"
+      write (lout,*) "ifuncs: (",nfuncs_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "FUN:"
+      write (*,*)    "ifuncs: (",nfuncs_dynk,")"
++ei
+      do ii=1,nfuncs_dynk
++if cr
+         write (lout,*) 
++ei
++if .not.cr
+         write (*,*) 
++ei
+     &        ii, ":", funcs_dynk(ii,:)
+
+      end do
++if cr
+      write (lout,*) "iexpr_dynk: (",niexpr_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "iexpr_dynk: (",niexpr_dynk,")"
++ei
+      do ii=1,niexpr_dynk
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &     ii, ":", iexpr_dynk(ii)
+      end do
++if cr
+      write (lout,*) "fexpr_dynk: (",nfexpr_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "fexpr_dynk: (",nfexpr_dynk,")"
++ei
+      do ii=1,nfexpr_dynk
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &   ii, ":", fexpr_dynk(ii)
+      end do
++if cr
+      write (lout,*) "cexpr_dynk: (",ncexpr_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "cexpr_dynk: (",ncexpr_dynk,")"
++ei
+      do ii=1,ncexpr_dynk
++if cr
+         write(lout,*)
++ei
++if .not.cr
+         write(*,*)
++ei
+     &   ii, ":", "'"//trim(dynk_stringzerotrim(cexpr_dynk(ii)))//"'"
+      end do
+
++if cr
+      write (lout,*) "SET:"      
+      write (lout,*) "sets(,:) csets(,1) csets(,2): (",
+     &     nsets_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "SET:"      
+      write (*,*)    "sets(,:) csets(,1) csets(,2): (",
+     &     nsets_dynk,")"
++ei
+      do ii=1,nsets_dynk
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*) 
++ei
+     &        ii, ":", sets_dynk(ii,:),
+     &        "'"//trim(dynk_stringzerotrim(csets_dynk(ii,1)))//
+     &  "' ", "'"//trim(dynk_stringzerotrim(csets_dynk(ii,2)))//"'"
+      end do
+      
++if cr
+      write (lout,*) "csets_unique_dynk: (",nsets_unique_dynk,")"
++ei
++if .not.cr
+      write (*,*)    "csets_unique_dynk: (",nsets_unique_dynk,")"
++ei
+      do ii=1,nsets_unique_dynk
++if cr
+         write(lout,*)
++ei
++if .not.cr
+         write (*,*) 
++ei
+     &       ii, ":", "'"//
+     &       trim(dynk_stringzerotrim(csets_unique_dynk(ii,1)))//"' '"//
+     &       trim(dynk_stringzerotrim(csets_unique_dynk(ii,2)))//"' = ",
+     &        fsets_origvalue_dynk(ii)
+      end do
+
++if cr
+      write (lout,*) "*************************************************"
++ei
++if .not.cr
+      write (*,*)    "*************************************************"
++ei
+      
+      end subroutine
+
+      function dynk_stringzerotrim(instring)
+!----------------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 30-10-2014
+!     Replace "\0" with ' ' in strings.
+!     Usefull before output, else "write (*,*)" will actually write all the \0s
+!
+!     Warning: Do not add any write(*,*) inside this function:
+!     if this function is called by a write(*,*) and then does a write,
+!     the program may deadlock!
+!----------------------------------------------------------------------------
+      implicit none
++ca parpro
++ca comdynk
+      character(maxstrlen_dynk) dynk_stringzerotrim, instring
+      intent(in) instring
+
+      integer ii
+
+      do ii=1,maxstrlen_dynk
+         if ( instring(ii:ii) .ne. char(0) ) then
+            dynk_stringzerotrim(ii:ii) = instring(ii:ii)
+         else 
+            dynk_stringzerotrim(ii:ii) = ' '
+         end if
+      end do
+      dynk_stringzerotrim = trim(dynk_stringzerotrim)
+
+      end function
+      
+      subroutine dynk_pretrack
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 21-10-2014
+!     
+!     Save original values for GET functions and sanity check
+!     that elements/attributes for SET actually exist.
+!-----------------------------------------------------------------------
+      implicit none
++ca parpro
++ca comdynk
++if cr
++ca crcoall
++ei
+      !Functions
+      double precision dynk_getvalue
+      integer dynk_findSETindex
+      !Temp variables
+      integer ii
+
+      if (ldynkdebug) then
++if cr
+         write(lout,*)
++ei
++if .not.cr
+         write(*,*)
++ei
+     &    "DYNKDEBUG> In dynk_pretrack()"
+      end if
+      
+      ! Find which elem/attr combos are affected by SET
+      nsets_unique_dynk = 0 !Assuming this is only run once
+      do ii=1,nsets_dynk
+         if ( dynk_findSETindex(
+     &        csets_dynk(ii,1),csets_dynk(ii,2), ii+1 ) .eq. -1 ) then
+            ! Last SET which has this attribute, store it
+            nsets_unique_dynk = nsets_unique_dynk+1
+
+            csets_unique_dynk(nsets_unique_dynk,1) = csets_dynk(ii,1)
+            csets_unique_dynk(nsets_unique_dynk,2) = csets_dynk(ii,2)
+
+            ! Store original value of data point
+            fsets_origvalue_dynk(nsets_unique_dynk) = 42.0
+            fsets_origvalue_dynk(nsets_unique_dynk) =  
+     &           dynk_getvalue(csets_dynk(ii,1),csets_dynk(ii,2))
+         endif
+      enddo
+
+      ! Save original values for GET functions
+      do ii=1,nfuncs_dynk
+         if (funcs_dynk(ii,2) .eq. 0) then !GET
+            fexpr_dynk(funcs_dynk(ii,3)) =
+     &           dynk_getvalue( cexpr_dynk(funcs_dynk(ii,1)+1),
+     &                          cexpr_dynk(funcs_dynk(ii,1)+2) )
+         endif
+      enddo
+
+      if (ldynkdebug) call dynk_dumpdata
+      
+      end subroutine
+
++dk dynktrack
+      subroutine dynk_apply(turn)
+!-----------------------------------------------------------------------
+!     A.Mereghetti, for the FLUKA Team
+!     K.Sjobak & A. Santamaria, BE-ABP/HSS
+!     last modified: 30-10-2014
+!     actually apply dynamic kicks
+!     always in main code
+!
+!     For each element (group) flagged with SET(R), compute the new value
+!     using dynk_computeFUN() at the given (shifted) turn number
+!     using the specified FUN function. The values are stored 
+!     in the element using dynk_setvalue().
+!     
+!     Also resets the values at the beginning of each pass through the
+!     turn loop (for COLLIMATION).
+!
+!     Also writes the file "dynksets.dat", only on the first turn.
+!-----------------------------------------------------------------------
+      implicit none
+
++if cr
++ca crcoall
++ei
++ca parpro
++ca parnum
++ca common
++ca commonmn
++ca commontr
++ca comdynk
+
+!     interface variables
+      integer turn  ! current turn number
+      intent(in) turn
+
+!     temporary variables
+      integer ii, jj, shiftedTurn
+      logical ldynksetsEnable
+!     functions
+      double precision dynk_computeFUN
+      character(maxstrlen_dynk) dynk_stringzerotrim
+      integer dynk_findSETindex
+      
+      double precision dynk_getvalue, getvaldata
+      
+      character(maxstrlen_dynk) whichFUN(maxsets_dynk) !Which function was used to set a given elem/attr?
+      integer whichSET(maxsets_dynk) !Which SET was used for a given elem/attr?
+      
+      save ldynksetsEnable
+
+      if ( ldynkdebug ) then
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &   'DYNKDEBUG> In dynk_apply(), turn = ', turn
+      end if
+      
+      !Initialize variables
+      do jj=1, nsets_unique_dynk
+         whichSET(jj) = -1
+         do ii=1,maxstrlen_dynk
+            whichFUN(jj)(ii:ii) = char(0)
+         enddo
+      enddo
+
+      if (turn .eq. 1) then
+         ! Reset RNGs
+         do ii=1, nfuncs_dynk
+            if (funcs_dynk(ii,2) .eq. 6) then !RANDG
+               if (ldynkdebug) then
++if cr
+                  write (lout,*) 
++ei
++if .not.cr
+                  write (*,*) 
++ei
+     &              "DYNKDEBUG> Resetting RNG for FUN named '",
+     &              cexpr_dynk(funcs_dynk(ii,1)), "'"
+               endif
+
+               iexpr_dynk(funcs_dynk(ii,3)+3) =
+     &         iexpr_dynk(funcs_dynk(ii,3) )
+               iexpr_dynk(funcs_dynk(ii,3)+4) =
+     &         iexpr_dynk(funcs_dynk(ii,3)+1)
+            endif
+         enddo
+      endif
+
+      if (ldynkfileopen .and. turn .eq. 1) then
+         ! We're in the 2nd pass of the turn loop
+         
+         ! Only write to output file in first "pass"
+         ldynksetsEnable = .false. ! (comment out for debugging)
+         
+         ! Reset values
+         do ii=1, nsets_unique_dynk
+            if (ldynkdebug) then
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNKDEBUG> resetting: '",
+     &               trim(dynk_stringzerotrim(csets_unique_dynk(ii,1))),
+     &         "':'",trim(dynk_stringzerotrim(csets_unique_dynk(ii,2))),
+     &         "', funNum=", -ii, "turn=", 0
+            endif
+            call dynk_setvalue(csets_unique_dynk(ii,1),
+     &                         csets_unique_dynk(ii,2),
+     &                         -ii, 0 )
+         enddo
+         
+      endif
+      
+      if (.not. ldynkfileopen) then
+         open(unit=665, file="dynksets.dat",
+     &        status="replace",action="write") 
+         if (ldynkfiledisable) then
+            write (665,*) "### DYNK file output was disabled ",
+     &                    "with flag NOFILE in fort.3 ###"
+            ldynksetsEnable = .false.
+         else
+            write(665,*) "# turn element attribute SETidx funname ",
+     &        "nvalues value1 value2 ..." !TODO Update file format
+            ldynksetsEnable = .true.
+         endif
+         ldynkfileopen = .true.
+      endif
+      
+      do ii=1,nsets_dynk
+         ! Sanity check already confirms that only a single SET
+         ! is active on a given element:attribute on a given turn.
+         if (turn .ge. sets_dynk(ii,2) .and.
+     &       turn .le. sets_dynk(ii,3)) then
+            
+            !Shifting
+            shiftedTurn = turn + sets_dynk(ii,4)
+            
+            !Set the value
+            if (ldynkdebug) then
++if cr
+               write(lout,*)
++ei
++if .not.cr
+               write(*,*)
++ei
+     &              "DYNKDEBUG> Applying set #", ii, "on '",
+     &           trim(dynk_stringzerotrim(csets_dynk(ii,1))),
+     &           "':'", trim(dynk_stringzerotrim(csets_dynk(ii,2))),
+     &           "', shiftedTurn=",shiftedTurn
+            endif
+            call dynk_setvalue(csets_dynk(ii,1), csets_dynk(ii,2),
+     &           sets_dynk(ii,1), shiftedTurn )
+            
+            if (ldynkdebug) then
+               getvaldata = dynk_getvalue( csets_dynk(ii,1), 
+     &                                     csets_dynk(ii,2) )
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNKDEBUG> Read back value = ",
+     &              getvaldata
+            endif
+            
+            !For the output file: Which function was used?
+            do jj=1, nsets_unique_dynk
+               if (csets_dynk(ii,1) .eq. csets_unique_dynk(jj,1) .and.
+     &             csets_dynk(ii,2) .eq. csets_unique_dynk(jj,2) ) then
+                  whichSET(jj)=ii
+                  whichFUN(jj)=cexpr_dynk(funcs_dynk(sets_dynk(ii,1),1))
+               endif
+            enddo
+         end if
+      end do
+      
+      !Write output file
+      if (ldynksetsEnable) then
+         do jj=1,nsets_unique_dynk
+            getvaldata =  dynk_getvalue( csets_unique_dynk(jj,1),
+     &                                   csets_unique_dynk(jj,2) )
+            
+            if (whichSET(jj) .eq. -1) then
+               whichFUN(jj) = "N/A"
+            endif
+            
+            write(665,*)
+     &           turn, 
+     &           dynk_stringzerotrim(csets_unique_dynk(jj,1)),
+     &           dynk_stringzerotrim(csets_unique_dynk(jj,2)),
+     &           whichSET(jj),
+     &           dynk_stringzerotrim(whichFUN(jj)),
+     &           1, getvaldata ! TODO: Change file format
+         enddo
+      endif
+
+      end subroutine
+!
+      
+      recursive double precision function 
+     &     dynk_computeFUN( funNum, turn ) result(retval)
+!-----------------------------------------------------------------------
+!     K. Sjobak, BE-ABP/HSS
+!     last modified: 17-10-2014
+!     Compute the value of a given DYNK function (funNum) for the given turn
+!     If turn = 0 and -nsets_unique_dynk<funNum<0: reset to original value
+!-----------------------------------------------------------------------
+      implicit none
++ca parpro
++ca comdynk
+      integer funNum, turn
+      intent (in) funNum, turn
+      
+      !Functions to call
+      double precision dynk_lininterp
++if crlibm
++ca crlibco
++ei
++if cr
++ca crcoall
++ei
+      
+      ! Temporaries for FILELIN
+      integer filelin_start, filelin_xypoints
+      
+      ! Temporaries for random generator functions
+      integer tmpseed1, tmpseed2
+      double precision ranecu_rvec(1)
+      
+      ! General temporaries
+      integer foff !base offset into fexpr array
+            
+      if (  funNum .lt. 0 .and. 
+     &     -funNum .le. nsets_unique_dynk .and. 
+     &        turn .eq. 0 ) then
+         ! Recall at first turn
+         retval = fsets_origvalue_dynk(-funNum)
+         return
+      elseif (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
++if cr
+         write(lout,*) "DYNK> **** ERROR in dynk_computeFUN() ****"
+         write(lout,*) "DYNK> funNum =", funNum, "turn=", turn
+         write(lout,*) "DYNK> Invalid funNum & turn combination"
++ei
++if .not. cr
+         write(*,*)    "DYNK> **** ERROR in dynk_computeFUN() ****"
+         write(*,*)    "DYNK> funNum =", funNum, "turn=", turn
+         write(*,*)    "DYNK> Invalid funNum & turn combination"
++ei
+         call dynk_dumpdata
+         call prror(-1)
+      endif
+      
+      select case ( funcs_dynk(funNum,2) )                              ! WHICH FUNCTION TYPE?
+      case (0)                                                          ! GET
+         retval = fexpr_dynk(funcs_dynk(funNum,3))
+      case (1)                                                          ! FILE
+         if (turn .gt. funcs_dynk(funNum,5) ) then
++if cr
+            write(lout,*)"DYNK> ****ERROR in dynk_computeFUN():FILE****"
+            write(lout,*)"DYNK> funNum =", funNum, "turn=", turn
+            write(lout,*)"DYNK> Turn > length of file = ", 
+     &           funcs_dynk(funNum,5)
++ei
++if .not.cr
+            write(*,*)   "DYNK> ****ERROR in dynk_computeFUN():FILE****"
+            write(*,*)   "DYNK> funNum =", funNum, "turn=", turn
+            write(*,*)   "DYNK> Turn > length of file = ", 
+     &           funcs_dynk(funNum,5)
++ei
+            call dynk_dumpdata
+            call prror(-1)
+         endif
+         retval = fexpr_dynk(funcs_dynk(funNum,4)+turn-1)
+      case(2)                                                           ! FILELIN
+         filelin_start    = funcs_dynk(funNum,4)
+         filelin_xypoints = funcs_dynk(funNum,5)
+         !Pass the correct array views/sections to dynk_lininterp
+         retval = dynk_lininterp( dble(turn),
+     &       fexpr_dynk(filelin_start:filelin_start+filelin_xypoints-1),
+     &       fexpr_dynk(filelin_start +  filelin_xypoints:
+     &                  filelin_start +2*filelin_xypoints-1),
+     &        filelin_xypoints )
+         
+      case (6)                                                          ! RANDG
+         ! Save old seeds and loud our current seeds
+         call recuut(tmpseed1,tmpseed2)
+         call recuin(iexpr_dynk(funcs_dynk(funNum,3)+3),
+     &               iexpr_dynk(funcs_dynk(funNum,3)+4) )
+         ! Run generator for 1 value with current mcut
+         call ranecu( ranecu_rvec, 1,
+     &                iexpr_dynk(funcs_dynk(funNum,3)+2) )
+         ! Save our current seeds and load old seeds
+         call recuut(iexpr_dynk(funcs_dynk(funNum,3)+3),
+     &               iexpr_dynk(funcs_dynk(funNum,3)+4) )
+         call recuin(tmpseed1,tmpseed2)
+         ! Change to mu, sigma
+         retval = fexpr_dynk(funcs_dynk(funNum,4))
+     &          + fexpr_dynk(funcs_dynk(funNum,4)+1)*ranecu_rvec(1)
+         
+      case (20)                                                         ! ADD
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          + dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      case (21)                                                         ! SUB
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          - dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      case (22)                                                         ! MUL
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          * dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      case (23)                                                         ! DIV
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &          / dynk_computeFUN(funcs_dynk(funNum,4),turn)
+      case (24)                                                         ! POW
+         retval = dynk_computeFUN(funcs_dynk(funNum,3),turn)
+     &         ** dynk_computeFUN(funcs_dynk(funNum,4),turn)
+         
+      case (30)                                                         ! MINUS
+         retval = (-1)*dynk_computeFUN(funcs_dynk(funNum,3),turn)
+      case (31)                                                         ! SQRT
+C+if crlibm
+C      retval = sqrt_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
+C+ei
+C+if .not.crlibm      
+      retval = sqrt(dynk_computeFUN(funcs_dynk(funNum,3),turn))
+C+ei
+      case (32)                                                         ! SIN
++if crlibm
+         retval = sin_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
++if .not.crlibm
+         retval = sin(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
+      case (33)                                                         ! COS
++if crlibm
+         retval = cos_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
++if .not.crlibm
+         retval = cos(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
+      case (34)                                                         ! LOG
++if crlibm
+         retval = log_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
++if .not.crlibm
+         retval = log(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
+      case (35)                                                         ! LOG10
++if crlibm
+         retval = log10_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
++if .not. crlibm
+         retval = log10(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
+      case (36)                                                         ! EXP
++if crlibm
+         retval = exp_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
++if .not.crlibm
+         retval = exp(dynk_computeFUN(funcs_dynk(funNum,3),turn))
++ei
+      
+      case (40)                                                         ! CONST
+         retval = fexpr_dynk(funcs_dynk(funNum,3))
+      case (41)                                                         ! TURN
+         retval = turn
+      case (42)                                                         ! LIN
+         retval = turn*fexpr_dynk(funcs_dynk(funNum,3)) + 
+     &                 fexpr_dynk(funcs_dynk(funNum,3)+1)
+      case (43)                                                         ! LINSEG
+         filelin_start    = funcs_dynk(funNum,3)
+         filelin_xypoints = 2
+         !Pass the correct array views/sections to dynk_lininterp
+         retval = dynk_lininterp( dble(turn),
+     &       fexpr_dynk(filelin_start:filelin_start+1),
+     &       fexpr_dynk(filelin_start+2:filelin_xypoints+3),
+     &       filelin_xypoints )
+      case (44,45)                                                      ! QUAD/QUADSEG
+         retval = (turn**2)*fexpr_dynk(funcs_dynk(funNum,3))   + (
+     &                 turn*fexpr_dynk(funcs_dynk(funNum,3)+1) +
+     &                      fexpr_dynk(funcs_dynk(funNum,3)+2) )
+
+      case (60)                                                         ! SIN
++if crlibm
+      retval = fexpr_dynk(funcs_dynk(funNum,3))
+     &     * SIN_RN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
+     &             + fexpr_dynk(funcs_dynk(funNum,3)+2) )
+
++ei
++if .not.crlibm
+      retval = fexpr_dynk(funcs_dynk(funNum,3))
+     &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
+     &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
++ei
+      
+      case (80)                                                         ! PELP
+         foff = funcs_dynk(funNum,3)
+         if (turn .le. fexpr_dynk(foff)) then ! <= tinj
+            ! Constant Iinj
+            retval = fexpr_dynk(foff+5)
+         elseif (turn .le. fexpr_dynk(foff+1)) then ! <= te
+            ! Parabola (accelerate)
+            retval = ( fexpr_dynk(foff+6) *
+     &                 (turn-fexpr_dynk(foff))**2 ) / 2.0
+     &             + fexpr_dynk(foff+5)
+         elseif (turn .le. fexpr_dynk(foff+2)) then ! <= t1
+            ! Exponential
+            retval = fexpr_dynk(foff+7) *
+     &          exp( fexpr_dynk(foff+8)*turn )
+         elseif (turn .le. fexpr_dynk(foff+3)) then ! <= td
+            ! Linear (max ramp rate)
+            retval = fexpr_dynk(foff+10) *
+     &               (turn-fexpr_dynk(foff+2))
+     &             + fexpr_dynk(foff+9)
+         elseif (turn .le. fexpr_dynk(foff+4)) then ! <= tnom
+            ! Parabola (decelerate)
+            retval =  - ( (fexpr_dynk(foff+11) *
+     &                    (fexpr_dynk(foff+4)-turn)**2) ) / 2.0
+     &                + fexpr_dynk(foff+12)
+         else ! > tnom
+            ! Constant Inom
+            retval = fexpr_dynk(foff+12)
+         endif
+      case default
++if cr
+         write(lout,*) "DYNK> **** ERROR in dynk_computeFUN(): ****"
+         write(lout,*) "DYNK> funNum =", funNum, "turn=", turn
+         write(lout,*) "DYNK> Unknown function type ",
+     &        funcs_dynk(funNum,2)
++ei
++if .not.cr
+         write(*,*)    "DYNK> **** ERROR in dynk_computeFUN(): ****"
+         write(*,*)    "DYNK> funNum =", funNum, "turn=", turn
+         write(*,*)    "DYNK> Unknown function type ",
+     &        funcs_dynk(funNum,2)
++ei
+         call dynk_dumpdata
+         call prror(-1)
+      end select
+
+      end function
+      
+      subroutine dynk_setvalue(element_name, att_name, 
+     &     funNum, turn )
+!-----------------------------------------------------------------------
+!     A.Santamaria & K.Sjobak, BE-ABP/HSS
+!     last modified: 31-10-2014
+!     Set the value of the element's attribute 
+!     to the value provided by dynk_computeFUN(funNum, turn)
+!-----------------------------------------------------------------------
+      implicit none
+
++ca parpro
++ca parnum
++ca common
++ca commonmn
++ca commontr
++ca comdynk
+
++if cr
++ca crcoall
++ei
+
+      character(maxstrlen_dynk) element_name, att_name
+      integer funNum, turn
+      intent (in) element_name, att_name, funNum, turn
+      !Functions
+      double precision dynk_computeFUN
+      character(maxstrlen_dynk) dynk_stringzerotrim
+      ! temp variables
+      integer el_type, ii
+      double precision fun_val
+      character(maxstrlen_dynk) element_name_stripped
+      character(maxstrlen_dynk) att_name_stripped
+
+      logical ldoubleElement
+      ldoubleElement = .false. ! For sanity check
+      
+      element_name_stripped = trim(dynk_stringzerotrim(element_name))
+      att_name_stripped = trim(dynk_stringzerotrim(att_name))
+
+      if ( ldynkdebug ) then
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &        "DYNKDEBUG> In dynk_setvalue(), element_name = '",
+     &        element_name_stripped, "', att_name = '",
+     &        att_name_stripped, "', funNum =", funNum
+         if (funNUM .gt. 0) then
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*)
++ei
+     &           "DYNKDEBUG> Using function number =", funNUM,
+     &           "named '", 
+     &           trim(dynk_stringzerotrim(cexpr_dynk(
+     &                                      funcs_dynk(funNum,1)))), "'"
+         elseif (funNUM .lt. 0) then
++if cr
+            write (lout,*)
++ei
++if .not.cr
+            write (*,*)
++ei
+     &           "DYNKDEBUG> Using function number =", funNUM,
+     &           "reffering to origvalue of '",
+     &          trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,1))),
+     & "':'",trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,2))),"'"
+         end if
+      endif
+      
+C     Here comes the logic for setting the value of the attribute for all instances of the element...
+      ! Get type
+      do ii=1,il
+         if (element_name_stripped.eq.bez(ii)) then ! name found
+            el_type=kz(ii)      ! type found
+            
+            if (ldoubleElement) then ! Sanity check
++if cr
+               write(lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &            "DYNK> ERROR: two elements with the same BEZ?"
+               call prror(-1)
+            end if
+            ldoubleElement = .true.
+          
+            if ((abs(el_type).eq.1).or. ! horizontal bending kick
+     &          (abs(el_type).eq.2).or. ! quadrupole kick
+     &          (abs(el_type).eq.3).or. ! sextupole kick
+     &          (abs(el_type).eq.4).or. ! octupole kick
+     &          (abs(el_type).eq.5).or. ! decapole kick
+     &          (abs(el_type).eq.6).or. ! dodecapole kick
+     &          (abs(el_type).eq.7).or. ! 14th pole kick
+     &          (abs(el_type).eq.8).or. ! 16th pole kick
+     &          (abs(el_type).eq.9).or. ! 18th pole kick
+     &          (abs(el_type).eq.10)) then ! 20th pole kick
+               if (att_name_stripped.eq."average_ms") then !
+                  ed(ii) = dynk_computeFUN(funNum,turn)
+               else
++if cr
+                  WRITE (lout,*)"DYNK> *** ERROR in dynk_setvalue() ***"
+                  WRITE (lout,*)"DYNK> Attribute'", att_name_stripped,
+     &           "' does not exist for type =", el_type, "(2-20th pole)"
++ei
++if .not.cr
+                  WRITE (*,*)   "DYNK> *** ERROR in dynk_setvalue() ***"
+                  WRITE (*,*)   "DYNK> Attribute '", att_name_stripped,
+     &         "' does not exist for type =", el_type, "(2-20th pole)"
++ei
+                  call prror(-1)
+               endif
+               call initialize_element(ii, .false.)
+               
+            elseif (abs(el_type).eq.11 .and. 
+     &              abs(el(ii)+one).le.pieni) then ! multipoles 
+               if (att_name_stripped.eq."bending_str") then 
+                  dki(ii,1) = dynk_computeFUN(funNum,turn) !TODO: HUH?!?!? Should be in initialize_element??
+               elseif (att_name_stripped.eq."radius") then
+                  dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
+               else
++if cr
+                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/hor)"
++ei
++if .not.cr
+                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/hor)"
++ei
+                  call prror(-1)
+               endif
+            elseif (abs(el_type).eq.11 .and. 
+     &              abs(el(ii)+two).le.pieni) then
+               if (att_name_stripped.eq."bending_str") then 
+                  dki(ii,2) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
+               elseif (att_name_stripped.eq."radius") then
+                  dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
+               else
++if cr
+                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/ver)"
++ei
++if .not.cr
+                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/cer)"
++ei
+                  call prror(-1)
+               endif
+            elseif (abs(el_type).eq.11) then !TODO: Always do this. also for the two cases above?
+               if (att_name_stripped.eq."bending_str") then ! [rad]
+                  ed(ii) = dynk_computeFUN(funNum,turn)
+               elseif (att_name_stripped.eq."radius") then ! [m]
+                  ek(ii) = dynk_computeFUN(funNum,turn)
+               else
++if cr
+                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/def)"
++ei
++if .not.cr
+                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
+     &          "' does not exist for type =", el_type,"(multipole/def)"
++ei
+                  call prror(-1)
+               endif
+
+          !Not yet supported
+c$$$          elseif (abs(el_type).eq.12) then ! cavities 
+c$$$            if (att_name_stripped.eq."voltage") then ! [MV]
+c$$$               ed(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."harmonic") then !
+c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."lag_angle") then ! [deg]
+c$$$               el(ii) = dynk_computeFUN(funNum,turn)
+c$$$            else
+c$$$               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+c$$$               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+c$$$     &              "does not exist for type =", el_type, "(cavity)"
+c$$$               call prror(-1)
+c$$$            endif
+c$$$            call initialize_element(ii, .false.)
+            
+          !Not yet supported
+c$$$          elseif (abs(el_type).eq.16) then ! AC dipole 
+c$$$            if (att_name_stripped.eq."amplitude") then ! [T.m]
+c$$$               ed(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."frequency") then ! [2pi]
+c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."phase") then ! [rad]
+c$$$               el(ii) = dynk_computeFUN(funNum,turn)
+c$$$            else
+c$$$              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+c$$$              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+c$$$     &        "does not exist for type =", el_type,"AC dipole"
+c$$$               call prror(-1)
+c$$$            endif
+
+          !Not yet supported
+c$$$          elseif (abs(el_type).eq.20) then ! beam-beam separation
+c$$$            if (att_name_stripped.eq."horizontal") then ! [mm]
+c$$$               ed(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."vertical") then ! [mm]
+c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
+c$$$            elseif (att_name_stripped.eq."strength") then ! [m]
+c$$$               el(ii) = dynk_computeFUN(funNum,turn)
+c$$$            else
+c$$$               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+c$$$               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
+c$$$     &              "does not exist for type =", el_type, "(beam-beam)"
+c$$$               call prror(-1)
+c$$$            endif
+            
+            elseif ((abs(el_type).eq.23).or.    ! crab cavity
+     &              (abs(el_type).eq.26).or.    ! cc mult. kick order 2
+     &              (abs(el_type).eq.27).or.    ! cc mult. kick order 3
+     &              (abs(el_type).eq.28)) then  ! cc mult. kick order 4
+               if (att_name_stripped.eq."voltage") then ![MV]   
+                  ed(ii) = dynk_computeFUN(funNum,turn)
+               elseif (att_name_stripped.eq."frequency") then ![MHz]
+                  ek(ii) = dynk_computeFUN(funNum,turn)
+               elseif (att_name_stripped.eq."phase") then ![rad]
+                  if (abs(el_type).eq.23) then
+                     crabph(ii) = dynk_computeFUN(funNum,turn)
+                  elseif (abs(el_type).eq.26) then
+                     crabph2(ii) = dynk_computeFUN(funNum,turn)
+                  elseif (abs(el_type).eq.27) then
+                     crabph3(ii) = dynk_computeFUN(funNum,turn)
+                  elseif (abs(el_type).eq.28) then
+                     crabph4(ii) = dynk_computeFUN(funNum,turn)
+                  endif     
+               else
++if cr
+                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (lout,*) "DYNK> attribute '",att_name_stripped,
+     &              "' does not exist for type =", el_type, "(crab)"
++ei
++if .not.cr
+                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
+                  WRITE (*,*)    "DYNK> attribute '",att_name_stripped,
+     &              "' does not exist for type =", el_type, "(crab)"
++ei
+                  call prror(-1)
+               endif
+               call initialize_element(ii, .false.)
+            
+            else
++if cr
+               WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+               write (lout,*) "DYNK> Unsupported element type", el_type
+               write (lout,*) "DYNK> element name = '",
+     &              element_name_stripped,"'"
++ei
++if .not.cr
+               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
+               write (*,*) "DYNK> Unsupported element type", el_type
+               write (*,*) "DYNK> element name = '",
+     &              element_name_stripped,"'"
+
++ei
+               call prror(-1)
+            endif
+         endif
+      enddo
+      
+      end subroutine
+
+      double precision function dynk_getvalue
+     &     (element_name, att_name)
+!-----------------------------------------------------------------------
+!     A.Santamaria & K. Sjobak, BE-ABP/HSS
+!     last modified: 2101-2015
+!
+!     Returns the original value currently set by an element.
+!-----------------------------------------------------------------------
+      implicit none
++ca parpro
++ca parnum
++ca common
++ca commonmn
++ca commontr
++ca comdynk
+
++if cr
++ca crcoall
++ei
+
+      character(maxstrlen_dynk) element_name, att_name
+      intent(in) element_name, att_name
+      
+      integer el_type, ii
+      character(maxstrlen_dynk) dynk_stringzerotrim
+      character(maxstrlen_dynk) element_name_s, att_name_s
+      
+      logical ldoubleElement
+      ldoubleElement = .false.  ! For sanity check
+      
+      if (ldynkdebug) then
++if cr
+         write(lout,*)
++ei
++if .not.cr
+         write(*,*)
++ei
+     &   "DYNKDEBUG> in dynk_getvalue()"
+      end if
+      
+      element_name_s = trim(dynk_stringzerotrim(element_name))
+      att_name_s = trim(dynk_stringzerotrim(att_name))
+      
+      do ii=1,il
+         if (element_name_s.eq.bez(ii)) then ! name found
+            el_type=kz(ii)
+            if (ldoubleElement) then
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     &              "DYNK> ERROR: two elements with the same BEZ"
+               call prror(-1)
+            end if
+            ldoubleElement = .true.
+            
+            if ((abs(el_type).eq.1).or.
+     &          (abs(el_type).eq.2).or.
+     &          (abs(el_type).eq.3).or.
+     &          (abs(el_type).eq.4).or.
+     &          (abs(el_type).eq.5).or.
+     &          (abs(el_type).eq.6).or.
+     &          (abs(el_type).eq.7).or.
+     &          (abs(el_type).eq.8).or.
+     &          (abs(el_type).eq.9).or.
+     &          (abs(el_type).eq.10)) then
+               if (att_name_s.eq."average_ms") then
+                  dynk_getvalue = ed(ii)
+               else
++if cr
+                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(lout,*) "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for type",el_type," name '", trim(bez(ii)), "'"
+
++ei
++if .not.cr
+                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*)    "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for type",el_type," name '", trim(bez(ii)), "'"
++ei
+                  call prror(-1)
+               endif
+               
+            elseif (abs(el_type).eq.11 .and. 
+     &              abs(el(ii)+one).le.pieni) then        ! multipoles 
+               if (att_name_s.eq."bending_str") then 
+                  dynk_getvalue = dki(ii,1)    
+               elseif (att_name_s.eq."radius") then
+                  dynk_getvalue = dki(ii,3) 
+               else
++if cr
+                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(lout,*) "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for multipole '", trim(bez(ii)), "'"
+
++ei
++if .not.cr
+                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*)    "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for multipole '", trim(bez(ii)), "'"
++ei
+                  call prror(-1)
+               endif
+            elseif (abs(el_type).eq.11 .and. 
+     &              abs(el(ii)+two).le.pieni) then
+               if (att_name_s.eq."bending_str") then 
+                  dynk_getvalue = dki(ii,2) 
+               elseif (att_name_s.eq."radius") then
+                  dynk_getvalue = dki(ii,3) 
+               else
++if cr
+                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(lout,*) "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for multipole '", trim(bez(ii)), "'"
++ei
++if .not.cr
+                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*)    "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for multipole '", trim(bez(ii)), "'"
++ei
+                  call prror(-1)
+               endif
+            elseif (abs(el_type).eq.11) then
+               if (att_name_s.eq."bending_str") then ! [rad]
+                  dynk_getvalue = ed(ii)
+               elseif (att_name_s.eq."radius") then ! [m]
+                  dynk_getvalue = ek(ii)
+               else
++if cr
+                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(lout,*) "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for multipole '", trim(bez(ii)), "'"
++ei
++if .not.cr
+                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*)    "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for multipole '", trim(bez(ii)), "'"
++ei
+                  call prror(-1)
+               endif
+               
+            !Not yet supported
+c$$$            elseif (abs(el_type).eq.12) then ! cavities 
+c$$$               if (att_name_s.eq."voltage") then ! MV
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ed(ii)                
+c$$$               elseif (att_name_s.eq."harmonic") then ! harmonic number
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ek(ii)                
+c$$$               elseif (att_name_s.eq."lag_angle") then ! [deg]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = el(ii)       
+c$$$               else
+c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+c$$$                  write(*,*) "DYNK> Unknown attribute '",
+c$$$     &                 trim(att_name_s),"'",
+c$$$     &                 " for cavity '", trim(bez(ii)), "'"
+c$$$                  call prror(-1)
+c$$$               endif
+             
+            !Not yet supported
+c$$$            elseif (abs(el_type).eq.16) then ! AC dipole 
+c$$$               if (att_name_s.eq."amplitude") then ! [T.m]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ed(ii)                
+c$$$               elseif (att_name_s.eq."frequency") then !  [2pi]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ek(ii)                
+c$$$               elseif (att_name_s.eq."phase") then !  [rad]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = el(ii)      
+c$$$               else
+c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+c$$$                  write(*,*) "DYNK> Unknown attribute '",
+c$$$     &                 trim(att_name_s),"'",
+c$$$     &                 " for AC dipole '", trim(bez(ii)), "'"
+c$$$                  call prror(-1)
+c$$$               endif
+               
+            !Not yet supported
+c$$$            elseif (abs(el_type).eq.20) then ! beam-beam separation
+c$$$               if (att_name_s.eq."horizontal") then ! [mm]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ed(ii)                
+c$$$               elseif (att_name_s.eq."vertical") then ! [mm]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = ek(ii)                
+c$$$               elseif (att_name_s.eq."strength") then ! [m]
+c$$$                  nretdata = nretdata+1
+c$$$                  retdata(nretdata) = el(ii)       
+c$$$               else
+c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+c$$$                  write(*,*) "DYNK> Unknown attribute '",
+c$$$     &                 trim(att_name_s),"'",
+c$$$     &                 " for beam-beam '", trim(bez(ii)), "'"
+c$$$                  call prror(-1)
+c$$$               endif
+               
+            elseif ((abs(el_type).eq.23).or. ! crab cavity
+     &              (abs(el_type).eq.26).or. ! cc mult. kick order 2
+     &              (abs(el_type).eq.27).or. ! cc mult. kick order 3
+     &              (abs(el_type).eq.28)) then ! cc mult. kick order 4
+               if (att_name_s.eq."voltage") then ![MV]
+                  dynk_getvalue = ed(ii)
+               elseif (att_name_s.eq."frequency") then ![MHz]
+                  dynk_getvalue = ek(ii)
+               elseif (att_name_s.eq."phase") then ![rad]
+                  if (abs(el_type).eq.23) then
+                     dynk_getvalue = crabph(ii)
+                  elseif (abs(el_type).eq.26) then
+                     dynk_getvalue = crabph2(ii)
+                  elseif (abs(el_type).eq.27) then
+                     dynk_getvalue = crabph3(ii)
+                  elseif (abs(el_type).eq.28) then
+                     dynk_getvalue = crabph4(ii)
+                  endif
+               else
++if cr
+                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(lout,*) "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for crab cavity '", trim(bez(ii)), "'"
++ei
++if .not.cr
+                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
+                  write(*,*)    "DYNK> Unknown attribute '",
+     &                 trim(att_name_s),"'",
+     &                 " for crab cavity '", trim(bez(ii)), "'"
++ei
+                  call prror(-1)
+               endif
+            endif !el_type
+
+         endif !bez
+      enddo
+      
+      end function
+      
+      double precision function dynk_lininterp(x,xvals,yvals,datalen)
+      implicit none
+!-----------------------------------------------------------------------
+!
+!     A.Mereghetti, for the FLUKA Team and K.Sjobak for BE-ABP/HSS
+!     last modified: 29-10-2014
+!     
+!     Define a linear function with a set of x,y-coordinates xvals, yvals
+!     Return this function evaluated at the point x.
+!     The length of the arrays xvals and yvals should be given in datalen.
+!
+!     xvals should be in increasing order, if not then program is aborted.
+!     If x < min(xvals) or x>max(xvals), program is aborted.
+!     If datalen <= 0, program is aborted. 
+!     
+!-----------------------------------------------------------------------
+
++if cr
++ca crcoall
++ei
+
+      double precision x, xvals(*),yvals(*)
+      integer datalen
+      intent(in) x,xvals,yvals,datalen
+      
+      integer ii
+      double precision dydx, y0
+      
+      !Sanity checks
+      if (datalen .le. 0) then
++if cr
+         write(lout,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(lout,*) "DYNK> datalen was 0!"
++ei
++if .not.cr
+         write(*,*)    "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(*,*)    "DYNK> datalen was 0!"
++ei
+
+         call prror(-1)
+      endif
+      if ( x .lt. xvals(1) .or. x .gt. xvals(datalen) ) then
++if cr
+         write(lout,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(lout,*) "x =",x, "outside range", xvals(1),xvals(datalen)
++ei
++if .not.cr
+         write(*,*)    "DYNK> **** ERROR in dynk_lininterp() ****"
+         write(*,*)    "x =",x, "outside range", xvals(1),xvals(datalen)
++ei
+         call prror(-1)
+      endif
+
+      !Find the right indexes i1 and i2
+      ! Special case: first value at first point
+      if (x .eq. xvals(1)) then
+         dynk_lininterp = yvals(1)
+         return
+      endif
+      
+      do ii=1, datalen-1
+         if (xvals(ii) .ge. xvals(ii+1)) then
++if cr
+            write (lout,*) "DYNK> **** ERROR in dynk_lininterp() ****"
+            write (lout,*) "DYNK> xvals should be in increasing order"
+            write (lout,*) "DYNK> xvals =", xvals(:datalen)
++ei
++if .not.cr
+            write (*,*)    "DYNK> **** ERROR in dynk_lininterp() ****"
+            write (*,*)    "DYNK> xvals should be in increasing order"
+            write (*,*)    "DYNK> xvals =", xvals(:datalen)
++ei
+            call prror(-1)
+         endif
+         
+         if (x .le. xvals(ii+1)) then
+            ! we're in the right interval
+            dydx = (yvals(ii+1)-yvals(ii)) / (xvals(ii+1)-xvals(ii))
+            y0   = yvals(ii) - dydx*xvals(ii)
+            dynk_lininterp = dydx*x + y0
+            return
+         endif
+      enddo
+      
+      !We didn't return yet: Something wrong
++if cr
+      write (lout,*) "DYNK> ****ERROR in dynk_lininterp() ****"
+      write (lout,*) "DYNK> Reached the end of the function"
+      write (lout,*) "DYNK> This should not happen, "//
+     &               "please contact developers"
++ei
++if .not.cr
+      write (*,*)    "DYNK> ****ERROR in dynk_lininterp() ****"
+      write (*,*)    "DYNK> Reached the end of the function"
+      write (*,*)    "DYNK> This should not happen, "//
+     &               "please contact developers"
++ei
+      call prror(-1)
+
+      end function
+
 +dk linopt
       subroutine linopt(dpp)
 !-----------------------------------------------------------------------
@@ -43611,7 +46956,7 @@ C Should get me a NaN
 +if .not.cr
             write(*,10000) ' SUSPECTED CORRECTOR: ',j
 +ei
-+ca close
+            call closeUnits
 +if cr
       call abend('777                                               ')
 +ei
@@ -44036,7 +47381,7 @@ C Should get me a NaN
   115   continue
       endif
       if(kanf.ne.1) then
-!--UMSPEICHERUNG AUF DEN STARTPUNKT
+!-- Re-saving of the starting point (UMSPEICHERUNG AUF DEN STARTPUNKT)
         kanf1=kanf-1
         do 130 i=1,kanf1
           if(iorg.ge.0) ilfr(i)=mzu(i)
@@ -53610,7 +56955,7 @@ C Should get me a NaN
  900  write(*,910) p0
 +ei
  910  format(' (FUNC.GAUINV) INVALID INPUT ARGUMENT ',1pd20.13)
-+ca close
+      call closeUnits
 +if cr
       call abend('                                                  ')
 +ei
@@ -59344,6 +62689,9 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       return
 !
 !                    Entry to output the "convenient" restart point
+!STRANGENESS: Entry point 'rluxat' not used,
+!             strange first argument "lout" (should be luxury level)
+!             This is not compatible with CR!
       entry rluxat(lout,inout,k1,k2)
       lout = luxlev
       inout = inseed
@@ -59375,7 +62723,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
          nskip = ndskip(luxlev)
 +if cr
          write(lout,'(A,I2,A,I4)')                                      &
-    &' RANLUX LUXURY LEVEL SET BY RLUXGO :',
+     &' RANLUX LUXURY LEVEL SET BY RLUXGO :',
 +ei
 +if .not.cr
          write(*,'(A,I2,A,I4)') ' RANLUX LUXURY LEVEL SET BY RLUXGO :', &
@@ -65372,14 +68720,14 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
          b2=b2+b(j)*b(j)
         enddo
         if (b2>0) then
-      	 b2inv=1/b2
+         b2inv=1/b2
         else
-      	 b2inv=0
-		  endif
+         b2inv=0
+                endif
         g=1.0/sqrt(1.0-b2) ! relativistic gamma for the boost
 !         write(*,*) "DEBUG, g: ",g, v0, xp,yp,E,mass
 
-		lorentzmatrix(1,1)=g /g
+                lorentzmatrix(1,1)=g /g
       do j=2,4 
        lorentzmatrix(1,j)=g /g
         lorentzmatrix(1,j)=-b(j-1)*g /g
