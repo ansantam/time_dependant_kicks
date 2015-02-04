@@ -16941,17 +16941,29 @@ cc2008
 !  POWER SUPPLY RIPPLE
 !-----------------------------------------------------------------------
  1290 continue
++if cr
+      write(lout,*)
+      write(lout,*) "     old RIPP module is not supported anymore"
+      write(lout,*) "     ignoring all concerned lines"
+      write(lout,*)
++ei
++if .not.cr
       write(*,*)
       write(*,*) "     old RIPP module is not supported anymore"
       write(*,*) "     ignoring all concerned lines"
       write(*,*)
-
++ei
  1300 read(3,10020,end=1530,iostat=ierro) ch
       if(ierro.gt.0) call prror(58)
 
++if cr
+      write(lout,*) 'ignoring line:'
+      write(lout,*) ch
++ei
++if .not.cr
       write(*,*) 'ignoring line:'
       write(*,*) ch
-
++ei
       lineno3=lineno3+1
       if(ch(1:1).eq.'/') goto 1300
       if(ch(:4).eq.next) goto 110
