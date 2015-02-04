@@ -1046,6 +1046,67 @@
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !
++cd   dbdcum
+
+!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
+!     last modified: 17-07-2013
+!     COMMON block for computing the dcum, i.e. the longitudinal s-coordinate
+!     always in main code
+
+!     dcum is computed at the END of each entry of the accelerator structure
+!       thus, for BLOCks, values are given at the end
+!     entries are identified by the usual indices: 1:nblz
+!     two further entries are added, at the beginning and at the end of the
+!       array, for storing the positions of the MARKERs at the beginning and
+!       end of the accelerator structure
+
+      double precision dcum                  ! actual values [m]
+      logical print_dcum                     ! flag for printout
+      parameter ( print_dcum = .false. )
+
+      common /dcumdb/ dcum(0:nblz+1)
+!
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!
++cd   dbdump
+
+!     A.Mereghetti, D.Sinuela Pastor and P.Garcia Ortega, for the FLUKA Team
+!     last modified: 13-06-2014
+!     COMMON for dumping the beam population
+!     always in main code
+
+!     in case the DUMP input block is issued, the beam population is dumped
+!       at EACH occurence of the flagged SINGLE ELEMENT(s) in the accelerator
+!       structure
+!     important remarks:
+!     - the chosen SINGLE ELEMENT(s) must be outside a BLOC, and BLOCs cannot
+!       be chosen
+!     - the special name 'ALL' will trigger dump at all SINGLE ELEMENTs
+!       (settings of dump are stored in index 0 of all the usual arrays);
+!     - the beam population is ALWAYS dumped at the end of the entry,
+!       i.e. AFTER the proper transformation map is applied, and after the
+!       aperture check, i.e. AFTER the lost particles are filtered out
+!     - a negative or null value of the dump frequency is interpreted as dump
+!       at every turn
+!     - NO check is performed on the logical units, i.e. if the ones selected
+!       by the user are used in other places of the code...
+!     - the dump format can be changed to the one required by the LHC aperture check
+!	post-processing tools, activating the dumpfmt flag (0=off, by default);
+      logical ldumphighprec                  ! high precision printout required
+                                             !   at all flagged SINGLE ELEMENTs
+      logical ldump                          ! flag the SINGLE ELEMENT for
+                                             !   dumping
+      integer ndumpt                         ! dump every n turns at a flagged
+                                             !   SINGLE ELEMENT (dump frequency)
+      integer dumpunit                       ! fortran unit for dump at a
+                                             !   flagged SINGLE ELEMENT
+      integer dumpfmt                        ! flag the format of the dump
+      
+      common /dumpdb/ ldump(0:nele), ndumpt(0:nele), dumpunit(0:nele),
+     &                dumpfmt(0:nele), ldumphighprec
+!
+!-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+!
 +cd   comgetfields
 
 !     A.Mereghetti, for the FLUKA Team
@@ -1412,7 +1473,7 @@ C     Store the SET statements
          bbiv35(k,m,i)=(ed(ix)*(bk0(im,k)+zfz35(izu)*bka(im,k)))/r0a !hr05
 +ei
          bbi(i,k)=bbiv(k,m,i)
-
+         
          r0a=r0a*r0
       enddo
       
@@ -7488,6 +7549,27 @@ cc2008
             sigmv(j)=sigmv(j)+stracki*(c1e3-rvv(j)*sqrt((c1e6+yv(1,j)   &!hr03
      &**2)+yv(2,j)**2))                                                  !hr03
 +ei
+
++cd dumplines
+!         A.Mereghetti, D.Sinuela Pastor and P.Garcia Ortega, for the FLUKA Team
+!         last modified: 13-06-2014
+!         dump beam particles
+!         always in main code
+          if ( ldump(0) ) then
+!           dump at all SINGLE ELEMENTs
+            if ( ndumpt(0).eq.1 .or. mod(n,ndumpt(0)).eq.1 ) then
+              call dump_beam_population( n, i, ix, dumpunit(0),         &
+     &                              dumpfmt(0), ldumphighprec )
+            endif
+          endif
+          if ( ldump(ix) ) then
+!           dump at this precise SINGLE ELEMENT
+            if ( ndumpt(ix).eq.1 .or. mod(n,ndumpt(ix)).eq.1 ) then
+              call dump_beam_population( n, i, ix, dumpunit(ix),        &
+     &                             dumpfmt(ix), ldumphighprec )
+            endif
+          endif
+
 +cd lostpart
           llost=.false.
           do j=1,napx
@@ -9813,6 +9895,7 @@ cc2008
       implicit none
 +ca parpro
 +ca common
++ca dbdump
 +ca comdynk
       integer i
       logical lopen
@@ -9907,6 +9990,17 @@ cc2008
       close(111)
 +ei
 
+!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
+!     last modified: 01-09-2014
+!     close units for dumping particle population or statistics or beam matrix
+!     always in main code
+      do i=0,il
+        if ( ldump(i) ) then
+!         the same file could be used by more than one SINGLE ELEMENT
+          inquire( unit=dumpunit(i), opened=lopen )
+          if ( lopen ) close(dumpunit(i))
+        endif
+      enddo
 !     A.Mereghetti, for the FLUKA Team
 !     last modified: 02-09-2014
 !     close units for logging dynks
@@ -12982,7 +13076,7 @@ cc2008
 +if crlibm
 +ca crlibco
 +ei
-      integer i,i1,i2,ia,icc,ichrom0,iclr,ico,icy,idi,iexnum,iexread,   &
+      integer i,i1,i2,i3,ia,icc,ichrom0,iclr,ico,icy,idi,iexnum,iexread,&
      &ifiend16,ifiend8,ii,il1,ilin0,im,imo,imod,imtr0,irecuin,iw,iw0,ix,&
      &izu,j,j0,j1,j2,jj,k,k0,k10,k11,ka,ke,ki,kk,kpz,kzz,l,l1,l2,l3,l4, &
      &ll,m,mblozz,mout,mout1,mout3,mout4,nac,nbidu,ncy2,ndum,nfb,nft
@@ -13043,6 +13137,7 @@ cc2008
 +if bnlelens
 +ca rhicelens
 +ei
++ca dbdump
 +ca comdynk
 
       dimension icel(ncom,20),iss(2),iqq(5)
@@ -13059,10 +13154,10 @@ cc2008
      &/'RE','EL','COMB','FREE','GEOM','CAV','BEAM','TROM'/
       data idum,kl,kr,orga,norm,corr/' ','(',')','ORGA','NORM','CORR'/
       data coll /'COLL'/
-!     A.Mereghetti, for the FLUKA Team
-!     last modified: 17-07-2013
-!     brand new input block for dynamic kicks
-!     always in main code
+!     - dump beam population:
+      character*16 dump
+      data dump /'DUMP'/
+!     - dynamic kicks
       character*16 dynk
       data dynk /'DYNK'/
 
@@ -13299,6 +13394,9 @@ cc2008
 !GRD
       if(idat.eq.coll) goto 1285
 !GRD
+
+!     - dump beam population:
+      if(idat.eq.dump) goto 2000
 
 !     A.Mereghetti, for the FLUKA Team
 !     last modified: 17-07-2013
@@ -17674,6 +17772,103 @@ cc2008
         if(j1.lt.6) goto 1740
       enddo
       goto 1700
+!-----------------------------------------------------------------------
+!  DUMP BEAM POPULATION
+!  A.Mereghetti, D.Sinuela Pastor and P.Garcia Ortega, for the FLUKA Team
+!  last modified: 13-06-2014
+!  always in main code
+!-----------------------------------------------------------------------
+ 2000 read(3,10020,end=1530,iostat=ierro) ch
+      if(ierro.gt.0) call prror(58)
+
+      if(ch(1:1).eq.'/') goto 2000
+      if(ch(:4).eq.next) then
+        write(*,10460) dump
+!       dump all elements found:
+        if ( ldump(0) ) then
+           write(*,'(t10,a50)') ' required dump at ALL SINGLE ELEMENTs'
+           write(*,10470) 'ALL', ndumpt(0), dumpunit(0), dumpfmt(0)
+        endif
+        write(*,*) ''
+        write(*,*) '          The last column states the format'
+        write(*,*) '               of the output file (see Twiki page):'
+        write(*,*) '          ==0 -> regular output (default)'
+        write(*,*) '          ==1 -> special one, for post-processing'
+        write(*,*) '                 with LHC Coll Team tools'
+        write(*,*) '          ==2 -> as 1, but add z as column 6'
+
+        do ii=1,il
+          if(ldump(ii)) then
+            write(*,10470) bez(ii), ndumpt(ii), dumpunit(ii),dumpfmt(ii)
+!           At which structure indices is this single element found? (Sanity check)
+            kk = 0
+            do jj=1,mper*mbloz      ! Loop over all structure elements
+              if ( ic(jj)-nblo .eq. ii ) then
+                write (ch1,*) jj    ! internal write for left-adjusting
+                write (*,10472) " -> Found as structure element no. "
+     &               // trim(adjustl(ch1))
+                kk = kk + 1
+              end if
+            end do
+            if (kk .eq. 0) then
+               write (*,10472) " !! Warning: No structure elements "
+     &              // "found for '" // bez(ii) // "'!"
+               write (*,10472) " !! This element is probably only found"
+     &              // " in a BLOC, or it is not used at all."
+               write (*,10472) " !! Please fix your DUMP block"
+     &              // " in fort.3"
+               call prror(-1)
+            endif
+          endif
+        enddo
+        if ( ldumphighprec ) then
+          write(*,*) ''
+          write(*,*) '        --> requested high precision dumping!'
+        endif
+        goto 110
+      endif
+
+!     initialise reading variables, to avoid storing non sense values
+      idat = ' '
+      i1 = 0
+      i2 = 0
+      i3 = 0
+
+      lineno3=lineno3+1
+      ch1(:83)=ch(:80)//' / '
+
+      if(ch1(:4).eq.'HIGH') then
+        ldumphighprec = .true.
+        goto 2000
+      endif
+
+!     requested element
+      read(ch1,*) idat, i1, i2, i3
+!     find it in the list of SINGLE ELEMENTs:
+      do j=1,il
+         if(bez(j).eq.idat) goto 2001
+      enddo
+      if ( idat(:3).eq.'ALL' ) then
+         j=0
+         goto 2001
+      endif
+!     search failed:
+      write(*,*) ''
+      write(*,*) " Un-identified SINGLE ELEMENT '", idat, "'"
+      write(*,*) '   in block ',dump, '(fort.3)'
+      write(*,*) '   parsed line:'
+      write(*,*) ch(:80)
+      write(*,*) ''
+      call prror(-1)
+
+!     element found:
+ 2001 ldump(j) = .true.
+      ndumpt(j) = i1
+      if (ndumpt(j).le.0) ndumpt(j)=1
+      dumpunit(j) = i2
+      dumpfmt(j)  = i3
+!     go to next line
+      goto 2000
 
 !-----------------------------------------------------------------------
 !  DYNAMIC KICKS
@@ -18280,6 +18475,8 @@ cc2008
      &'OO   NORMAL FORMS   OO', /t10,2('O'),18x,2('O')/t10,22('O'))
 10430 format(/5x,'No cut on random distribution'//)
 10440 format(/5x,'Random distribution has been cut to: ',i4,' sigma.'//)
+10460 format(//131('-')//t10,'DATA BLOCK ',a4,' INFOs'/ /t10,           &
+     &'NAME',16x,'EVERY # TURNs',2x,'LOGICAL UNIT') !DUMP/STAT/BMAT
 10070 format(1x,i3,1x,a16,1x,i3,1x,d16.10,1x,d16.10,1x,d16.10,1x,d13.7, &
      &1x,d12.6,1x,d13.7,1x,d12.6)
 10210 format(t10,'DATA BLOCK MULTIPOLE COEFFICIENTS'/ t10,              &
@@ -18299,6 +18496,8 @@ cc2008
      &'   |    ',a16,'   |               |               |')
 10400 format(5x,'| ELEMENTS |                              |          ' &
      &,'     |               |    ',a16,'   |    ',a16,'   |')
+10470 format(t10,a16,4x,i13,2x,i12,2x,i12) !BMAT/STAT/DUMP
+10472 format(t10,a)                        !BMAT/STAT/DUMP
 10700 format(t10,'DATA BLOCK TROMBONE ELEMENT'/                         &
      &t10,'TROMBONE #      NAME'/)
 10710 format(t22,i4,5x,a16)
@@ -24071,6 +24270,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if cr
 +ca crco
 +ei
++ca dbdump
 +ca comdynk
       integer i,itiono,i1,i2,i3,ia,ia2,iar,iation,ib,ib0,ib1,ib2,ib3,id,&
      &idate,ie,ig,ii,ikk,im,imonth,iposc,irecuin,itime,ix,izu,j,j2,jj,  &
@@ -24115,6 +24315,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     integer umcalls,dapcalls,dokcalls,dumpl
 !     common /mycalls/ umcalls,dapcalls,dokcalls,dumpl
 +ei
+      logical lopen
       dimension cmonth(12)
       data (cmonth(i),i=1,12)/' January ',' February ','  March   ',    &
      &'  April   ','   May    ','   June   ','   July   ',' August  ',  &
@@ -25660,6 +25861,33 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
   430   continue
   440 continue
 !---------------------------------------  END OF 'BLOCK'
+
+!     A.Mereghetti, P. G. Ortega and D.Sinuela Pastor, for the FLUKA Team
+!     last modified: 01-07-2014
+!     call routine for calculating dcum, necessary for the online
+!        aperture check and in case of dumping particle population
+!        or statistics or beam matrix
+!     always in main code
+      call cadcum
+
+!     A.Mereghetti, P.Garcia Ortega and D.Sinuela Pastor, for the FLUKA Team
+!     last modified: 01-09-2014
+!     open units for dumping particle population or statistics or beam matrix
+!     always in main code
+      do i=0,il
+        if (ldump(i)) then
+!         the same file could be used by more than one SINGLE ELEMENT
+          inquire( unit=dumpunit(i), opened=lopen )
+          if ( .not.lopen ) then
+             open(dumpunit(i),form='formatted')
+             if ( dumpfmt(i).eq.1 )    write(dumpunit(i),*)
+     &                       '# ID  turn  s  x  y  xp  yp  dE/E  type'
+             if ( dumpfmt(i).eq.2 )    write(dumpunit(i),*)
+     &                       '# ID  turn  s  x  y  z xp  yp dE/E  type'
+          endif
+        endif
+      enddo
+
 +if cr
       write(lout,10200)
 +ei
@@ -27851,7 +28079,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
++ca dbdump
 +ca comdynk
++ca dbdcum
 +ca save
 !-----------------------------------------------------------------------
       nthinerr=0
@@ -28287,6 +28517,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
   620     continue
 
 +ca lostpart
+
+
++ca dumplines
+
   630   continue
         call lostpart(nthinerr)
         if(nthinerr.ne.0) return
@@ -28377,7 +28611,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
++ca dbdump
 +ca comdynk
++ca dbdcum
 +ca save
 !-----------------------------------------------------------------------
 +if fast
@@ -31765,6 +32001,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if .not.collimat
 +ca lostpart
 +ei
+
++ca dumplines
+
   650   continue
 !GRD
 !UPGRADE JANUARY 2005
@@ -32392,7 +32631,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
++ca dbdump
 +ca comdynk
++ca dbdcum
 +ca save
 !-----------------------------------------------------------------------
 +if fast
@@ -32895,6 +33136,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
   640     continue
 
 +ca lostpart
+
++ca dumplines
+
   650   continue
         call lostpart(nthinerr)
         if(nthinerr.ne.0) return
@@ -33367,6 +33611,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca lost3b
 +ca lost4
 +ca lost5c
+
       subroutine dist1
 !-----------------------------------------------------------------------
 !
@@ -33547,6 +33792,128 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &' MOMENTUM DEVIATION ',g12.5 /5x,'REVOLUTION ',i8/)
 10010 format(10x,f47.33)
       end
+      subroutine dump_beam_population( nturn, i, ix, unit, fmt,         &
+     &  lhighprec )
+!
+!-----------------------------------------------------------------------
+!     by A.Mereghetti, D.Sinuela-Pastor & P.Garcia Ortega, for the FLUKA Team
+!     last modified: 13-06-2014
+!     dump beam particles
+!     always in main code
+!-----------------------------------------------------------------------
+!
++if fluka
+      use mod_fluka
++ei
+
+      implicit none
+
+!     interface variables:
+      integer nturn, i, ix, unit, fmt
+      logical lhighprec, lheader
+
++ca parpro
++ca parnum
++ca common
++ca commonmn
++ca commonm1
++ca commontr
++ca dbdcum
+
+!     temporary variables
+      integer j
+
+      if ( fmt .eq. 0 ) then ! General format
+         if ( lhighprec ) then
+            do j=1,napx
+               write(unit,1981) nturn, i, ix, bez(ix), dcum(i),         &
++if fluka
+     &fluka_uid(j), fluka_gen(j), fluka_weight(j),                      &
++ei
+     &xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3, yv(2,j)*1d-3,           &
+     &ejfv(j)*1d-3, (ejv(j)-e0)*1d6, -1.0d-03*(sigmv(j)/clight)*(e0/e0f)
+            enddo
+         else
+            do j=1,napx
+               write(unit,1982) nturn, i, ix, bez(ix), dcum(i),         &
++if fluka
+     &fluka_uid(j), fluka_gen(j), fluka_weight(j),                      &
++ei
+     &xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3, yv(2,j)*1d-3,           &
+     &ejfv(j)*1d-3, (ejv(j)-e0)*1d6, -1.0d-03*(sigmv(j)/clight)*(e0/e0f)
+            enddo
+         endif
+         write(unit,*) ''
+         write(unit,*) ''
+
+      else if (fmt .eq. 1) then ! Format for aperture check
+
+        if ( lhighprec ) then
+            do j=1,napx
++if .not.fluka
+               write(unit,1983) nlostp(j), nturn, dcum(i), xv(1,j),     &
++ei
++if fluka
+               write(unit,1983) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
++ei
+     &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
+            enddo
+         else
+            do j=1,napx
++if .not.fluka
+               write(unit,1984) nlostp(j), nturn, dcum(i), xv(1,j),     &
++ei
++if fluka
+               write(unit,1984) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
++ei
+     &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
+            enddo
+         endif
+      else if (fmt .eq. 2) then ! Same as fmt=1 but also include z (for crab cavities etc)
+         if ( lhighprec ) then
+            do j=1,napx
++if .not.fluka
+               write(unit,1985) nlostp(j), nturn, dcum(i), xv(1,j),     &
++ei
++if fluka
+               write(unit,1985) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
++ei
+     &              yv(1,j), sigmv(j), xv(2,j), yv(2,j),
+     &              (ejv(j)-e0)/e0, ktrack(i)
+            enddo
+         else
+            do j=1,napx
++if .not.fluka
+               write(unit,1986) nlostp(j), nturn, dcum(i), xv(1,j),
++ei
++if fluka
+               write(unit,1986) fluka_uid(j), nturn, dcum(i), xv(1,j),
++ei
+     &              yv(1,j), sigmv(j), xv(2,j), yv(2,j),
+     &              (ejv(j)-e0)/e0, ktrack(i)
+            enddo
+         endif
+      else
+         write (*,*) "DUMP> Format",fmt, "not understood for unit", unit
+         call prror(-1)
+      endif
+      return
+
++if fluka
+ 1981 format (3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE25.18)) !fmt 0 / hiprec
+ 1982 format (3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE16.9))  !fmt 0 / not hiprec
++ei
++if .not.fluka
+ 1981 format (3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE25.18)) !fmt 0 / hiprec
+ 1982 format (3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE16.9))  !fmt 0 / not hiprec
++ei
+ 1983 format (2(1x,I8),1X,F12.5,5(1X,1PE25.18),1X,I8)  !fmt 1 / hiprec
+ 1984 format (2(1x,I8),1X,F12.5,5(1X,1PE16.9),1X,I8)   !fmt 1 / not hiprec
+
+ 1985 format (2(1x,I8),1X,F12.5,6(1X,1PE25.18),1X,I8)  !fmt 2 / hiprec
+ 1986 format (2(1x,I8),1X,F12.5,6(1X,1PE16.9),1X,I8) !fmt 2 / not hiprec
+      end subroutine
+
 +dk tra_thck
       subroutine trauthck(nthinerr)
 !-----------------------------------------------------------------------
@@ -33990,6 +34357,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
++ca dbdump
 +ca comdynk
 +ca save
 !-----------------------------------------------------------------------
@@ -34445,6 +34813,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
   470     continue
 
 +ca lostpart
+
++ca dumplines
+
   480     continue
           call lostpart(nthinerr)
           if(nthinerr.ne.0) return
@@ -34515,6 +34886,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRDRHIC
 !GRD-042008
 +ei
++ca dbdump
 +ca comdynk
 +ca save
 +if debug
@@ -35090,6 +35462,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
   490     continue
 
 +ca lostpart
+
++ca dumplines
+
 +if debug
   500 continue
 !     if (n.ge.990) then
@@ -35185,6 +35560,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
++ca dbdump
 +ca comdynk
 +ca save
 !-----------------------------------------------------------------------
@@ -35695,6 +36071,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
   490     continue
 
 +ca lostpart
+
++ca dumplines
+
   500     continue
           call lostpart(nthinerr)
           if(nthinerr.ne.0) return
@@ -37718,6 +38097,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca rhicelens
 +ei
++ca dbdcum
++ca dbdump
 +ca comdynk
 +ca save
 !-----------------------------------------------------------------------
@@ -38217,6 +38598,28 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       enddo
       do i=1,mcor
         smida_da(i)=0
+      enddo
+
+!--CADCUM---------------------------------------------------------------
+!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
+!     last modified: 17-07-2013
+!     initialise common
+!     always in main code
+      do i=0,nblz+1
+         dcum(i)=zero
+      enddo
+
+!--DUMP BEAM POPULATION-------------------------------------------------
+!     A.Mereghetti, D.Sinuela Pastor and P.Garcia Ortega, for the FLUKA Team
+!     last modified: 13-06-2014
+!     initialise common
+!     always in main code
+      ldumphighprec = .false.
+      do i=0,nele
+        ldump(i)    = .false.
+        ndumpt(i)   = 0
+        dumpunit(i) = 0
+	dumpfmt(i)  = 0
       enddo
 !--DYNAMIC KICKS--------------------------------------------------------
 !     A.Mereghetti, for the FLUKA Team
@@ -44543,6 +44946,91 @@ c$$$               endif
       call prror(-1)
 
       end function
+
++dk cadcum
+      subroutine cadcum
+!
+!-----------------------------------------------------------------------
+!     A.Mereghetti and D.Sinuela Pastor, for the FLUKA Team
+!     last modified: 13-06-2014
+!     calculate dcum, as done in linopt and when parsing BLOCs (daten):
+!         lengths of thick lens elements are taken on the curvilinear
+!         reference system; thus, no difference between the length
+!         of SBENDs and the one of RBENDs, as they are both the ARC one;
+!     for future needs:
+!                ds=two/ed(ix)*asin(el(ix)*ed(ix)/two)
+!     always in main code
+!-----------------------------------------------------------------------
+!
+      implicit none
+
++ca parpro
++ca parnum
++ca common
++ca dbdcum
++ca save
+
+!     temporary variables
+      double precision tmpdcum, ds
+      integer ientry, jentry, kentry, ix
+
+      write(*,*)''
+      write(*,10010)
+      write(*,*)''
+      write(*,*)' CALL TO CADCUM'
+      write(*,*)''
+
+!     initialise cumulative length
+      tmpdcum=zero
+
+!     loop all over the entries in the accelerator structure
+      do ientry=1,iu
+        ix=ic(ientry)
+        if(ix.gt.nblo) then
+!         SINGLE ELEMENT
+          ix=ix-nblo
+          if ( el(ix).gt.zero ) tmpdcum=tmpdcum+el(ix)
+        else
+!         BLOC: iterate over elements
+          do jentry=1,mel(ix)
+            kentry=mtyp(ix,jentry)
+            if( el(kentry).gt.zero ) tmpdcum=tmpdcum+el(kentry)
+          enddo
+        endif
+!       assign value of dcum
+        dcum(ientry)=tmpdcum
+!     go to next entry in the acclerator structure
+      enddo
+
+!     assign the last value to the closing MARKER:
+      dcum(iu+1)=tmpdcum
+
+      if ( print_dcum ) then
+!       a useful printout
+        write(*,10030)'ientry','ix','name            ','dcum [m]'
+        write(*,10020) 0,-1,'START           ',dcum(0)
+        do ientry=1,iu
+          ix=ic(ientry)
+          if(ix.gt.nblo) then
+!            SINGLE ELEMENT
+             ix=ix-nblo
+             write(*,10020) ientry,ix,bez(ix),dcum(ientry)
+          else
+!            BLOC
+             write(*,10020) ientry,ix,bezb(ix),dcum(ientry)
+          endif
+        enddo
+        write(*,10020) iu+1,-1,'END            ',dcum(iu+1)
+        write(*,*) ''
+      endif
+
+!     au revoir:
+      return
+10010 format(132('-'))
+10020 format(2(1x,i6),1x,a16,1x,f12.5)
+10030 format(2(1x,a6),1x,a16,1x,a12)
+      end subroutine
+!
 +dk linopt
       subroutine linopt(dpp)
 !-----------------------------------------------------------------------
