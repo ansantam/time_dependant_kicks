@@ -17795,20 +17795,38 @@ cc2008
 
       if(ch(1:1).eq.'/') goto 2000
       if(ch(:4).eq.next) then
++if cr
+        write(lout,10460) dump
+!       dump all elements found:
+        if ( ldump(0) ) then
+           write(lout,'(t10,a50)')
+     &          ' required dump at ALL SINGLE ELEMENTs'
+           write(lout,10470) 'ALL', ndumpt(0), dumpunit(0), dumpfmt(0)
+        endif
+        write(lout,*)
+        write(lout,*) '       The last column states the format'
+        write(lout,*) '            of the output file (see Twiki page):'
+        write(lout,*) '       ==0 -> regular output (default)'
+        write(lout,*) '       ==1 -> special one, for post-processing'
+        write(lout,*) '              with LHC Coll Team tools'
+        write(lout,*) '       ==2 -> as 1, but add z as column 6'
++ei
++if .not.cr
         write(*,10460) dump
 !       dump all elements found:
         if ( ldump(0) ) then
-           write(*,'(t10,a50)') ' required dump at ALL SINGLE ELEMENTs'
+           write(*,'(t10,a50)')
+     &          ' required dump at ALL SINGLE ELEMENTs'
            write(*,10470) 'ALL', ndumpt(0), dumpunit(0), dumpfmt(0)
         endif
-        write(*,*) ''
-        write(*,*) '          The last column states the format'
-        write(*,*) '               of the output file (see Twiki page):'
-        write(*,*) '          ==0 -> regular output (default)'
-        write(*,*) '          ==1 -> special one, for post-processing'
-        write(*,*) '                 with LHC Coll Team tools'
-        write(*,*) '          ==2 -> as 1, but add z as column 6'
-
+        write(*,*)
+        write(*,*)    '       The last column states the format'
+        write(*,*)    '            of the output file (see Twiki page):'
+        write(*,*)    '       ==0 -> regular output (default)'
+        write(*,*)    '       ==1 -> special one, for post-processing'
+        write(*,*)    '              with LHC Coll Team tools'
+        write(*,*)    '       ==2 -> as 1, but add z as column 6'
++ei
         do ii=1,il
           if(ldump(ii)) then
             write(*,10470) bez(ii), ndumpt(ii), dumpunit(ii),dumpfmt(ii)
@@ -17817,25 +17835,50 @@ cc2008
             do jj=1,mper*mbloz      ! Loop over all structure elements
               if ( ic(jj)-nblo .eq. ii ) then
                 write (ch1,*) jj    ! internal write for left-adjusting
-                write (*,10472) " -> Found as structure element no. "
++if cr
+                write (lout,10472)
++ei
++if .not.cr
+                write (*,10472)
++ei
+     &               " -> Found as structure element no. "
      &               // trim(adjustl(ch1))
                 kk = kk + 1
               end if
             end do
             if (kk .eq. 0) then
-               write (*,10472) " !! Warning: No structure elements "
++if cr
+               write (lout,10472) " !! Warning: No structure elements "
      &              // "found for '" // bez(ii) // "'!"
-               write (*,10472) " !! This element is probably only found"
+               write (lout,10472)
+     &              " !! This element is probably only found"
      &              // " in a BLOC, or it is not used at all."
-               write (*,10472) " !! Please fix your DUMP block"
+               write (lout,10472) " !! Please fix your DUMP block"
      &              // " in fort.3"
+
++ei
++if .not.cr
+               write (*,10472)    " !! Warning: No structure elements "
+     &              // "found for '" // bez(ii) // "'!"
+               write (*,10472)
+     &              " !! This element is probably only found"
+     &              // " in a BLOC, or it is not used at all."
+               write (*,10472)    " !! Please fix your DUMP block"
+     &              // " in fort.3"
++ei
                call prror(-1)
             endif
           endif
         enddo
         if ( ldumphighprec ) then
-          write(*,*) ''
++if cr
+          write(lout,*)
+          write(lout,*) '        --> requested high precision dumping!'
++ei
++if .not.cr
+          write(*,*)
           write(*,*) '        --> requested high precision dumping!'
++ei
         endif
         goto 110
       endif
@@ -17865,12 +17908,22 @@ cc2008
          goto 2001
       endif
 !     search failed:
-      write(*,*) ''
-      write(*,*) " Un-identified SINGLE ELEMENT '", idat, "'"
-      write(*,*) '   in block ',dump, '(fort.3)'
-      write(*,*) '   parsed line:'
-      write(*,*) ch(:80)
-      write(*,*) ''
++if cr
+      write(lout,*)
+      write(lout,*) " Un-identified SINGLE ELEMENT '", idat, "'"
+      write(lout,*) '   in block ',dump, '(fort.3)'
+      write(lout,*) '   parsed line:'
+      write(lout,*) ch(:80)
+      write(lout,*)
++ei
++if .not.cr
+      write(*,*)
+      write(*,*)    " Un-identified SINGLE ELEMENT '", idat, "'"
+      write(*,*)    '   in block ',dump, '(fort.3)'
+      write(*,*)    '   parsed line:'
+      write(*,*)    ch(:80)
+      write(*,*)
++ei
       call prror(-1)
 
 !     element found:
@@ -33823,7 +33876,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     interface variables:
       integer nturn, i, ix, unit, fmt
       logical lhighprec, lheader
-
++if cr
++ca crcoall
++ei
 +ca parpro
 +ca parnum
 +ca common
@@ -33906,7 +33961,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             enddo
          endif
       else
-         write (*,*) "DUMP> Format",fmt, "not understood for unit", unit
++if cr
+         write (lout,*) 
++ei
++if .not.cr
+         write (*,*) 
++ei
+     & "DUMP> Format",fmt, "not understood for unit", unit
          call prror(-1)
       endif
       return
