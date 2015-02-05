@@ -13354,8 +13354,14 @@ cc2008
         lineno2=lineno2+1
         if(idat(1:1).eq.'/') goto 100
         if(idat.eq.sing) goto 120
-        call prror(15)
-      endif
++if cr
+          write(lout,*) "idat = '"//idat//"'"
++ei
++if .not.cr
+          write(*,*)    "idat = '"//idat//""
++ei
+          call prror(15)
+        endif
   110 read(3,10000,end=1530,iostat=ierro) idat
       if(ierro.gt.0) call prror(58)
       nunit=3
@@ -13406,6 +13412,12 @@ cc2008
 
       if(idat.eq.next) goto 110
       if(idat.eq.ende) goto 771
++if cr
+      write(lout,*) "idat = '"//idat//"'"
++ei
++if .not.cr
+      write(*,*)    "idat = '"//idat//"'"
++ei
       call prror(15)
 !-----------------------------------------------------------------------
 !  DATENBLOCK SINGLE ELEMENTS
@@ -13432,7 +13444,15 @@ cc2008
           nunit=2
           lineno2=lineno2+1
           if(idat(1:1).eq.'/') goto 160
-          if(idat.ne.bloc) call prror(15)
+          if(idat.ne.bloc) then
++if cr
+            write(lout,*) "idat = '"//idat//"'"
++ei
++if .not.cr
+            write(*,*)    "idat = '"//idat//""
++ei
+            call prror(15)
+          endif
           goto 190
         endif
       endif
@@ -13716,7 +13736,15 @@ cc2008
           nunit=2
           lineno2=lineno2+1
           if(idat(1:1).eq.'/') goto 260
-          if(idat.ne.stru) call prror(15)
+          if(idat.ne.stru) then
++if cr
+            write(lout,*) "idat = '"//idat//"'"
++ei
++if .not.cr
+            write(*,*)    "idat = '"//idat//""
++ei
+            call prror(15)
+          endif
           goto 320
         endif
       endif
@@ -42459,6 +42487,27 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
       ! define function return type
       integer dynk_findFUNindex
+
++if crlibm
+      integer nchars
+      parameter (nchars=160)
+      character*(nchars) ch
+      
+      character filefields_fields
+     &     ( getfields_n_max_fields )*( getfields_l_max_string )
+      integer filefields_nfields
+      integer filefields_lfields( getfields_n_max_fields )
+      logical filefields_lerr
+      
+      double precision round_near
+      integer errno
++ei
+
++if fio
+! Do not support FIO, it is not supported by any compilers.
+      write (*,*) "FIO not supported in DYNK!"
+      stop 1
++ei
       
       if (nfuncs_dynk+1 .gt. maxfuncs_dynk) then
 +if cr
@@ -42577,8 +42626,61 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
          ii = 0 !Number of data lines read
          do
++if .not.crlibm
             read(664,*, iostat=stat) t,y
             if (stat .ne. 0) exit !EOF
++ei
++if crlibm
+            read(664,'(a)', iostat=stat) ch
+            if (stat .ne. 0) exit !EOF
+            call getfields_split(ch,
+     &           filefields_fields, filefields_lfields,
+     &           filefields_nfields, filefields_lerr )
+            if ( filefields_lerr ) then
++if cr
+               write(lout,*) "DYNK> dynk_parseFUN():FILE"
+               write(lout,*) "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(lout,*) "DYNK> Error in getfields_split"
++ei
++if .not.cr
+               write(*,*)    "DYNK> dynk_parseFUN():FILE"
+               write(*,*)    "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(*,*)    "DYNK> Error in getfields_split"
++ei
+               call prror(-1)
+            end if
+
+            if ( filefields_nfields  .ne. 2 ) then
++if cr
+               write(lout,*) "DYNK> dynk_parseFUN():FILE"
+               write(lout,*) "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(lout,*) "DYNK> expected 2 fields, got",
+     &              filefields_nfields, "ch =",ch
++ei
++if .not.cr
+               write(*,*)    "DYNK> dynk_parseFUN():FILE"
+               write(*,*)    "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(*,*)    "DYNK> expected 2 fields, got",
+     &              filefields_nfields, "ch =",ch
++ei
+            end if
+
+            read(filefields_fields(1)(1:filefields_lfields(1)),*) t
+            y = round_near(errno, 30, filefields_fields(2),
+     &           filefields_lfields(2))
+            if (errno.ne.0)
+     &           call rounderr(errno,filefields_fields,2,y)
+!            write(*,*) "DBGDBG: ch=",ch
+!            write(*,*) "DBGDBG: filefields_fields(1)=",
+!     &           filefields_fields(1)
+!            write(*,*) "DBGDBG: filefields_fields(2)=",
+!     &           filefields_fields(2)
++ei
+!            write(*,*) "DBGDBG: t,y = ",t,y
 
             ii = ii+1
             if (t .ne. ii) then
@@ -42670,8 +42772,64 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! Find the size of the file
          ii = 0 !Number of data lines read
          do
++if .not.crlibm
             read(664,*, iostat=stat) x,y
             if (stat .ne. 0) exit !EOF
++ei
++if crlibm
+            read(664,'(a)', iostat=stat) ch
+            if (stat .ne. 0) exit !EOF
+            call getfields_split(ch,
+     &           filefields_fields, filefields_lfields,
+     &           filefields_nfields, filefields_lerr )
+            if ( filefields_lerr ) then
++if cr
+               write(lout,*) "DYNK> dynk_parseFUN():FILELIN"
+               write(lout,*) "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(lout,*) "DYNK> Error in getfields_split"
++ei
++if .not.cr
+               write(*,*)    "DYNK> dynk_parseFUN():FILELIN"
+               write(*,*)    "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(*,*)    "DYNK> Error in getfields_split"
++ei
+               call prror(-1)
+            end if
+            
+            if ( filefields_nfields  .ne. 2 ) then
++if cr
+               write(lout,*) "DYNK> dynk_parseFUN():FILELIN"
+               write(lout,*) "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(lout,*) "DYNK> expected 2 fields, got",
+     &              filefields_nfields, "ch =",ch
++ei
++if .not.cr
+               write(*,*)    "DYNK> dynk_parseFUN():FILELIN"
+               write(*,*)    "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(*,*)    "DYNK> expected 2 fields, got",
+     &              filefields_nfields, "ch =",ch
++ei
+            end if
+
+            x = round_near(errno, 30, filefields_fields(1),
+     &           filefields_lfields(1))
+            if (errno.ne.0)
+     &           call rounderr(errno,filefields_fields,2,x)
+            y = round_near(errno, 30, filefields_fields(2),
+     &           filefields_lfields(2))
+            if (errno.ne.0)
+     &           call rounderr(errno,filefields_fields,2,y)
+!            write(*,*) "DBGDBG: ch=",ch
+!            write(*,*) "DBGDBG: filefields_fields(1)=",
+!     &           filefields_fields(1)
+!            write(*,*) "DBGDBG: filefields_fields(2)=",
+!     &           filefields_fields(2)
++ei
+!            write(*,*) "DBGDBG: x,y = ",x,y
             
             if (ii.gt.0 .and. x.le. x2) then !Insane: Decreasing x
 +if cr
@@ -42720,6 +42878,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          !Read the file
          ii = 0
          do
++if .not.crlibm
             read(664,*, iostat=stat) x,y
             if (stat .ne. 0) then !EOF
                if (ii .ne. t) then
@@ -42740,6 +42899,81 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                endif
                exit
             endif
++ei
++if crlibm
+            read(664,'(a)', iostat=stat) ch
+            if (stat .ne. 0) then !EOF
+               if (ii .ne. t) then
++if cr
+                  write (lout,*) "DYNK> dynk_parseFUN():FILELIN"
+                  write (lout,*) "DYNK> Unexpected when reading file '",
+     &                 cexpr_dynk(ncexpr_dynk),"'"
+                  write (lout,*) "DYNK> ii=",ii,"t=",t
+
++ei
++if .not.cr
+                  write (*,*)    "DYNK> dynk_parseFUN():FILELIN"
+                  write (*,*)    "DYNK> Unexpected when reading file '",
+     &                 cexpr_dynk(ncexpr_dynk),"'"
+                  write (*,*)    "DYNK> ii=",ii,"t=",t
++ei
+                  call prror(51)
+               endif
+               exit
+            endif
+            
+            call getfields_split(ch,
+     &           filefields_fields, filefields_lfields,
+     &           filefields_nfields, filefields_lerr )
+            if ( filefields_lerr ) then
++if cr
+               write(lout,*) "DYNK> dynk_parseFUN():FILELIN"
+               write(lout,*) "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(lout,*) "DYNK> Error in getfields_split"
++ei
++if .not.cr
+               write(*,*)    "DYNK> dynk_parseFUN():FILELIN"
+               write(*,*)    "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(*,*)    "DYNK> Error in getfields_split"
++ei
+               call prror(-1)
+            end if
+            
+            if ( filefields_nfields  .ne. 2 ) then
++if cr
+               write(lout,*) "DYNK> dynk_parseFUN():FILELIN"
+               write(lout,*) "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(lout,*) "DYNK> expected 2 fields, got",
+     &              filefields_nfields, "ch =",ch
++ei
++if .not.cr
+               write(*,*)    "DYNK> dynk_parseFUN():FILELIN"
+               write(*,*)    "DYNK> Error reading file '",
+     &              cexpr_dynk(ncexpr_dynk),"'"
+               write(*,*)    "DYNK> expected 2 fields, got",
+     &              filefields_nfields, "ch =",ch
++ei
+            end if
+
+            x = round_near(errno, 30, filefields_fields(1),
+     &           filefields_lfields(1))
+            if (errno.ne.0)
+     &           call rounderr(errno,filefields_fields,2,x)
+            y = round_near(errno, 30, filefields_fields(2),
+     &           filefields_lfields(2))
+            if (errno.ne.0)
+     &           call rounderr(errno,filefields_fields,2,y)
+!            write(*,*) "DBGDBG: ch=",ch
+!            write(*,*) "DBGDBG: filefields_fields(1)=",
+!     &           filefields_fields(1)
+!            write(*,*) "DBGDBG: filefields_fields(2)=",
+!     &           filefields_fields(2)
++ei
+!            write(*,*) "DBGDBG: x,y = ",x,y
+
             !Current line number
             ii = ii+1
             
@@ -59045,7 +59279,7 @@ c$$$               endif
                xp_flk = xp_flk + tiltangle
             elseif (tiltangle.lt.0.d0) then !hr09
                xp_flk = xp_flk + tiltangle
-               x_flk  = x_flk - sin_rn(tiltangle) * ( length -(sInt+sp) )
+               x_flk  = x_flk - sin_rn(tiltangle) * ( length-(sInt+sp) )
             endif
             x_flk = (x_flk + c_aperture/2d0) + mirror*c_offset !hr09
             x_flk    = mirror * x_flk
@@ -62285,6 +62519,10 @@ c$$$     &           myalphay * cos(phiy))
       double precision p
       integer mat_i
       double precision dpodx,get_dpodx   
++if crlibm
++ca crlibco
++ei
+
       mp2=mp**2
       me2=me**2
       beta_p=1.
@@ -62344,6 +62582,9 @@ C.**************************************************************************
       data me/0.510998910/ !electron mass [MeV/c^2]
       data mp/938.272013/ !proton mass [MeV/c^2]
 
++if crlibm
++ca crlibco
++ei
 
       mom=PC*1.0d3              ! [GeV/c] -> [MeV/c]
       enr=(mom*mom+mp*mp)**0.5  ! [MeV]
@@ -62368,7 +62609,7 @@ C.**************************************************************************
       thl= 4.0d0*k*zatom(IS)*DZ*100.0d0*rho(IS)/(anuc(IS)*betar**2) ![MeV]
 !     write(3456,*) thl     ! should typically be >0.06MeV for approximations to be valid - check!
 
-+if crlibm 
++if crlibm
       ! Bethe Bloch mean energy loss
       EnLo=((k*zatom(IS))/(anuc(IS)*betar**2))*
      +     (0.5*log_rn((2.0d0*me*bgr*bgr*Tmax)/(exEn*exEn))
