@@ -1117,7 +1117,8 @@
 *     parameters for the parser
       integer getfields_n_max_fields, getfields_l_max_string
       parameter ( getfields_n_max_fields = 10  ) ! max number of returned fields
-      parameter ( getfields_l_max_string = 132 ) ! max len of parsed line and its fields
+      parameter ( getfields_l_max_string = 161 ) ! max len of parsed line and its fields
+                                                 ! (nchars in daten +1 to always make room for \0)
 
 *     array of fields
       character getfields_fields
@@ -18824,7 +18825,7 @@ cc2008
 
 *     parse the line
       lchar = .false.
-      do ii=1, getfields_l_max_string
+      do ii=1, getfields_l_max_string-1 !For \0 termination
          if ( tmpline(ii:ii) .eq. ' ' ) then
 *           blank char
             if ( lchar ) then
@@ -18842,11 +18843,18 @@ cc2008
 *              a new what starts
                getfields_nfields = getfields_nfields +1
                if ( getfields_nfields.gt.getfields_n_max_fields ) then
-                  write (*,*) ' error! too many fields in line:'
-                  write (*,*) tmpline
-                  write (*,*) ' please increase getfields_n_max_fields'
++if cr
+                  write (lout,*)'error! too many fields in line:'
+                  write (lout,*) tmpline
+                  write (lout,*)'please increase getfields_n_max_fields'
++ei
++if .not.cr
+                  write (*,*)   'error! too many fields in line:'
+                  write (*,*)   tmpline
+                  write (*,*)   'please increase getfields_n_max_fields'
++ei
                   getfields_lerr = .true.
-                  goto 1982
+                  exit !Break do
                endif
                istart = ii
                lchar = .true.
@@ -18855,8 +18863,6 @@ cc2008
             lenstr = lenstr+1
          endif
       enddo
-
- 1982 return
 
       end subroutine
       
@@ -42490,7 +42496,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
 +if crlibm
       integer nchars
-      parameter (nchars=160)
+      parameter (nchars=160) !Same as in daten
       character*(nchars) ch
       
       character filefields_fields
@@ -42670,8 +42676,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             end if
 
             read(filefields_fields(1)(1:filefields_lfields(1)),*) t
-            y = round_near(errno, 30, filefields_fields(2),
-     &           filefields_lfields(2))
+            y = round_near(errno, filefields_lfields(2)+1,
+     &           filefields_fields(2) )
             if (errno.ne.0)
      &           call rounderr(errno,filefields_fields,2,y)
 !            write(*,*) "DBGDBG: ch=",ch
@@ -42815,19 +42821,20 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
             end if
 
-            x = round_near(errno, 30, filefields_fields(1),
-     &           filefields_lfields(1))
+            x = round_near(errno, filefields_lfields(1)+1,
+     &           filefields_fields(1) )
             if (errno.ne.0)
      &           call rounderr(errno,filefields_fields,2,x)
-            y = round_near(errno, 30, filefields_fields(2),
-     &           filefields_lfields(2))
+            y = round_near(errno, filefields_lfields(2)+1,
+     &           filefields_fields(2) )
             if (errno.ne.0)
      &           call rounderr(errno,filefields_fields,2,y)
+            
 !            write(*,*) "DBGDBG: ch=",ch
 !            write(*,*) "DBGDBG: filefields_fields(1)=",
-!     &           filefields_fields(1)
+!     &           filefields_fields(1)(1:filefields_lfields(1))
 !            write(*,*) "DBGDBG: filefields_fields(2)=",
-!     &           filefields_fields(2)
+!     &           filefields_fields(2)(1:filefields_lfields(2))
 +ei
 !            write(*,*) "DBGDBG: x,y = ",x,y
             
@@ -42958,12 +42965,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
             end if
 
-            x = round_near(errno, 30, filefields_fields(1),
-     &           filefields_lfields(1))
+            x = round_near(errno, filefields_lfields(1)+1,
+     &           filefields_fields(1) )
             if (errno.ne.0)
      &           call rounderr(errno,filefields_fields,2,x)
-            y = round_near(errno, 30, filefields_fields(2),
-     &           filefields_lfields(2))
+            y = round_near(errno, filefields_lfields(2)+1,
+     &           filefields_fields(2) )
             if (errno.ne.0)
      &           call rounderr(errno,filefields_fields,2,y)
 !            write(*,*) "DBGDBG: ch=",ch
@@ -43011,12 +43018,26 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &        iexpr_dynk(niexpr_dynk) ! seed1 (initial)
          read(getfields_fields(5)(1:getfields_lfields(5)),*)
      &        iexpr_dynk(niexpr_dynk+1) ! seed2 (initial)
++if .not.crlibm
          read(getfields_fields(6)(1:getfields_lfields(6)),*)
      &        fexpr_dynk(nfexpr_dynk) ! mu
          read(getfields_fields(7)(1:getfields_lfields(7)),*)
      &        fexpr_dynk(nfexpr_dynk+1) ! sigma
++ei
++if crlibm
+         fexpr_dynk(nfexpr_dynk) = round_near(errno, ! mu
+     &        getfields_lfields(6)+1, getfields_fields(6) )
+         if (errno.ne.0)
+     &        call rounderr(errno,getfields_fields,6,y)
+
+         fexpr_dynk(nfexpr_dynk+1) = round_near(errno, ! sigma
+     &        getfields_lfields(7)+1, getfields_fields(7) )
+         if (errno.ne.0)
+     &        call rounderr(errno,getfields_fields,7,y)
++ei
          read(getfields_fields(8)(1:getfields_lfields(8)),*)
      &        iexpr_dynk(niexpr_dynk+2) ! mcut
+
          iexpr_dynk(niexpr_dynk+3) = 0 ! seed1 (current)
          iexpr_dynk(niexpr_dynk+4) = 0 ! seed2 (current)
          niexpr_dynk = niexpr_dynk+4
