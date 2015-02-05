@@ -43028,20 +43028,24 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          fexpr_dynk(nfexpr_dynk) = round_near(errno, ! mu
      &        getfields_lfields(6)+1, getfields_fields(6) )
          if (errno.ne.0)
-     &        call rounderr(errno,getfields_fields,6,y)
+     &        call rounderr( errno,getfields_fields,6,
+     &                       fexpr_dynk(nfexpr_dynk)  )
 
          fexpr_dynk(nfexpr_dynk+1) = round_near(errno, ! sigma
      &        getfields_lfields(7)+1, getfields_fields(7) )
          if (errno.ne.0)
-     &        call rounderr(errno,getfields_fields,7,y)
+     &        call rounderr( errno,getfields_fields,7,
+     &                       fexpr_dynk(nfexpr_dynk+1) )
 +ei
          read(getfields_fields(8)(1:getfields_lfields(8)),*)
      &        iexpr_dynk(niexpr_dynk+2) ! mcut
 
          iexpr_dynk(niexpr_dynk+3) = 0 ! seed1 (current)
          iexpr_dynk(niexpr_dynk+4) = 0 ! seed2 (current)
+
          niexpr_dynk = niexpr_dynk+4
          nfexpr_dynk = nfexpr_dynk+1
+
          if (iexpr_dynk(niexpr_dynk) .lt. 0) then
             !mcut < 0
 +if cr
@@ -43223,9 +43227,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! Store data
          cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
      &        getfields_fields(2)(1:getfields_lfields(2))
-         
+
++if .not.crlibm
          read(getfields_fields(4)(1:getfields_lfields(4)),*)
      &        fexpr_dynk(nfexpr_dynk) ! value
++ei
++if crlibm
+         fexpr_dynk(nfexpr_dynk) = round_near(errno, ! value
+     &        getfields_lfields(4)+1, getfields_fields(4) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,4,
+     &                       fexpr_dynk(nfexpr_dynk)  )
++ei
 
       case ("TURN")
          ! TURN: Just the current turn number
@@ -43268,11 +43281,25 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! Store data
          cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
      &        getfields_fields(2)(1:getfields_lfields(2))
-         
+
++if .not.crlibm
          read(getfields_fields(4)(1:getfields_lfields(4)),*)
      &        fexpr_dynk(nfexpr_dynk) ! dy/dt
          read(getfields_fields(5)(1:getfields_lfields(5)),*)
      &        fexpr_dynk(nfexpr_dynk+1) ! b
++ei
++if crlibm
+         fexpr_dynk(nfexpr_dynk) = round_near(errno, ! dy/dt
+     &        getfields_lfields(4)+1, getfields_fields(4) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,4,
+     &                       fexpr_dynk(nfexpr_dynk)   )
+         fexpr_dynk(nfexpr_dynk+1) = round_near(errno, ! b
+     &        getfields_lfields(5)+1, getfields_fields(5) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,5,
+     &                       fexpr_dynk(nfexpr_dynk+1) )
++ei
          nfexpr_dynk = nfexpr_dynk + 1
 
       case ("LINSEG")
@@ -43295,7 +43322,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! Store data
          cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
      &        getfields_fields(2)(1:getfields_lfields(2))
-         
++if .not.crlibm
          read(getfields_fields(4)(1:getfields_lfields(4)),*)
      &        fexpr_dynk(nfexpr_dynk)   ! x1
          read(getfields_fields(5)(1:getfields_lfields(5)),*)
@@ -43304,6 +43331,29 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &        fexpr_dynk(nfexpr_dynk+2) ! y1
          read(getfields_fields(7)(1:getfields_lfields(7)),*)
      &        fexpr_dynk(nfexpr_dynk+3) ! y2
++ei
++if crlibm
+         fexpr_dynk(nfexpr_dynk) = round_near(errno, ! x1
+     &        getfields_lfields(4)+1, getfields_fields(4) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,4,
+     &                       fexpr_dynk(nfexpr_dynk)   )
+         fexpr_dynk(nfexpr_dynk+1) = round_near(errno, ! x2
+     &        getfields_lfields(5)+1, getfields_fields(5) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,5,
+     &                       fexpr_dynk(nfexpr_dynk+1)   )
+         fexpr_dynk(nfexpr_dynk+2) = round_near(errno, ! y1
+     &        getfields_lfields(6)+1, getfields_fields(6) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,6,
+     &                       fexpr_dynk(nfexpr_dynk+2)   )
+         fexpr_dynk(nfexpr_dynk+3) = round_near(errno, ! y2
+     &        getfields_lfields(7)+1, getfields_fields(7) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,7,
+     &                       fexpr_dynk(nfexpr_dynk+3)   )
++ei
          nfexpr_dynk = nfexpr_dynk + 3
          
          if (fexpr_dynk(nfexpr_dynk) .eq. fexpr_dynk(nfexpr_dynk+1))then
@@ -43338,13 +43388,32 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! Store data
          cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
      &        getfields_fields(2)(1:getfields_lfields(2))
-         
+
++if .not.crlibm
          read(getfields_fields(4)(1:getfields_lfields(4)),*)
      &        fexpr_dynk(nfexpr_dynk)   ! a
          read(getfields_fields(5)(1:getfields_lfields(5)),*)
      &        fexpr_dynk(nfexpr_dynk+1) ! b
          read(getfields_fields(6)(1:getfields_lfields(6)),*)
      &        fexpr_dynk(nfexpr_dynk+2) ! c
++ei
++if crlibm
+         fexpr_dynk(nfexpr_dynk) = round_near(errno, ! a
+     &        getfields_lfields(4)+1, getfields_fields(4) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,4,
+     &                       fexpr_dynk(nfexpr_dynk)   )
+         fexpr_dynk(nfexpr_dynk+1) = round_near(errno, ! b
+     &        getfields_lfields(5)+1, getfields_fields(5) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,5,
+     &                       fexpr_dynk(nfexpr_dynk+1)   )
+         fexpr_dynk(nfexpr_dynk+2) = round_near(errno, ! c
+     &        getfields_lfields(6)+1, getfields_fields(6) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,6,
+     &                       fexpr_dynk(nfexpr_dynk+2)   )
++ei
          nfexpr_dynk = nfexpr_dynk + 2
 
       case ("QUADSEG")
@@ -43368,13 +43437,35 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ! Store data
          cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
      &        getfields_fields(2)(1:getfields_lfields(2))
-         
++if .not.crlibm
          read(getfields_fields(4)(1:getfields_lfields(4)),*) x1
          read(getfields_fields(5)(1:getfields_lfields(5)),*) x2
          read(getfields_fields(6)(1:getfields_lfields(6)),*) y1
          read(getfields_fields(7)(1:getfields_lfields(7)),*) y2
          read(getfields_fields(8)(1:getfields_lfields(8)),*) deriv
-         
++ei
++if crlibm
+         x1 = round_near(errno, ! x1
+     &        getfields_lfields(4)+1, getfields_fields(4) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,4, x1 )
+         x2 = round_near(errno, ! x2
+     &        getfields_lfields(5)+1, getfields_fields(5) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,5, x2 )
+         y1 = round_near(errno, ! y1
+     &        getfields_lfields(6)+1, getfields_fields(6) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,6, y1 )
+         y2 = round_near(errno, ! y2
+     &        getfields_lfields(7)+1, getfields_fields(7) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,7, y2 )
+         deriv = round_near(errno, ! deriv
+     &        getfields_lfields(8)+1, getfields_fields(8) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,8, deriv )
++ei
          if (x1 .eq. x2) then
 +if cr
             write (lout,*) "ERROR in DYNK block parsing (fort.3)"
@@ -43429,13 +43520,32 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          cexpr_dynk(ncexpr_dynk)(1:getfields_lfields(2)) = !NAME
      &        getfields_fields(2)(1:getfields_lfields(2))
          
++if .not.crlibm
          read(getfields_fields(4)(1:getfields_lfields(4)),*)
      &        fexpr_dynk(nfexpr_dynk) !A
          read(getfields_fields(5)(1:getfields_lfields(5)),*)
      &        fexpr_dynk(nfexpr_dynk+1) !omega
          read(getfields_fields(6)(1:getfields_lfields(6)),*)
      &        fexpr_dynk(nfexpr_dynk+2) !phi
-         nfexpr_dynk = nfexpr_dynk + 2         
++ei
++if crlibm
+         fexpr_dynk(nfexpr_dynk) = round_near(errno, ! A
+     &        getfields_lfields(4)+1, getfields_fields(4) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,4,
+     &                       fexpr_dynk(nfexpr_dynk)   )
+         fexpr_dynk(nfexpr_dynk+1) = round_near(errno, ! omega
+     &        getfields_lfields(5)+1, getfields_fields(5) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,5,
+     &                       fexpr_dynk(nfexpr_dynk+1)   )
+         fexpr_dynk(nfexpr_dynk+2) = round_near(errno, ! phi
+     &        getfields_lfields(6)+1, getfields_fields(6) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,6,
+     &                       fexpr_dynk(nfexpr_dynk+2)   )
++ei
+         nfexpr_dynk = nfexpr_dynk + 2
 
       case ("PELP")
          ! PELP: Parabolic/exponential/linear/parabolic
@@ -43463,6 +43573,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &        getfields_fields(2)(1:getfields_lfields(2))
          
          !Read and calculate parameters
++if .not.crlibm
          read(getfields_fields(4) (1:getfields_lfields( 4)),*) tinj
          read(getfields_fields(5) (1:getfields_lfields( 5)),*) Iinj
          read(getfields_fields(6) (1:getfields_lfields( 6)),*) Inom
@@ -43470,7 +43581,37 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          read(getfields_fields(8) (1:getfields_lfields( 8)),*) D
          read(getfields_fields(9) (1:getfields_lfields( 9)),*) R
          read(getfields_fields(10)(1:getfields_lfields(10)),*) te
-                  
++ei
++if crlibm
+         tinj = round_near(errno,    ! tinj
+     &        getfields_lfields(4)+1, getfields_fields(4) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,4, tinj )
+         Iinj = round_near(errno,    ! Iinj
+     &        getfields_lfields(5)+1, getfields_fields(5) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,5, Iinj )
+         Inom = round_near(errno,    ! Inom
+     &        getfields_lfields(6)+1, getfields_fields(6) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,6, Inom )
+         A = round_near(errno,       ! A
+     &        getfields_lfields(7)+1, getfields_fields(7) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,7, A )
+         D = round_near(errno,       ! D
+     &        getfields_lfields(8)+1, getfields_fields(8) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,8, D )
+         R = round_near(errno,       ! R
+     &        getfields_lfields(9)+1, getfields_fields(9) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,9, R )
+         te = round_near(errno,      ! te
+     &        getfields_lfields(10)+1, getfields_fields(10) )
+         if (errno.ne.0)
+     &        call rounderr( errno,getfields_fields,10, te )
++ei
          derivI_te = A*(te-tinj)                 ! nostore
          I_te      = (A/2.0)*(te-tinj)**2 + Iinj ! nostore
          bexp      = derivI_te/I_te
