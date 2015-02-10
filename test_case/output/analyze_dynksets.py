@@ -35,6 +35,7 @@ class DYNKdata:
 dynkData = {}
 
 ifile = open("dynksets.dat", 'r')
+lnum = 1
 for l in ifile:
     l = l.strip()
     if l[0] == "#":
@@ -45,8 +46,19 @@ for l in ifile:
     EL_ATT = (ls[1],ls[2])
     SETIDX = int(ls[3])
     FUNCTION = ls[4]
-    DATALEN = int(ls[5])
-    DATA = map(float,ls[6:])
+    if len(ls) == 6:
+        if lnum ==1:
+            print "New file format"
+        DATALEN = 1
+        DATA = [float(ls[5])]
+    elif len(ls) >= 7: 
+        if lnum ==1:
+            print "Old file format"
+        DATALEN = int(ls[5])
+        DATA = map(float,ls[6:])
+    else:
+        print "ERROR: Invalid file format"
+        exit(1)
     
     if DATALEN != len(DATA):
         print "ERROR! DATALEN != DATA"
@@ -59,7 +71,9 @@ for l in ifile:
     dynkData[EL_ATT].setIDX.append(SETIDX)
     dynkData[EL_ATT].funName.append(FUNCTION)
     dynkData[EL_ATT].data.append(DATA)
-    
+
+    lnum = lnum+1
+
 ifile.close()
 
 if len(dynkData) == 0:

@@ -1151,6 +1151,8 @@
       logical ldynkdebug       ! print debug messages in main output
       logical ldynkfileopen    ! Is dynksets.dat already open?
       logical ldynkfiledisable ! Disable writing dynksets.dat?
+      logical ldynksetsEnable  ! Used in apply_dynk, true if .not.ldynkfiledisable
+                               !  and in first turn loop. Must be saved for CR
 
 C     Store the FUN statements
       integer maxfuncs_dynk, maxdata_dynk, maxstrlen_dynk
@@ -1162,7 +1164,7 @@ C     Store the FUN statements
                                            ! (3,4,5) = arguments (often pointing within other arrays {i|f|c}expr_dynk)
       integer iexpr_dynk (maxdata_dynk)                  ! Data for DYNK FUNs
       double precision fexpr_dynk (maxdata_dynk)         ! Data for DYNK FUNs
-      character(maxstrlen_dynk) cexpr_dynk(maxdata_dynk) ! Data for DYNK FUNs (\0 initialized in comdynk)
+      character(maxstrlen_dynk) cexpr_dynk(maxdata_dynk) ! Data for DYNK FUNs (\0 initialized in comnul)
       
       integer nfuncs_dynk, niexpr_dynk, nfexpr_dynk, ncexpr_dynk !Number of used positions in arrays
             
@@ -1191,7 +1193,7 @@ C     Store the SET statements
       
 !     fortran COMMON declaration follows padding requirements
       common /dynkComGen/ ldynk, ldynkdebug,
-     &     ldynkfileopen, ldynkfiledisable
+     &     ldynkfileopen, ldynkfiledisable, ldynksetsEnable
 
       common /dynkComExpr/ funcs_dynk,
      &     iexpr_dynk, fexpr_dynk, cexpr_dynk,
@@ -1203,6 +1205,29 @@ C     Store the SET statements
      
       common /dynkComReinitialize/ dynk_izuIndex
 
++cd comdynkcr
+C     Block with data/fields needed for checkpoint/restart of DYNK
+      ! Number of records written to dynkfile (dynksets.dat)
+      integer dynkfilepos, dynkfilepos_cr
+      
+      ! Data for DYNK FUNs
+      integer iexpr_dynk_cr (maxdata_dynk)
+      double precision fexpr_dynk_cr (maxdata_dynk)
+      character(maxstrlen_dynk) cexpr_dynk_cr(maxdata_dynk)
+      ! Number of used positions in arrays
+      integer niexpr_dynk_cr, nfexpr_dynk_cr, ncexpr_dynk_cr
+      
+      ! Store current settings from dynk
+      double precision fsets_dynk_cr(maxsets_dynk)
+
+      common /dynkComCR/ dynkfilepos,dynkfilepos_cr
+      common /dynkComExprCR/
+     &     iexpr_dynk_cr, fexpr_dynk_cr, cexpr_dynk_cr,
+     &     niexpr_dynk_cr, nfexpr_dynk_cr, ncexpr_dynk_cr
+      
+      common /dynkComUniqueSetCR/
+     &     fsets_dynk_cr
+      
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !
@@ -18801,8 +18826,11 @@ cc2008
 !
       implicit none
 +ca   comgetfields
++if cr
++ca crcoall
++ei
       
-      character tmpline*( getfields_l_max_string )
+      character tmpline*(getfields_l_max_string-1) !nchars in daten is 160
 
       intent(in) tmpline
       intent(out) getfields_fields, getfields_lfields,
@@ -28222,14 +28250,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
         numx=n-1
 
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
         if(mod(numx,nwri).eq.0) call writebin(nthinerr)
         if(nthinerr.ne.0) return
 
@@ -28239,6 +28259,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(mod(numx,numlcp).eq.0) call callcrp()
           restart=.false.
 +ei
+
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
+
+
         do 630 i=1,iu
 +if bnlelens
 +ca bnltwiss
@@ -29258,14 +29288,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
         numx=n-1
 
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
         if(mod(numx,nwri).eq.0) call writebin(nthinerr)
         if(nthinerr.ne.0) return
 +if cr
@@ -29274,6 +29296,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(mod(numx,numlcp).eq.0) call callcrp()
           restart=.false.
 +ei
+      
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
+
 +if collimat
         totals=0d0
 +ei
@@ -32092,11 +32123,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRD
 !GRD END OF UPGRADE
 !GRD
-+if collimat
-          kpz=abs(kp(ix))
-          if(kpz.eq.0) goto 650
-          if(kpz.eq.1) goto 650
-+ei
+
 +if .not.collimat
 +ca lostpart
 +ei
@@ -32777,14 +32804,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
         numx=n-1
 
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
         if(n.le.nde(1)) nwri=nwr(1)
         if(n.gt.nde(1).and.n.le.nde(2)) nwri=nwr(2)
         if(n.gt.nde(2)) nwri=nwr(3)
@@ -32798,6 +32817,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(mod(numx,numlcp).eq.0) call callcrp()
           restart=.false.
 +ei
+
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
+
         do 650 i=1,iu
 +if bnlelens
 +ca bnltwiss
@@ -34509,14 +34537,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
           numx=n-1
 
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
           if(mod(numx,nwri).eq.0) call writebin(nthinerr)
           if(nthinerr.ne.0) return
 
@@ -34526,6 +34546,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(mod(numx,numlcp).eq.0) call callcrp()
           restart=.false.
 +ei
+
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
+
           do 480 i=1,iu
 +if bnlelens
 +ca bnltwiss
@@ -35045,14 +35074,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
           numx=n-1
 
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
           if(mod(numx,nwri).eq.0) call writebin(nthinerr)
           if(nthinerr.ne.0) return
 
@@ -35062,6 +35083,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(mod(numx,numlcp).eq.0) call callcrp()
           restart=.false.
 +ei
+
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
+
 +if debug
 ! Now comes the loop over elements do 500/501
           do 501 i=1,iu
@@ -35712,14 +35742,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
           numx=n-1
 
-!       A.Mereghetti, for the FLUKA Team
-!       last modified: 03-09-2014
-!       apply dynamic kicks
-!       always in main code
-        if ( ldynk ) then
-           call dynk_apply(n)
-        endif
-
           if(n.le.nde(1)) nwri=nwr(1)
           if(n.gt.nde(1).and.n.le.nde(2)) nwri=nwr(2)
           if(n.gt.nde(2)) nwri=nwr(3)
@@ -35733,6 +35755,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(mod(numx,numlcp).eq.0) call callcrp()
           restart=.false.
 +ei
+
+!       A.Mereghetti, for the FLUKA Team
+!       last modified: 03-09-2014
+!       apply dynamic kicks
+!       always in main code
+        if ( ldynk ) then
+           call dynk_apply(n)
+        endif
+
           do 500 i=1,iu
 +if bnlelens
 +ca bnltwiss
@@ -38758,6 +38789,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             csets_dynk(i,2)(j:j) = char(0)
          enddo
       enddo
+
 !
 !-----------------------------------------------------------------------
       return
@@ -44130,6 +44162,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       write (lout,*) " ldynkdebug       =", ldynkdebug
       write (lout,*) " ldynkfiledisable =", ldynkfiledisable
       write (lout,*) " ldynkfileopen    =", ldynkfileopen
+      write (lout,*) " ldynksetsEnable  =", ldynksetsEnable
 +ei
 +if .not.cr
       write (*,*)    "OPTIONS:"
@@ -44137,6 +44170,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       write (*,*)    " ldynkdebug       =", ldynkdebug
       write (*,*)    " ldynkfiledisable =", ldynkfiledisable
       write (*,*)    " ldynkfileopen    =", ldynkfileopen
+      write (*,*)    " ldynksetsEnable  =", ldynksetsEnable
 +ei
 
 +if cr
@@ -44343,6 +44377,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if (ldynkdebug) call dynk_dumpdata
       
       end subroutine
+      
+      subroutine dynk_store
+      ! Store current settings of elements affected by DYNK,
+      ! i.e. fill fsets_dynk. Called when saving a checkpoint.
+      
+      end subroutine
+      subroutine dynk_reload
+      ! Load current settings from fsets_dynk into the elements affected by DYNK.
+      ! Called when restarting from checkpoint.
+      end subroutine
 
 +dk dynktrack
       subroutine dynk_apply(turn)
@@ -44374,6 +44418,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca commonmn
 +ca commontr
 +ca comdynk
++if cr
++ca comdynkcr
++ei
 
 !     interface variables
       integer turn  ! current turn number
@@ -44381,7 +44428,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
 !     temporary variables
       integer ii, jj, shiftedTurn
-      logical ldynksetsEnable
+!!      logical ldynksetsEnable
 !     functions
       double precision dynk_computeFUN
       character(maxstrlen_dynk) dynk_stringzerotrim
@@ -44392,7 +44439,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       character(maxstrlen_dynk) whichFUN(maxsets_dynk) !Which function was used to set a given elem/attr?
       integer whichSET(maxsets_dynk) !Which SET was used for a given elem/attr?
       
-      save ldynksetsEnable
+!      save ldynksetsEnable
 
       if ( ldynkdebug ) then
 +if cr
@@ -44469,10 +44516,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             write (665,*) "### DYNK file output was disabled ",
      &                    "with flag NOFILE in fort.3 ###"
             ldynksetsEnable = .false.
++if cr
+            !Note: To be able to reposition, each line should be shorter than 255 chars
+            dynkfilepos = 1
++ei
          else
-            write(665,*) "# turn element attribute SETidx funname ",
-     &        "nvalues value1 value2 ..." !TODO Update file format
+            write(665,*) "# turn element attribute SETidx funname value"
             ldynksetsEnable = .true.
++if cr
+            !Note: To be able to reposition, each line should be shorter than 255 chars
+            dynkfilepos = 1
++ei
          endif
          ldynkfileopen = .true.
       endif
@@ -44542,7 +44596,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &           dynk_stringzerotrim(csets_unique_dynk(jj,2)),
      &           whichSET(jj),
      &           dynk_stringzerotrim(whichFUN(jj)),
-     &           1, getvaldata ! TODO: Change file format
+     &           getvaldata
++if cr
+            !Note: To be able to reposition, each line should be shorter than 255 chars
+            dynkfilepos = dynkfilepos+1
++ei
          enddo
       endif
 
@@ -65170,6 +65228,8 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 +ca rhicelens
 +ei
 +ca crco
++ca comdynk
++ca comdynkcr
       integer i,j,k,l,m,ia
       integer lstring,hbuff,tbuff,myia,mybinrecs,binrecs94,istat
       dimension hbuff(253),tbuff(35)
@@ -65273,13 +65333,29 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !GRDRHIC
 !GRD-042008
 +ei
+      if (ldynk) then
+         write(93,*) 'SIXTRACR CRCHECK reading fort.95 Record 4 DYNK'
+         endfile 93
+         backspace 93
+         read(95,err=100,end=100)
+     &        dynkfilepos_cr,
+     &        ldynksetsEnable,
+     &        niexpr_dynk_cr,
+     &        nfexpr_dynk_cr,
+     &        ncexpr_dynk_cr,
+     &        (iexpr_dynk_cr(j),j=1,maxdata_dynk),
+     &        (fexpr_dynk_cr(j),j=1,maxdata_dynk),
+     &        (cexpr_dynk_cr(j),j=1,maxdata_dynk),
+     &        (fsets_dynk_cr(j),j=1,maxsets_dynk)
+      endif
+
 !ERIC new extended checkpoint for synuthck
-        if (crsythck) then
+      if (crsythck) then
 !ERICVARS
 ! and make sure we can read the extended vars before leaving fort.95
 ! We will re-read them in crstart to be sure they are restored correctly
           write(93,*)                                                   &
-     &'SIXTRACR CRCHECK verifying Record 4 extended vars fort.95',      &
+     &'SIXTRACR CRCHECK verifying Record 5 extended vars fort.95',      &
      &' crnapxo=',crnapxo
           endfile 93
           backspace 93
@@ -65406,13 +65482,31 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !GRDRHIC
 !GRD-042008
 +ei
+
+      if (ldynk) then
+         write(93,*) 'SIXTRACR CRCHECK reading fort.96 Record 4 DYNK'
+         endfile 93
+         backspace 93
+         read(96,err=101,end=101)
+     &        dynkfilepos_cr,
+     &        ldynksetsEnable,
+     &        niexpr_dynk_cr,
+     &        nfexpr_dynk_cr,
+     &        ncexpr_dynk_cr,
+     &        (iexpr_dynk_cr(j),j=1,maxdata_dynk),
+     &        (fexpr_dynk_cr(j),j=1,maxdata_dynk),
+     &        (cexpr_dynk_cr(j),j=1,maxdata_dynk),
+     &        (fsets_dynk_cr(j),j=1,maxsets_dynk)
+      endif
+
+
 !ERIC new extended checkpoint for synuthck
         if (crsythck) then
 !ERICVARS
 ! and make sure we can read the extended vars before leaving fort.96
 ! We will re-read them in crstart to be sure they are correct
           write(93,*)                                                   &
-     &'SIXTRACR CRCHECK verifying Record 4 extended vars fort.96,',     &
+     &'SIXTRACR CRCHECK verifying Record 5 extended vars fort.96,',     &
      &' crnapxo=',crnapxo
           endfile 93
           backspace 93
@@ -65689,6 +65783,31 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !GRDRHIC
 !GRD-042008
 +ei
+      
+      !reposition dynksets.dat
+      if (ldynk .and.(.not.ldynkfiledisable) ) then
+         write(93,*)
+     &"SIXTRACR CRCHECK REPOSITIONING dynksets.dat"
+         endfile 93
+         backspace 93
+         
+         open(unit=665,file='dynksets.dat',status="old",
+     &        action="readwrite", err=110)
+         ldynkfileopen = .true.
+         
+ 701     read(665,'(a255)',end=110,err=110,iostat=istat) arecord
+         dynkfilepos=dynkfilepos+1
+         if (dynkfilepos.lt.dynkfilepos_cr) goto 701
+         endfile 665
+         backspace 665
+         write(93,*)                                                     &
+     &'SIXTRACR CRCHECK sucessfully repositioned dynksets.dat, '//
+     &'dynkfilepos=',dynkfilepos
+        endfile 93
+        backspace 93
+
+      endif
+      
 !--     Set up flag for tracking routines to call CRSTART
         restart=.true.
         write(lout,'(a80)')                                                   &
@@ -65802,7 +65921,17 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !GRDRHIC
 !GRD-042008
 +ei
+ 110  write(93,*)                                                       &
+     &'SIXTRACR CRCHECK *** ERROR ***'//
+     &' reading dynksets.dat, iostat=',istat
+      write(93,*)                                                       &
+     &'dynkfilepos=',dynkfilepos,' dynkfilepos_cr=',dynkfilepos_cr
+      endfile 93
+      backspace 93
+      call abend('SIXTRACR CRCHECK failure positioning dynksets.dat ')
+
       end
+
       subroutine crpoint
       implicit none
 +ca crcoall
@@ -65820,6 +65949,8 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 +ca commonm1
 +ca commontr
 +ca commonc
++ca comdynk
++ca comdynkcr
 +if collimat
 +ca collpara
 +ca dbmaincr
@@ -65858,7 +65989,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
         restart=.false.
         return
       endif
-!--   We need to copy fort.92 to fort.6 (sixrecs)
+!--   We need to copy fort.92 (lout) to fort.6 (sixrecs)
 !--   (if it exists and we are not already using fort.6)
 +if debug
                    !call system('../crpoint >> crlog')
@@ -65909,6 +66040,18 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 ! Maybe not!!!! this should be accumulative over multiple C/Rs
       time3=(time3-time1)+crtime3
       crnumlcr=numx+1
+
++if .not.debug
+      if (ncalls.le.20.or.numx.ge.numl-20) then
++ei
+        write(93,*) 'SIXTRACR CRPOINT calling dynk_store'
+        endfile 93
+        backspace 93
++if .not.debug
+      endif
++ei
+      call dynk_store
+
 +if .not.debug
       if (ncalls.le.20.or.numx.ge.numl-20) then
 +ei
@@ -65987,6 +66130,32 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !GRDRHIC
 !GRD-042008
 +ei
+      
+      if (ldynk) then
++if .not.debug
+        if (ncalls.le.20.or.numx.ge.numl-20) then
++ei
+          write(93,*) 'SIXTRACR CRPOINT writing DYNK vars fort.95'
+          endfile 93
+          backspace 93
++if .not.debug
+        endif
++ei
+        !TODO: One could probably be more efficient when saving
+        write(95,err=100,iostat=istat)                                  &
+     &dynkfilepos,
+     &ldynksetsEnable,
+     &niexpr_dynk,
+     &nfexpr_dynk,
+     &ncexpr_dynk,
+     &(iexpr_dynk(j),j=1,maxdata_dynk),
+     &(fexpr_dynk(j),j=1,maxdata_dynk),
+     &(cexpr_dynk(j),j=1,maxdata_dynk),
+     &(fsets_dynk_cr(j),j=1,maxsets_dynk)
+        endfile 95
+        backspace 95
+      endif
+
       if (sythckcr) then
 +if .not.debug
         if (ncalls.le.20.or.numx.ge.numl-20) then
@@ -66037,6 +66206,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
         endfile 95
         backspace 95
       endif
+
 +if bnlelens
 +if debug
 !     if (numx.ge.990) then
@@ -66137,6 +66307,32 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !GRDRHIC
 !GRD-042008
 +ei
+
+      if (ldynk) then
++if .not.debug
+        if (ncalls.le.20.or.numx.ge.numl-20) then
++ei
+          write(93,*) 'SIXTRACR CRPOINT writing DYNK vars fort.96'
+          endfile 93
+          backspace 93
++if .not.debug
+        endif
++ei
+        !TODO: One could probably be more efficient when saving
+        write(96,err=100,iostat=istat)                                  &
+     &dynkfilepos,
+     &ldynksetsEnable,
+     &niexpr_dynk,
+     &nfexpr_dynk,
+     &ncexpr_dynk,
+     &(iexpr_dynk(j),j=1,maxdata_dynk),
+     &(fexpr_dynk(j),j=1,maxdata_dynk),
+     &(cexpr_dynk(j),j=1,maxdata_dynk),
+     &(fsets_dynk_cr(j),j=1,maxsets_dynk)
+        endfile 96
+        backspace 96
+      endif
+
       if (sythckcr) then
 !ERIC new extended checkpoint for synuthck
 +if .not.debug
@@ -66240,6 +66436,8 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 +ca rhicelens
 +ei
 +ca crco
++ca comdynk
++ca comdynkcr
       integer j,l,k,m,istat,i
       character*256 filename
 +ca save
@@ -66349,6 +66547,21 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 +ei
 +ei
 !ERIC new extended checkpoint for synuthck
+
+      if (ldynk) then
+         !TODO: LOAD LDYNK DATA from temp arrays (loaded in crcheck)
+         niexpr_dynk_cr = niexpr_dynk
+         nfexpr_dynk_cr = nfexpr_dynk
+         ncexpr_dynk_cr = ncexpr_dynk
+         do j=1,maxdata_dynk
+            iexpr_dynk_cr(j) = iexpr_dynk(j)
+            fexpr_dynk_cr(j) = fexpr_dynk(j)
+            cexpr_dynk_cr(j) = cexpr_dynk(j)
+         enddo
+         call dynk_reload
+         !call dynk_inputsanitycheck ! lout problems, reasonable to call it here?!? Also pointless.
+      endif
+
       if (crsythck) then
 !ERICVARS now read the extended vars from fort.95/96.
         if (cril.ne.il) then
