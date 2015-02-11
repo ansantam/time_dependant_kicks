@@ -44480,7 +44480,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          ! Reset values
          do ii=1, nsets_unique_dynk
-            newValue = dynk_computeFUN(-ii,0)
+            newValue = fsets_origvalue_dynk(ii)
             if (ldynkdebug) then
 +if cr
                write (lout,*)
@@ -44620,7 +44620,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     K. Sjobak, BE-ABP/HSS
 !     last modified: 17-10-2014
 !     Compute the value of a given DYNK function (funNum) for the given turn
-!     If turn = 0 and -nsets_unique_dynk<funNum<0: reset to original value
 !-----------------------------------------------------------------------
       implicit none
 +ca parpro
@@ -44647,22 +44646,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       ! General temporaries
       integer foff !base offset into fexpr array
             
-      if (  funNum .lt. 0 .and. 
-     &     -funNum .le. nsets_unique_dynk .and. 
-     &        turn .eq. 0 ) then
-         ! Recall at first turn
-         retval = fsets_origvalue_dynk(-funNum)
-         return
-      elseif (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
+      if (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
 +if cr
          write(lout,*) "DYNK> **** ERROR in dynk_computeFUN() ****"
-         write(lout,*) "DYNK> funNum =", funNum, "turn=", turn
-         write(lout,*) "DYNK> Invalid funNum & turn combination"
+         write(lout,*) "DYNK> funNum =", funNum
+         write(lout,*) "DYNK> Invalid funNum, nfuncs_dynk=", nfuncs_dynk
 +ei
 +if .not. cr
          write(*,*)    "DYNK> **** ERROR in dynk_computeFUN() ****"
-         write(*,*)    "DYNK> funNum =", funNum, "turn=", turn
-         write(*,*)    "DYNK> Invalid funNum & turn combination"
+         write(*,*)    "DYNK> funNum =", funNum
+         write(*,*)    "DYNK> Invalid funNum, nfuncs_dynk=", nfuncs_dynk
 +ei
          call dynk_dumpdata
          call prror(-1)
