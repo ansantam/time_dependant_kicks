@@ -1211,9 +1211,9 @@ C     Block with data/fields needed for checkpoint/restart of DYNK
       integer dynkfilepos, dynkfilepos_cr
       
       ! Data for DYNK FUNs
-      integer iexpr_dynk_cr (maxdata_dynk)
-      double precision fexpr_dynk_cr (maxdata_dynk)
-      character(maxstrlen_dynk) cexpr_dynk_cr(maxdata_dynk)
+      integer                  iexpr_dynk_cr (maxdata_dynk)
+      double precision         fexpr_dynk_cr (maxdata_dynk)
+      character(maxstrlen_dynk)cexpr_dynk_cr (maxdata_dynk)
       ! Number of used positions in arrays
       integer niexpr_dynk_cr, nfexpr_dynk_cr, ncexpr_dynk_cr
       
@@ -44359,7 +44359,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             csets_unique_dynk(nsets_unique_dynk,2) = csets_dynk(ii,2)
 
             ! Store original value of data point
-            fsets_origvalue_dynk(nsets_unique_dynk) = 42.0
             fsets_origvalue_dynk(nsets_unique_dynk) =  
      &           dynk_getvalue(csets_dynk(ii,1),csets_dynk(ii,2))
          endif
@@ -44378,15 +44377,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
       end subroutine
       
-      subroutine dynk_store
-      ! Store current settings of elements affected by DYNK,
-      ! i.e. fill fsets_dynk. Called when saving a checkpoint.
-      
-      end subroutine
-      subroutine dynk_reload
-      ! Load current settings from fsets_dynk into the elements affected by DYNK.
-      ! Called when restarting from checkpoint.
-      end subroutine
 
 +dk dynktrack
       subroutine dynk_apply(turn)
@@ -44434,7 +44424,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       character(maxstrlen_dynk) dynk_stringzerotrim
       integer dynk_findSETindex
       
-      double precision dynk_getvalue, getvaldata
+      double precision dynk_getvalue, getvaldata, newValue
       
       character(maxstrlen_dynk) whichFUN(maxsets_dynk) !Which function was used to set a given elem/attr?
       integer whichSET(maxsets_dynk) !Which SET was used for a given elem/attr?
@@ -44490,6 +44480,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          
          ! Reset values
          do ii=1, nsets_unique_dynk
+            newValue = dynk_computeFUN(-ii,0)
             if (ldynkdebug) then
 +if cr
                write (lout,*)
@@ -44502,9 +44493,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &         "':'",trim(dynk_stringzerotrim(csets_unique_dynk(ii,2))),
      &         "', funNum=", -ii, "turn=", 0
             endif
+
             call dynk_setvalue(csets_unique_dynk(ii,1),
      &                         csets_unique_dynk(ii,2),
-     &                         -ii, 0 )
+     &                         newValue )
          enddo
          
       endif
@@ -44531,9 +44523,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ldynkfileopen = .true.
       endif
       
+      !Apply the sets
       do ii=1,nsets_dynk
          ! Sanity check already confirms that only a single SET
          ! is active on a given element:attribute on a given turn.
+         
+         !Active in this turn?
          if (turn .ge. sets_dynk(ii,2) .and.
      &       turn .le. sets_dynk(ii,3)) then
             
@@ -44541,6 +44536,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             shiftedTurn = turn + sets_dynk(ii,4)
             
             !Set the value
+            newValue = dynk_computeFUN(sets_dynk(ii,1),shiftedTurn)
             if (ldynkdebug) then
 +if cr
                write(lout,*)
@@ -44551,10 +44547,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &              "DYNKDEBUG> Applying set #", ii, "on '",
      &           trim(dynk_stringzerotrim(csets_dynk(ii,1))),
      &           "':'", trim(dynk_stringzerotrim(csets_dynk(ii,2))),
-     &           "', shiftedTurn=",shiftedTurn
+     &           "', shiftedTurn=",shiftedTurn,", value=",newValue
             endif
-            call dynk_setvalue(csets_dynk(ii,1), csets_dynk(ii,2),
-     &           sets_dynk(ii,1), shiftedTurn )
+            call dynk_setvalue(csets_dynk(ii,1),
+     &                         csets_dynk(ii,2),
+     &                         newValue)
+     &           
             
             if (ldynkdebug) then
                getvaldata = dynk_getvalue( csets_dynk(ii,1), 
@@ -44565,8 +44563,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if .not.cr
                write (*,*)
 +ei
-     &              "DYNKDEBUG> Read back value = ",
-     &              getvaldata
+     &              "DYNKDEBUG> Read back value = ", getvaldata
+
+               if (getvaldata .ne. newValue) then
++if cr
+                  write(lout,*)
++ei
++if .not.cr
+                  write(*,*)
++ei
+     &            "DYNKDEBUG> WARNING Read back value differs from set!"
+               end if
             endif
             
             !For the output file: Which function was used?
@@ -44849,13 +44856,11 @@ C+ei
 
       end function
       
-      subroutine dynk_setvalue(element_name, att_name, 
-     &     funNum, turn )
+      subroutine dynk_setvalue(element_name, att_name, newValue)
 !-----------------------------------------------------------------------
 !     A.Santamaria & K.Sjobak, BE-ABP/HSS
 !     last modified: 31-10-2014
-!     Set the value of the element's attribute 
-!     to the value provided by dynk_computeFUN(funNum, turn)
+!     Set the value of the element's attribute
 !-----------------------------------------------------------------------
       implicit none
 
@@ -44871,14 +44876,12 @@ C+ei
 +ei
 
       character(maxstrlen_dynk) element_name, att_name
-      integer funNum, turn
-      intent (in) element_name, att_name, funNum, turn
+      double precision newValue
+      intent (in) element_name, att_name, newValue
       !Functions
-      double precision dynk_computeFUN
       character(maxstrlen_dynk) dynk_stringzerotrim
       ! temp variables
       integer el_type, ii
-      double precision fun_val
       character(maxstrlen_dynk) element_name_stripped
       character(maxstrlen_dynk) att_name_stripped
 
@@ -44897,30 +44900,7 @@ C+ei
 +ei
      &        "DYNKDEBUG> In dynk_setvalue(), element_name = '",
      &        element_name_stripped, "', att_name = '",
-     &        att_name_stripped, "', funNum =", funNum
-         if (funNUM .gt. 0) then
-+if cr
-            write (lout,*)
-+ei
-+if .not.cr
-            write (*,*)
-+ei
-     &           "DYNKDEBUG> Using function number =", funNUM,
-     &           "named '", 
-     &           trim(dynk_stringzerotrim(cexpr_dynk(
-     &                                      funcs_dynk(funNum,1)))), "'"
-         elseif (funNUM .lt. 0) then
-+if cr
-            write (lout,*)
-+ei
-+if .not.cr
-            write (*,*)
-+ei
-     &           "DYNKDEBUG> Using function number =", funNUM,
-     &           "reffering to origvalue of '",
-     &          trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,1))),
-     & "':'",trim(dynk_stringzerotrim(csets_unique_dynk(-funNUM,2))),"'"
-         end if
+     &        att_name_stripped, "', newValue =", newValue
       endif
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
@@ -44952,7 +44932,7 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &          (abs(el_type).eq.9).or. ! 18th pole kick
      &          (abs(el_type).eq.10)) then ! 20th pole kick
                if (att_name_stripped.eq."average_ms") then !
-                  ed(ii) = dynk_computeFUN(funNum,turn)
+                  ed(ii) = newValue
                else
 +if cr
                   WRITE (lout,*)"DYNK> *** ERROR in dynk_setvalue() ***"
@@ -44971,9 +44951,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
             elseif (abs(el_type).eq.11 .and. 
      &              abs(el(ii)+one).le.pieni) then ! multipoles 
                if (att_name_stripped.eq."bending_str") then 
-                  dki(ii,1) = dynk_computeFUN(funNum,turn) !TODO: HUH?!?!? Should be in initialize_element??
+                  dki(ii,1) = newValue !TODO: HUH?!?!? Should be in initialize_element??
                elseif (att_name_stripped.eq."radius") then
-                  dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
+                  dki(ii,3) = newValue !TODO: Ditto?
                else
 +if cr
                   WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
@@ -44990,9 +44970,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
             elseif (abs(el_type).eq.11 .and. 
      &              abs(el(ii)+two).le.pieni) then
                if (att_name_stripped.eq."bending_str") then 
-                  dki(ii,2) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
+                  dki(ii,2) = newValue !TODO: Ditto?
                elseif (att_name_stripped.eq."radius") then
-                  dki(ii,3) = dynk_computeFUN(funNum,turn) !TODO: Ditto?
+                  dki(ii,3) = newValue !TODO: Ditto?
                else
 +if cr
                   WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
@@ -45008,9 +44988,9 @@ C     Here comes the logic for setting the value of the attribute for all instan
                endif
             elseif (abs(el_type).eq.11) then !TODO: Always do this. also for the two cases above?
                if (att_name_stripped.eq."bending_str") then ! [rad]
-                  ed(ii) = dynk_computeFUN(funNum,turn)
+                  ed(ii) = newValue
                elseif (att_name_stripped.eq."radius") then ! [m]
-                  ek(ii) = dynk_computeFUN(funNum,turn)
+                  ek(ii) = newValue
                else
 +if cr
                   WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
@@ -45076,18 +45056,18 @@ c$$$            endif
      &              (abs(el_type).eq.27).or.    ! cc mult. kick order 3
      &              (abs(el_type).eq.28)) then  ! cc mult. kick order 4
                if (att_name_stripped.eq."voltage") then ![MV]   
-                  ed(ii) = dynk_computeFUN(funNum,turn)
+                  ed(ii) = newValue
                elseif (att_name_stripped.eq."frequency") then ![MHz]
-                  ek(ii) = dynk_computeFUN(funNum,turn)
+                  ek(ii) = newValue
                elseif (att_name_stripped.eq."phase") then ![rad]
                   if (abs(el_type).eq.23) then
-                     crabph(ii) = dynk_computeFUN(funNum,turn)
+                     crabph(ii) = newValue
                   elseif (abs(el_type).eq.26) then
-                     crabph2(ii) = dynk_computeFUN(funNum,turn)
+                     crabph2(ii) = newValue
                   elseif (abs(el_type).eq.27) then
-                     crabph3(ii) = dynk_computeFUN(funNum,turn)
+                     crabph3(ii) = newValue
                   elseif (abs(el_type).eq.28) then
-                     crabph4(ii) = dynk_computeFUN(funNum,turn)
+                     crabph4(ii) = newValue
                   endif     
                else
 +if cr
@@ -65951,6 +65931,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 +ca commonc
 +ca comdynk
 +ca comdynkcr
+      double precision dynk_getvalue
 +if collimat
 +ca collpara
 +ca dbmaincr
@@ -66041,16 +66022,21 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       time3=(time3-time1)+crtime3
       crnumlcr=numx+1
 
+      if (ldynk) then ! Store current settings of elements affected by DYNK
 +if .not.debug
-      if (ncalls.le.20.or.numx.ge.numl-20) then
+         if (ncalls.le.20.or.numx.ge.numl-20) then
 +ei
-        write(93,*) 'SIXTRACR CRPOINT calling dynk_store'
-        endfile 93
-        backspace 93
+            write(93,*) 'SIXTRACR CRPOINT filling fsets_dynk_cr'
+            endfile 93
+            backspace 93
 +if .not.debug
-      endif
+         endif
 +ei
-      call dynk_store
+         do j=1,nsets_unique_dynk
+            fsets_dynk_cr(j) =
+     &           dynk_getvalue(csets_dynk(j,1),csets_dynk(j,2))
+         end do
+      end if
 
 +if .not.debug
       if (ncalls.le.20.or.numx.ge.numl-20) then
@@ -66438,6 +66424,8 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 +ca crco
 +ca comdynk
 +ca comdynkcr
+      double precision dynk_newValue
+
       integer j,l,k,m,istat,i
       character*256 filename
 +ca save
@@ -66549,17 +66537,22 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !ERIC new extended checkpoint for synuthck
 
       if (ldynk) then
-         !TODO: LOAD LDYNK DATA from temp arrays (loaded in crcheck)
-         niexpr_dynk_cr = niexpr_dynk
-         nfexpr_dynk_cr = nfexpr_dynk
-         ncexpr_dynk_cr = ncexpr_dynk
+         !LOAD DYNK DATA from temp arrays (loaded from file in crcheck)
+         niexpr_dynk = niexpr_dynk_cr
+         nfexpr_dynk = nfexpr_dynk_cr
+         ncexpr_dynk = ncexpr_dynk_cr
          do j=1,maxdata_dynk
-            iexpr_dynk_cr(j) = iexpr_dynk(j)
-            fexpr_dynk_cr(j) = fexpr_dynk(j)
-            cexpr_dynk_cr(j) = cexpr_dynk(j)
+            iexpr_dynk(j) = iexpr_dynk_cr(j)
+            fexpr_dynk(j) = fexpr_dynk_cr(j)
+            cexpr_dynk(j) = cexpr_dynk_cr(j)
          enddo
-         call dynk_reload
-         !call dynk_inputsanitycheck ! lout problems, reasonable to call it here?!? Also pointless.
+         ! Load current settings from fsets_dynk_cr into the elements affected by DYNK.
+         do j=1,nsets_unique_dynk
+            !It is OK to write to lout from here
+            call dynk_setvalue( csets_unique_dynk(j,1),
+     &                          csets_unique_dynk(j,2),
+     &                          fsets_dynk_cr(j)        )
+         enddo
       endif
 
       if (crsythck) then
