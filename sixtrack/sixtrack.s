@@ -1187,9 +1187,12 @@ C     Store the SET statements
       double precision fsets_origvalue_dynk(maxsets_dynk) ! Store original value from dynk
       integer nsets_unique_dynk ! Number of used positions in arrays
 
-!--Storing the right izu for multipoles in dynk
+      ! Some elements (multipoles) overwrites the general settings info when initialized.
+      ! Store this information on the side.
+      ! Also used by setvalue and getvalue
       integer dynk_izuIndex
       dimension dynk_izuIndex(nele)
+      double precision dynk_elemdata(nele,3)
       
 !     fortran COMMON declaration follows padding requirements
       common /dynkComGen/ ldynk, ldynkdebug,
@@ -1203,7 +1206,7 @@ C     Store the SET statements
       common /dynkComUniqueSet/
      &     csets_unique_dynk, fsets_origvalue_dynk, nsets_unique_dynk
      
-      common /dynkComReinitialize/ dynk_izuIndex
+      common /dynkComReinitialize/ dynk_izuIndex, dynk_elemdata
 
 +cd comdynkcr
 C     Block with data/fields needed for checkpoint/restart of DYNK
@@ -18904,6 +18907,8 @@ cc2008
 !     
 !     Never delete an element from the lattice, even if it is not making a kick.
 !     If the element is not recognized, do nothing (for now).
+!     If trying to initialize an element (not lfirst) which is disabled,
+!     print an error and exit.
 !-----------------------------------------------------------------------
 !
       implicit none
@@ -18920,9 +18925,11 @@ cc2008
 +ca commontr
 +ca commonxz
 +ca comdynk
-      
-      !Set the element to true when initialized - some elements need to be present in fort.2 and then later changed
-      logical, save :: lisinit(nele) = .false.
++if cr
++ca crcoall
++ei
+
+      !Temp variables
       integer i
 
 !--Nonlinear Elements
@@ -18930,6 +18937,7 @@ cc2008
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
+                 if(ktrack(i).eq.31) goto 100 !ERROR
                  sm(ix)=ed(ix)             ! Also done in envar() which is called from clorb()
                  smiv(1,i)=sm(ix)+smizf(i) ! Also done in program maincr
                  smi(i)=smiv(1,i)          ! Also done in program maincr
@@ -18942,6 +18950,7 @@ cc2008
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
+                 if(ktrack(i).eq.31) goto 100 !ERROR
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
@@ -18953,6 +18962,7 @@ cc2008
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
+                 if(ktrack(i).eq.31) goto 100 !ERROR
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
@@ -18967,6 +18977,7 @@ cc2008
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
+                 if(ktrack(i).eq.31) goto 100 !ERROR
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
@@ -18981,6 +18992,7 @@ cc2008
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
+                 if(ktrack(i).eq.31) goto 100 !ERROR
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
@@ -18993,6 +19005,7 @@ cc2008
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
+                 if(ktrack(i).eq.31) goto 100 !ERROR
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
@@ -19005,6 +19018,7 @@ cc2008
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
+                 if(ktrack(i).eq.31) goto 100 !ERROR
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
@@ -19017,6 +19031,7 @@ cc2008
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
+                 if(ktrack(i).eq.31) goto 100 !ERROR
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
@@ -19029,6 +19044,7 @@ cc2008
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
+                 if(ktrack(i).eq.31) goto 100 !ERROR
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
@@ -19041,6 +19057,7 @@ cc2008
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
+                 if(ktrack(i).eq.31) goto 100 !ERROR
                  sm(ix)=ed(ix)
                  smiv(1,i)=sm(ix)+smizf(i)
                  smi(i)=smiv(1,i)
@@ -19051,7 +19068,17 @@ cc2008
 
 !--Multipoles
       elseif(kz(ix).eq.11) then
-         ! Special case, moved from daten():
+         
+         if (lfirst) then
+            dynk_elemdata(ix,1) = el(ix) !Flag for type
+            dynk_elemdata(ix,2) = ed(ix) !Bending strenght
+            dynk_elemdata(ix,3) = ek(ix) !Radius
+         else
+            el(ix) = dynk_elemdata(ix,1)
+            !The others are set correctly in setvalue
+         end if
+         
+         ! Moved from daten():
          if (abs(el(ix)+one).le.pieni) then
             dki(ix,1) = ed(ix)
             dki(ix,3) = ek(ix)
@@ -19070,6 +19097,7 @@ cc2008
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
+                  if(ktrack(i).eq.31) goto 100 !ERROR
                   !--Initialize smiv as usual
                   sm(ix)=ed(ix)
                   smiv(m,i)=sm(ix)+smizf(i)
@@ -19080,52 +19108,52 @@ cc2008
 +ca multini !Also in program maincr()
  150              continue ! needs to be after a multini block
 
-                  ! From trauthin() -- TODO: Check that it matches TRAUTHICK
+                  ! From trauthin()&trauthck() (they are identical)
                   r0=ek(ix)
                   nmz=nmu(ix)
                   if(abs(r0).le.pieni.or.nmz.eq.0) then
                      if(abs(dki(ix,1)).le.pieni .and.
      &                    abs(dki(ix,2)).le.pieni) then
-                        ktrack(i)=31
+C                       ktrack(i)=31
                      else if(abs(dki(ix,1)).gt.pieni .and.
      &                       abs(dki(ix,2)).le.pieni) then
                         if(abs(dki(ix,3)).gt.pieni) then
-                           ktrack(i)=33
+C                          ktrack(i)=33
 +ca stra11
                         else
-                           ktrack(i)=35
+C                          ktrack(i)=35
 +ca stra12
                         endif
                      else if(abs(dki(ix,1)).le.pieni .and.
      &                       abs(dki(ix,2)).gt.pieni) then
                         if(abs(dki(ix,3)).gt.pieni) then
-                           ktrack(i)=37
+C                           ktrack(i)=37
 +ca stra13
                         else
-                            ktrack(i)=39
+C                            ktrack(i)=39
 +ca stra14
                         endif
                      endif
                   else
                      if(abs(dki(ix,1)).le.pieni .and.
      &                    abs(dki(ix,2)).le.pieni) then
-                        ktrack(i)=32
+C                        ktrack(i)=32
                      else if(abs(dki(ix,1)).gt.pieni .and.
      &                       abs(dki(ix,2)).le.pieni) then
                         if(abs(dki(ix,3)).gt.pieni) then
-                           ktrack(i)=34
+C                           ktrack(i)=34
 +ca stra11
                         else
-                           ktrack(i)=36
+C                           ktrack(i)=36
 +ca stra12
                         endif
                      else if(abs(dki(ix,1)).le.pieni .and.
      &                       abs(dki(ix,2)).gt.pieni) then
                         if(abs(dki(ix,3)).gt.pieni) then
-                           ktrack(i)=38
+C                           ktrack(i)=38
 +ca stra13
                         else
-                           ktrack(i)=40
+C                           ktrack(i)=40
 +ca stra14
                         endif
                      endif
@@ -19133,21 +19161,15 @@ cc2008
                endif
             enddo
          endif
-!--Cavities (BROKEN)
-      elseif(abs(kz(ix)).eq.12) then !Some 1st time initialization in daten()
-c$$$         ! TODO: If we try to change a cavity with DYNK, we will always get the ELSE -> prror(-1)
-c$$$         ! Oops...
-c$$$         if (lfirst) then
-c$$$            lisinit(ix)=.true.
-c$$$         elseif ( .not. lisinit(ix) ) then !not lfirst and not lisinit
-c$$$            call prror(-1)
-c$$$         else !not lfirst
-c$$$            call prror(-1)
-c$$$         endif
+!--Cavities (INCOMPLETE)
+      elseif(abs(kz(ix)).eq.12) then
+         ! Some 1st time initialization still in daten()
          ! Moved from daten:
          phasc(ix)=el(ix)
          el(ix)=zero
 !--Crab Cavities
+!   Note: If setting something else than el(),
+!   DON'T call initialize_element on a crab, it will reset the phase to 0.
       elseif(abs(kz(ix)).eq.23) then
          !Moved from daten()
          crabph(ix)=el(ix)
@@ -19169,6 +19191,22 @@ c$$$         endif
          el(ix)=0d0
       endif
       
+      return
+
+      !Error handlers
+ 100  continue
++if cr
+      write (lout,*) "ERROR in initialize_element, tried to set"
+      write (lout,*) "the strength of an element which is disabled."
+      write (lout,*) "bez = ", bez(ix)
++ei
++if .not.cr
+      write (*,*)    "ERROR in initialize_element, tried to set"
+      write (*,*)    "the strength of an element which is disabled."
+      write (*,*)    "bez = ", bez(ix)
++ei
+      call prror(-1)
+
       end subroutine
 
 +if crlibm
@@ -26695,7 +26733,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca solenoid
         ktrack(i)=56
         goto 290
-!--Multipole block
+!--Multipole block (also in initialize_elements)
   150   r0=ek(ix)
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
@@ -26774,6 +26812,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
   170     fake(2,j)=zero
         endif
         goto 290
+        
+        !Negative KZZ
   180   kzz=-kzz
         goto(190,200,210,220,230,240,250,260,270,280),kzz
         ktrack(i)=31
@@ -34251,7 +34291,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca solenoid
         ktrack(i)=56
         goto 290
-!--Multipole block
+!--Multipole block (also in initialize_elements)
   150   r0=ek(ix)
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
@@ -34330,6 +34370,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
   170     fake(2,j)=zero
         endif
         goto 290
+        
+        !Negative KZZ
   180   kzz=-kzz
         goto(190,200,210,220,230,240,250,260,270,280),kzz
         ktrack(i)=31
@@ -38789,7 +38831,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             csets_dynk(i,2)(j:j) = char(0)
          enddo
       enddo
-
+      
+      do i=1,nele
+         dynk_izuIndex(i) = 0
+         dynk_elemdata(i,1) = 0
+         dynk_elemdata(i,2) = 0
+         dynk_elemdata(i,3) = 0
+      end do
 !
 !-----------------------------------------------------------------------
       return
@@ -44877,9 +44925,9 @@ C+ei
       integer el_type, ii
       character(maxstrlen_dynk) element_name_stripped
       character(maxstrlen_dynk) att_name_stripped
-
+      ! For sanity check
       logical ldoubleElement
-      ldoubleElement = .false. ! For sanity check
+      ldoubleElement = .false.
       
       element_name_stripped = trim(dynk_stringzerotrim(element_name))
       att_name_stripped = trim(dynk_stringzerotrim(att_name))
@@ -44924,79 +44972,27 @@ C     Here comes the logic for setting the value of the attribute for all instan
      &          (abs(el_type).eq.8).or. ! 16th pole kick
      &          (abs(el_type).eq.9).or. ! 18th pole kick
      &          (abs(el_type).eq.10)) then ! 20th pole kick
+               
                if (att_name_stripped.eq."average_ms") then !
                   ed(ii) = newValue
                else
-+if cr
-                  WRITE (lout,*)"DYNK> *** ERROR in dynk_setvalue() ***"
-                  WRITE (lout,*)"DYNK> Attribute'", att_name_stripped,
-     &           "' does not exist for type =", el_type, "(2-20th pole)"
-+ei
-+if .not.cr
-                  WRITE (*,*)   "DYNK> *** ERROR in dynk_setvalue() ***"
-                  WRITE (*,*)   "DYNK> Attribute '", att_name_stripped,
-     &         "' does not exist for type =", el_type, "(2-20th pole)"
-+ei
-                  call prror(-1)
+                  goto 100 !ERROR
                endif
                call initialize_element(ii, .false.)
                
-            elseif (abs(el_type).eq.11 .and. 
-     &              abs(el(ii)+one).le.pieni) then ! multipoles 
+            elseif (abs(el_type).eq.11) then !MULTIPOLES
                if (att_name_stripped.eq."bending_str") then 
-                  dki(ii,1) = newValue !TODO: HUH?!?!? Should be in initialize_element??
-               elseif (att_name_stripped.eq."radius") then
-                  dki(ii,3) = newValue !TODO: Ditto?
-               else
-+if cr
-                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/hor)"
-+ei
-+if .not.cr
-                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/hor)"
-+ei
-                  call prror(-1)
-               endif
-            elseif (abs(el_type).eq.11 .and. 
-     &              abs(el(ii)+two).le.pieni) then
-               if (att_name_stripped.eq."bending_str") then 
-                  dki(ii,2) = newValue !TODO: Ditto?
-               elseif (att_name_stripped.eq."radius") then
-                  dki(ii,3) = newValue !TODO: Ditto?
-               else
-+if cr
-                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/ver)"
-+ei
-+if .not.cr
-                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/cer)"
-+ei
-                  call prror(-1)
-               endif
-            elseif (abs(el_type).eq.11) then !TODO: Always do this. also for the two cases above?
-               if (att_name_stripped.eq."bending_str") then ! [rad]
                   ed(ii) = newValue
-               elseif (att_name_stripped.eq."radius") then ! [m]
+                  dynk_elemdata(ii,2) = newValue
+                  ek(ii) = dynk_elemdata(ii,3)
+               elseif (att_name_stripped.eq."radius") then
+                  ed(ii) = dynk_elemdata(ii,1)
                   ek(ii) = newValue
+                  dynk_elemdata(ii,3) = newValue
                else
-+if cr
-                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (lout,*) "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/def)"
-+ei
-+if .not.cr
-                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (*,*)    "DYNK> Attribute '",att_name_stripped,
-     &          "' does not exist for type =", el_type,"(multipole/def)"
-+ei
-                  call prror(-1)
+                  goto 100 !ERROR
                endif
+               call initialize_element(ii, .false.)
 
           !Not yet supported
 c$$$          elseif (abs(el_type).eq.12) then ! cavities 
@@ -45007,10 +45003,7 @@ c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
 c$$$            elseif (att_name_stripped.eq."lag_angle") then ! [deg]
 c$$$               el(ii) = dynk_computeFUN(funNum,turn)
 c$$$            else
-c$$$               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-c$$$               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-c$$$     &              "does not exist for type =", el_type, "(cavity)"
-c$$$               call prror(-1)
+c$$$               goto 100 !ERROR
 c$$$            endif
 c$$$            call initialize_element(ii, .false.)
             
@@ -45023,10 +45016,7 @@ c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
 c$$$            elseif (att_name_stripped.eq."phase") then ! [rad]
 c$$$               el(ii) = dynk_computeFUN(funNum,turn)
 c$$$            else
-c$$$              WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-c$$$              WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-c$$$     &        "does not exist for type =", el_type,"AC dipole"
-c$$$               call prror(-1)
+c$$$               goto 100 !ERROR
 c$$$            endif
 
           !Not yet supported
@@ -45038,45 +45028,25 @@ c$$$               ek(ii) = dynk_computeFUN(funNum,turn)
 c$$$            elseif (att_name_stripped.eq."strength") then ! [m]
 c$$$               el(ii) = dynk_computeFUN(funNum,turn)
 c$$$            else
-c$$$               WRITE (*,*) "DYNK> *** ERROR in dynk_setvalue() ***"
-c$$$               WRITE (*,*) "DYNK> Attribute '",att_name_stripped,"' ",
-c$$$     &              "does not exist for type =", el_type, "(beam-beam)"
-c$$$               call prror(-1)
+c$$$               goto 100 !ERROR
 c$$$            endif
             
             elseif ((abs(el_type).eq.23).or.    ! crab cavity
      &              (abs(el_type).eq.26).or.    ! cc mult. kick order 2
      &              (abs(el_type).eq.27).or.    ! cc mult. kick order 3
      &              (abs(el_type).eq.28)) then  ! cc mult. kick order 4
-               if (att_name_stripped.eq."voltage") then ![MV]   
+               if (att_name_stripped.eq."voltage") then ![MV]
                   ed(ii) = newValue
                elseif (att_name_stripped.eq."frequency") then ![MHz]
                   ek(ii) = newValue
                elseif (att_name_stripped.eq."phase") then ![rad]
-                  if (abs(el_type).eq.23) then
-                     crabph(ii) = newValue
-                  elseif (abs(el_type).eq.26) then
-                     crabph2(ii) = newValue
-                  elseif (abs(el_type).eq.27) then
-                     crabph3(ii) = newValue
-                  elseif (abs(el_type).eq.28) then
-                     crabph4(ii) = newValue
-                  endif     
+                  el = newValue ! Note: el is set to 0 in initialize_element and in daten.
+                                ! Calling initialize element on a crab without setting el
+                                ! will set crabph = 0!
+                  call initialize_element(ii, .false.)
                else
-+if cr
-                  WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (lout,*) "DYNK> attribute '",att_name_stripped,
-     &              "' does not exist for type =", el_type, "(crab)"
-+ei
-+if .not.cr
-                  WRITE (*,*)    "DYNK> *** ERROR in dynk_setvalue()***"
-                  WRITE (*,*)    "DYNK> attribute '",att_name_stripped,
-     &              "' does not exist for type =", el_type, "(crab)"
-+ei
-                  call prror(-1)
+                  goto 100 !ERROR
                endif
-               call initialize_element(ii, .false.)
-            
             else
 +if cr
                WRITE (lout,*) "DYNK> *** ERROR in dynk_setvalue() ***"
@@ -45089,17 +45059,31 @@ c$$$            endif
                write (*,*) "DYNK> Unsupported element type", el_type
                write (*,*) "DYNK> element name = '",
      &              element_name_stripped,"'"
-
 +ei
                call prror(-1)
             endif
          endif
       enddo
+
+      return
+      
+      !Error handlers
+ 100  continue
++if cr
+      WRITE (lout,*)"DYNK> *** ERROR in dynk_setvalue() ***"
+      WRITE (lout,*)"DYNK> Attribute'", att_name_stripped,
+     &     "' does not exist for type =", el_type
++ei
++if .not.cr
+      WRITE (*,*)   "DYNK> *** ERROR in dynk_setvalue() ***"
+      WRITE (*,*)   "DYNK> Attribute '", att_name_stripped,
+     &     "' does not exist for type =", el_type
++ei
+      call prror(-1)
       
       end subroutine
 
-      double precision function dynk_getvalue
-     &     (element_name, att_name)
+      double precision function dynk_getvalue (element_name, att_name)
 !-----------------------------------------------------------------------
 !     A.Santamaria & K. Sjobak, BE-ABP/HSS
 !     last modified: 2101-2015
@@ -45156,6 +45140,7 @@ c$$$            endif
             end if
             ldoubleElement = .true.
             
+            ! Nonlinear elements
             if ((abs(el_type).eq.1).or.
      &          (abs(el_type).eq.2).or.
      &          (abs(el_type).eq.3).or.
@@ -45169,84 +45154,17 @@ c$$$            endif
                if (att_name_s.eq."average_ms") then
                   dynk_getvalue = ed(ii)
                else
-+if cr
-                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(lout,*) "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for type",el_type," name '", trim(bez(ii)), "'"
-
-+ei
-+if .not.cr
-                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*)    "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for type",el_type," name '", trim(bez(ii)), "'"
-+ei
-                  call prror(-1)
+                  goto 100 !ERROR
                endif
                
-            elseif (abs(el_type).eq.11 .and. 
-     &              abs(el(ii)+one).le.pieni) then        ! multipoles 
-               if (att_name_s.eq."bending_str") then 
-                  dynk_getvalue = dki(ii,1)    
-               elseif (att_name_s.eq."radius") then
-                  dynk_getvalue = dki(ii,3) 
-               else
-+if cr
-                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(lout,*) "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-
-+ei
-+if .not.cr
-                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*)    "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-+ei
-                  call prror(-1)
-               endif
-            elseif (abs(el_type).eq.11 .and. 
-     &              abs(el(ii)+two).le.pieni) then
-               if (att_name_s.eq."bending_str") then 
-                  dynk_getvalue = dki(ii,2) 
-               elseif (att_name_s.eq."radius") then
-                  dynk_getvalue = dki(ii,3) 
-               else
-+if cr
-                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(lout,*) "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-+ei
-+if .not.cr
-                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*)    "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-+ei
-                  call prror(-1)
-               endif
+            !Multipoles
             elseif (abs(el_type).eq.11) then
-               if (att_name_s.eq."bending_str") then ! [rad]
-                  dynk_getvalue = ed(ii)
-               elseif (att_name_s.eq."radius") then ! [m]
-                  dynk_getvalue = ek(ii)
+               if (att_name_s.eq."bending_str") then 
+                  dynk_getvalue = dynk_elemdata(ii,2)
+               elseif (att_name_s.eq."radius") then
+                  dynk_getvalue = dynk_elemdata(ii,3)
                else
-+if cr
-                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(lout,*) "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-+ei
-+if .not.cr
-                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*)    "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for multipole '", trim(bez(ii)), "'"
-+ei
-                  call prror(-1)
+                  goto 100 !ERROR
                endif
                
             !Not yet supported
@@ -45261,11 +45179,7 @@ c$$$               elseif (att_name_s.eq."lag_angle") then ! [deg]
 c$$$                  nretdata = nretdata+1
 c$$$                  retdata(nretdata) = el(ii)       
 c$$$               else
-c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-c$$$                  write(*,*) "DYNK> Unknown attribute '",
-c$$$     &                 trim(att_name_s),"'",
-c$$$     &                 " for cavity '", trim(bez(ii)), "'"
-c$$$                  call prror(-1)
+c$$$                  goto 100 !ERROR
 c$$$               endif
              
             !Not yet supported
@@ -45280,11 +45194,7 @@ c$$$               elseif (att_name_s.eq."phase") then !  [rad]
 c$$$                  nretdata = nretdata+1
 c$$$                  retdata(nretdata) = el(ii)      
 c$$$               else
-c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-c$$$                  write(*,*) "DYNK> Unknown attribute '",
-c$$$     &                 trim(att_name_s),"'",
-c$$$     &                 " for AC dipole '", trim(bez(ii)), "'"
-c$$$                  call prror(-1)
+c$$$                  goto 100 !ERROR
 c$$$               endif
                
             !Not yet supported
@@ -45299,11 +45209,7 @@ c$$$               elseif (att_name_s.eq."strength") then ! [m]
 c$$$                  nretdata = nretdata+1
 c$$$                  retdata(nretdata) = el(ii)       
 c$$$               else
-c$$$                  write(*,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-c$$$                  write(*,*) "DYNK> Unknown attribute '",
-c$$$     &                 trim(att_name_s),"'",
-c$$$     &                 " for beam-beam '", trim(bez(ii)), "'"
-c$$$                  call prror(-1)
+c$$$                  goto 100 !ERROR
 c$$$               endif
                
             elseif ((abs(el_type).eq.23).or. ! crab cavity
@@ -45325,25 +45231,29 @@ c$$$               endif
                      dynk_getvalue = crabph4(ii)
                   endif
                else
-+if cr
-                  write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(lout,*) "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for crab cavity '", trim(bez(ii)), "'"
-+ei
-+if .not.cr
-                  write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
-                  write(*,*)    "DYNK> Unknown attribute '",
-     &                 trim(att_name_s),"'",
-     &                 " for crab cavity '", trim(bez(ii)), "'"
-+ei
-                  call prror(-1)
+                  goto 100 !ERROR
                endif
             endif !el_type
-
          endif !bez
       enddo
       
+      return
+      
+      !Error handlers
+ 100  continue
++if cr
+      write(lout,*) "DYNK> *** ERROR in dynk_getvalue() ***"
+      write(lout,*) "DYNK> Unknown attribute '", trim(att_name_s),"'",
+     &     " for type",el_type," name '", trim(bez(ii)), "'"
+
++ei
++if .not.cr
+      write(*,*)    "DYNK> *** ERROR in dynk_getvalue() ***"
+      write(*,*)    "DYNK> Unknown attribute '", trim(att_name_s),"'",
+     &     " for type",el_type," name '", trim(bez(ii)), "'"
++ei
+      call prror(-1)
+  
       end function
       
       double precision function dynk_lininterp(x,xvals,yvals,datalen)
