@@ -17852,41 +17852,56 @@ cc2008
 
       if(ch(1:1).eq.'/') goto 2000
       if(ch(:4).eq.next) then
+
+        ! HEADER
 +if cr
         write(lout,10460) dump
-!       dump all elements found:
-        if ( ldump(0) ) then
-           write(lout,'(t10,a50)')
-     &          ' required dump at ALL SINGLE ELEMENTs'
-           write(lout,10470) 'ALL', ndumpt(0), dumpunit(0), dumpfmt(0)
-        endif
         write(lout,*)
         write(lout,*) '       The last column states the format'
         write(lout,*) '            of the output file (see Twiki page):'
         write(lout,*) '       ==0 -> regular output (default)'
         write(lout,*) '       ==1 -> special one, for post-processing'
         write(lout,*) '              with LHC Coll Team tools'
-        write(lout,*) '       ==2 -> as 1, but add z as column 6'
+        write(lout,*) '       ==2 -> as 1, but add z as column 8'
 +ei
 +if .not.cr
         write(*,10460) dump
-!       dump all elements found:
-        if ( ldump(0) ) then
-           write(*,'(t10,a50)')
-     &          ' required dump at ALL SINGLE ELEMENTs'
-           write(*,10470) 'ALL', ndumpt(0), dumpunit(0), dumpfmt(0)
-        endif
         write(*,*)
         write(*,*)    '       The last column states the format'
         write(*,*)    '            of the output file (see Twiki page):'
         write(*,*)    '       ==0 -> regular output (default)'
         write(*,*)    '       ==1 -> special one, for post-processing'
         write(*,*)    '              with LHC Coll Team tools'
-        write(*,*)    '       ==2 -> as 1, but add z as column 6'
+        write(*,*)    '       ==2 -> as 1, but add z as column 8'
++ei
+         
+        ! ldump(0)=.true. : DUMP all elements found
++if cr
+        if ( ldump(0) ) then
+!           write(lout,'(t10,a50)')
+!     &          ' required dump at ALL SINGLE ELEMENTs'
+           write(lout,10470) 'ALL SING. ELEMS.', ndumpt(0),
+     &          dumpunit(0), dumpfmt(0)
+        endif
++ei
++if .not.cr
+        if ( ldump(0) ) then
+!           write(*,'(t10,a50)')
+!     &          ' required dump at ALL SINGLE ELEMENTs'
+           write(*,10470) 'ALL SING. ELEMS.', ndumpt(0),
+     &          dumpunit(0), dumpfmt(0)
+        endif
 +ei
         do ii=1,il
           if(ldump(ii)) then
-            write(*,10470) bez(ii), ndumpt(ii), dumpunit(ii),dumpfmt(ii)
++if cr
+            write(lout,10470)
++ei
++if .not.cr
+            write(*,10470)
++ei
+     &            bez(ii), ndumpt(ii), dumpunit(ii),dumpfmt(ii)
+      
 !           At which structure indices is this single element found? (Sanity check)
             kk = 0
             do jj=1,mper*mbloz      ! Loop over all structure elements
@@ -26045,10 +26060,20 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           inquire( unit=dumpunit(i), opened=lopen )
           if ( .not.lopen ) then
              open(dumpunit(i),form='formatted')
-             if ( dumpfmt(i).eq.1 )    write(dumpunit(i),*)
-     &                       '# ID  turn  s  x  y  xp  yp  dE/E  type'
-             if ( dumpfmt(i).eq.2 )    write(dumpunit(i),*)
-     &                       '# ID  turn  s  x  y  z xp  yp dE/E  type'
+             if ( dumpfmt(i).eq.1 ) then
+                write(dumpunit(i),*)
+     &  '# ID turn s[m] x[mm] xp[mrad] y[mm] yp[mrad] dE/E ktrack'
+             else if ( dumpfmt(i).eq.2 ) then
+                if (i.eq.0) then
+                   write(dumpunit(i),*)
+     &  '# DUMP format #2, ALL ELEMENTS, dump period=', ndumpt(i)
+                else
+                   write(dumpunit(i),*)
+     &  '# DUMP format #2, bez=', bez(i), ', dump period=', ndumpt(i)
+                endif
+                write(dumpunit(i),*)
+     &  '# ID turn s[m] x[mm] xp[mrad] y[mm] yp[mrad] z[mm] dE/E ktrack'
+             end if
           endif
         endif
       enddo
@@ -34038,7 +34063,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
             enddo
          endif
-      else if (fmt .eq. 2) then ! Same as fmt=1 but also include z (for crab cavities etc)
+      else if (fmt .eq. 2) then ! Same as fmt 1, but also include z (for crab cavities etc.)
          if ( lhighprec ) then
             do j=1,napx
 +if .not.fluka
@@ -34047,7 +34072,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if fluka
                write(unit,1985) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
 +ei
-     &              yv(1,j), sigmv(j), xv(2,j), yv(2,j),
+     &              yv(1,j), xv(2,j), yv(2,j), sigmv(j),
      &              (ejv(j)-e0)/e0, ktrack(i)
             enddo
          else
@@ -34058,7 +34083,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if fluka
                write(unit,1986) fluka_uid(j), nturn, dcum(i), xv(1,j),
 +ei
-     &              yv(1,j), sigmv(j), xv(2,j), yv(2,j),
+     &              yv(1,j), xv(2,j), yv(2,j), sigmv(j),
      &              (ejv(j)-e0)/e0, ktrack(i)
             enddo
          endif

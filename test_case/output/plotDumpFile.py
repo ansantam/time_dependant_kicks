@@ -6,10 +6,16 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import os
 
-fileDType = np.dtype([('ID', np.int), ('turn', np.int),
-                      ('s', np.float),('x', np.float),('y', np.float),('z', np.float),
-                      ('xp', np.float),('yp', np.float),('dEE', np.float),
+# fileDType = np.dtype([('ID', np.int), ('turn', np.int),
+#                       ('s', np.float),('x', np.float),('xp', np.float),('z', np.float),
+#                       ('y', np.float),('yp', np.float),('dEE', np.float),
+#                       ('pType', np.int)])
+fileDType = np.dtype([('ID', np.int), ('turn', np.int),('s', np.float),
+                      ('x', np.float),('xp', np.float),
+                      ('y', np.float),('yp', np.float),
+                      ('z', np.float),('dEE', np.float),
                       ('pType', np.int)])
+
 
 def readdumpfile(fname):
     print "Loading file '" + fname + "'",
@@ -78,6 +84,10 @@ def get_turndata(fdata, turn):
 plot_particleNum(fdata,turnIdxs)
 
 corr = []
+X = []
+XP = []
+XT = []
+
 print
 for t in xrange(1,10000000):
     print "TURN =",t
@@ -88,15 +98,22 @@ for t in xrange(1,10000000):
         break
     
     corr.append(np.corrcoef(tdata['z'], tdata['x'])[0,1])    
-
-    
+    for p in tdata:
+        if p['ID'] == 1:
+            X.append(  p['x']  )
+            XP.append( p['xp'] )
+            XT.append( t )
+            break
+            
+    #continue
     plt.figure(5)
     
     #zx
     #plt.figure()
     plt.clf()
     plt.title("TURN =" + str(t))
-    plt.plot(tdata['z'], tdata['x'],'+')
+    #plt.plot(tdata['z'], tdata['x'],'+')
+    plt.scatter(tdata['z'], tdata['x'], c=tdata['ID'],cmap='rainbow',s=20)
     plt.xlabel("z [mm]")
     plt.ylabel("x [mm]")
     plt.xlim(-200,200)
@@ -107,13 +124,25 @@ for t in xrange(1,10000000):
     #plt.figure()
     plt.clf()
     plt.title("TURN =" + str(t))
-    plt.plot(tdata['x'], tdata['y'],'+')
+    #plt.plot(tdata['x'], tdata['y'],'+')
+    plt.scatter(tdata['x'], tdata['y'], c=tdata['ID'],cmap='rainbow',s=20)
     plt.xlabel("x [mm]")
     plt.ylabel("y [mm]")
     plt.xlim(-0.05,0.05)
     plt.ylim(-0.25,0.25)
     
     plt.savefig("pngs/xy_%05i.png" % (t))
+
+    plt.clf()
+    plt.title("TURN =" + str(t))
+    #plt.plot(tdata['x'], tdata['xp'],'+')
+    plt.scatter(tdata['x'], tdata['xp'], c=tdata['ID'],cmap='rainbow',s=20)
+    plt.xlabel("x [mm]")
+    plt.ylabel("xp [mrad]")
+    plt.xlim(-0.05,0.05)
+    plt.ylim(-0.25,0.25)
+    
+    plt.savefig("pngs/xxp_%05i.png" % (t))
 
     continue
 
@@ -164,10 +193,17 @@ print "Command = '" + command + "'"
 print "Done."
 
 
-plt.figure(5)
+plt.figure(5) # To close the remains of xy/xz plots
 plt.clf()
 plt.plot(corr)
 plt.xlabel("Turn")
 plt.ylabel("Corr")
+
+plt.figure(6)
+plt.clf()
+plt.scatter(X,XP, c=XT,cmap='rainbow',s=20)
+plt.colorbar()
+plt.xlabel("X [mm]")
+plt.ylabel("XP [mrad]")
 
 plt.show()
