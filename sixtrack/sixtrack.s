@@ -44647,7 +44647,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                   write (*,*) 
 +ei
      &              "DYNKDEBUG> Resetting RNG for FUN named '",
-     &              cexpr_dynk(funcs_dynk(ii,1)), "'"
+     & trim(dynk_stringzerotrim( cexpr_dynk(funcs_dynk(ii,1)) )), "'"
                endif
 
                iexpr_dynk(funcs_dynk(ii,3)+3) =
@@ -45250,6 +45250,9 @@ c$$$            endif
       logical ldoubleElement
       ldoubleElement = .false.  ! For sanity check
       
+      element_name_s = trim(dynk_stringzerotrim(element_name))
+      att_name_s = trim(dynk_stringzerotrim(att_name))
+      
       if (ldynkdebug) then
 +if cr
          write(lout,*)
@@ -45257,12 +45260,10 @@ c$$$            endif
 +if .not.cr
          write(*,*)
 +ei
-     &   "DYNKDEBUG> in dynk_getvalue()"
+     &   "DYNKDEBUG> In dynk_getvalue(), element_name = '",
+     &        element_name_s, "', att_name = '", att_name_s, "'"
       end if
-      
-      element_name_s = trim(dynk_stringzerotrim(element_name))
-      att_name_s = trim(dynk_stringzerotrim(att_name))
-      
+
       do ii=1,il
          if (element_name_s.eq.bez(ii)) then ! name found
             el_type=kz(ii)
