@@ -34112,7 +34112,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          dumpIdx = ix
       endif
 +ei
-      if ( fmt .eq. 0 ) then ! General format
+      
+      ! General format
+      if ( fmt .eq. 0 ) then
          if ( lhighprec ) then
             do j=1,napx
                write(unit,1981) nturn, i, ix, bez(ix), dcum(i),         &
@@ -34121,9 +34123,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
      &xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3, yv(2,j)*1d-3,           &
      &ejfv(j)*1d-3, (ejv(j)-e0)*1d6, -1.0d-03*(sigmv(j)/clight)*(e0/e0f)
-+if cr
-               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
-+ei
             enddo
          else
             do j=1,napx
@@ -34133,16 +34132,20 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
      &xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3, yv(2,j)*1d-3,           &
      &ejfv(j)*1d-3, (ejv(j)-e0)*1d6, -1.0d-03*(sigmv(j)/clight)*(e0/e0f)
-+if cr
-               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
-+ei
             enddo
          endif
          write(unit,*) ''
          write(unit,*) ''
-
-      else if (fmt .eq. 1) then ! Format for aperture check
-
+         
+         !Flush
+         endfile unit
+         backspace unit
++if cr
+         dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+napx+2
++ei
+      
+      ! Format for aperture check
+      else if (fmt .eq. 1) then
         if ( lhighprec ) then
             do j=1,napx
 +if .not.fluka
@@ -34152,9 +34155,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                write(unit,1983) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
 +ei
      &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
-+if cr
-               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
-+ei
             enddo
          else
             do j=1,napx
@@ -34165,12 +34165,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                write(unit,1984) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
 +ei
      &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
-+if cr
-               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
-+ei
             enddo
          endif
-      else if (fmt .eq. 2) then ! Same as fmt 1, but also include z (for crab cavities etc.)
+         
+         !Flush
+         endfile unit
+         backspace unit
++if cr
+         dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+napx
++ei
+
+      ! Same as fmt 1, but also include z (for crab cavities etc.)
+      else if (fmt .eq. 2) then
          if ( lhighprec ) then
             do j=1,napx
 +if .not.fluka
@@ -34181,9 +34187,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
      &              yv(1,j), xv(2,j), yv(2,j), sigmv(j),
      &              (ejv(j)-e0)/e0, ktrack(i)
-+if cr
-               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
-+ei
             enddo
          else
             do j=1,napx
@@ -34195,11 +34198,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
      &              yv(1,j), xv(2,j), yv(2,j), sigmv(j),
      &              (ejv(j)-e0)/e0, ktrack(i)
-+if cr
-               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
-+ei
             enddo
          endif
+         
+         !Flush
+         endfile unit
+         backspace unit
++if cr
+         dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+napx
++ei
+      
+      !Unrecognized format fmt
       else
 +if cr
          write (lout,*) 
@@ -44661,6 +44670,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if (ldynkfileopen .and. turn .eq. 1) then
          ! We're in the 2nd pass of the turn loop
          
+         if (ldynkdebug) then
++if cr
+               write (lout,*)
++ei
++if .not.cr
+               write (*,*)
++ei
+     & "DYNKDEBUG> 2nd pass of turn loop, ",
+     & "setting ldynksetsenable=FALSE'"
+         endif
          ! Only write to output file in first "pass"
          ldynksetsEnable = .false. ! (comment out for debugging)
          
@@ -44674,10 +44693,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if .not.cr
                write (*,*)
 +ei
-     &              "DYNKDEBUG> resetting: '",
+     &              "DYNKDEBUG> Resetting: '",
      &               trim(dynk_stringzerotrim(csets_unique_dynk(ii,1))),
      &         "':'",trim(dynk_stringzerotrim(csets_unique_dynk(ii,2))),
-     &         "', funNum=", -ii, "turn=", 0
+     &         "', newValue=", newValue
             endif
 
             call dynk_setvalue(csets_unique_dynk(ii,1),
@@ -44790,11 +44809,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &           whichSET(jj),
      &           dynk_stringzerotrim(whichFUN(jj)),
      &           getvaldata
-+if cr
-            !Note: To be able to reposition, each line should be shorter than 255 chars
-            dynkfilepos = dynkfilepos+1
-+ei
          enddo
+         
+         !Flush the unit
+         endfile 665
+         backspace 665
++if cr
+         !Note: To be able to reposition, each line should be shorter than 255 chars
+         dynkfilepos = dynkfilepos+nsets_unique_dynk
++ei
       endif
 
       end subroutine
