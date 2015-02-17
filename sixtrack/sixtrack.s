@@ -1104,6 +1104,10 @@
       
       common /dumpdb/ ldump(0:nele), ndumpt(0:nele), dumpunit(0:nele),
      &                dumpfmt(0:nele), ldumphighprec
++cd dbdumpcr
+      !For resetting file positions
+      integer dumpfilepos, dumpfilepos_cr
+      common /dumpdbCR/ dumpfilepos(0:nele), dumpfilepos_cr(0:nele)
 !
 !-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 !
@@ -24451,6 +24455,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca crco
 +ei
 +ca dbdump
++if cr
++ca dbdumpcr
++ei
 +ca comdynk
       integer i,itiono,i1,i2,i3,ia,ia2,iar,iation,ib,ib0,ib1,ib2,ib3,id,&
      &idate,ie,ig,ii,ikk,im,imonth,iposc,irecuin,itime,ix,izu,j,j2,jj,  &
@@ -26055,14 +26062,23 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     open units for dumping particle population or statistics or beam matrix
 !     always in main code
       do i=0,il
++if cr
+        dumpfilepos(i) = -1
++ei
         if (ldump(i)) then
 !         the same file could be used by more than one SINGLE ELEMENT
           inquire( unit=dumpunit(i), opened=lopen )
           if ( .not.lopen ) then
              open(dumpunit(i),form='formatted')
++if cr
+             dumpfilepos(i) = 0
++ei
              if ( dumpfmt(i).eq.1 ) then
                 write(dumpunit(i),*)
      &  '# ID turn s[m] x[mm] xp[mrad] y[mm] yp[mrad] dE/E ktrack'
++if cr
+                dumpfilepos(i) = dumpfilepos(i) + 1
++ei
              else if ( dumpfmt(i).eq.2 ) then
                 if (i.eq.0) then
                    write(dumpunit(i),*)
@@ -26073,7 +26089,64 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                 endif
                 write(dumpunit(i),*)
      &  '# ID turn s[m] x[mm] xp[mrad] y[mm] yp[mrad] z[mm] dE/E ktrack'
++if cr
+                dumpfilepos(i) = dumpfilepos(i) + 2
++ei
              end if
+          else
+             !Sanity check: If already open, it should be by another DUMP
+             ! (can't guarantee for files after this one)
+             ! Also should not be shared with element 0 (all)
+             ! Also should be same format -- if so, add to the header.
+             
+             !reuse the lopen flag as a temp variable
+             lopen = .false.
+             do j=0,i-1
+                if (dumpunit(j).eq.dumpunit(i)) then
+                   if (dumpfmt(i).ne.dumpfmt(i)) then
++if cr
+                      write(lout,*)
++ei
++if .not.cr
+                      write(*,*)
++ei
+     & "ERROR in DUMP: ouput unit",dumpunit(i), " used by two DUMPS,",
+     & " formats are not the same."
+                      call prror(-1)
+                   else if (j.eq.0) then
++if cr
+                      write(lout,*)
++ei
++if .not.cr
+                      write(*,*)
++ei
+     & "ERROR in DUMP: ouput unit",dumpunit(i), " used by two DUMPS,",
+     & " one of which is ALL"
+                      call prror(-1)
+                   else
+                      write(dumpunit(i),*)
+     &  '# DUMP format #2, bez=', bez(i), ', dump period=', ndumpt(i)
++if cr
+                      dumpfilepos(i) = dumpfilepos(i) + 1
++ei
+                      lopen = .true.
+                   endif
+                endif
+             end do
+             !File was already open, but not by DUMP
+             if ( .not.lopen ) then
++if cr
+                write (lout,*)
++ei
++if .not.cr
+                write (*,*)
++ei
+     & "ERROR in DUMP: unit", dumpunit(i), " is already open, ",
+     & " but not by DUMP. Please pick another unit! ",
+     & " Note: This test is not watertight (other part of",
+     & " the program may later open the same file/unit)"
+                call prror(-1)
+             endif
           endif
         endif
       enddo
@@ -33992,6 +34065,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     last modified: 13-06-2014
 !     dump beam particles
 !     always in main code
+!
+!     nturn     : Current turn number
+!     i         : Current structure element
+!     ix        : Corresponding single element
+!     unit      : Unit to dump from
+!     fmt       : Dump output format (0/1/2)
+!     lhighprec : High precission output y/n
 !-----------------------------------------------------------------------
 !
 +if fluka
@@ -34002,7 +34082,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
 !     interface variables:
       integer nturn, i, ix, unit, fmt
-      logical lhighprec, lheader
+      logical lhighprec
+      intent (in) nturn, i, ix, unit, fmt, lhighprec
 +if cr
 +ca crcoall
 +ei
@@ -34013,10 +34094,24 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca commonm1
 +ca commontr
 +ca dbdcum
++if cr
++ca dbdump
++ca dbdumpcr
++ei
 
 !     temporary variables
       integer j
 
++if cr      
+      !For accessing dumpfilepos
+      integer dumpIdx
+      if( unit .eq. dumpunit(0) ) then
+         ! ALL output must be on separate unit
+         dumpIdx = 0
+      else
+         dumpIdx = ix
+      endif
++ei
       if ( fmt .eq. 0 ) then ! General format
          if ( lhighprec ) then
             do j=1,napx
@@ -34026,6 +34121,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
      &xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3, yv(2,j)*1d-3,           &
      &ejfv(j)*1d-3, (ejv(j)-e0)*1d6, -1.0d-03*(sigmv(j)/clight)*(e0/e0f)
++if cr
+               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
++ei
             enddo
          else
             do j=1,napx
@@ -34035,6 +34133,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
      &xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3, yv(2,j)*1d-3,           &
      &ejfv(j)*1d-3, (ejv(j)-e0)*1d6, -1.0d-03*(sigmv(j)/clight)*(e0/e0f)
++if cr
+               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
++ei
             enddo
          endif
          write(unit,*) ''
@@ -34051,6 +34152,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                write(unit,1983) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
 +ei
      &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
++if cr
+               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
++ei
             enddo
          else
             do j=1,napx
@@ -34061,6 +34165,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                write(unit,1984) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
 +ei
      &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
++if cr
+               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
++ei
             enddo
          endif
       else if (fmt .eq. 2) then ! Same as fmt 1, but also include z (for crab cavities etc.)
@@ -34074,6 +34181,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
      &              yv(1,j), xv(2,j), yv(2,j), sigmv(j),
      &              (ejv(j)-e0)/e0, ktrack(i)
++if cr
+               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
++ei
             enddo
          else
             do j=1,napx
@@ -34085,6 +34195,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
      &              yv(1,j), xv(2,j), yv(2,j), sigmv(j),
      &              (ejv(j)-e0)/e0, ktrack(i)
++if cr
+               dumpfilepos(dumpIdx) = dumpfilepos(dumpIdx)+1
++ei
             enddo
          endif
       else
@@ -65138,9 +65251,12 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 +ca crco
 +ca comdynk
 +ca comdynkcr
++ca dbdump
++ca dbdumpcr
       integer i,j,k,l,m,ia
       integer lstring,hbuff,tbuff,myia,mybinrecs,binrecs94,istat
       dimension hbuff(253),tbuff(35)
+      logical lopen
 +if boinc
       character*256 filename
 +ei
@@ -65241,8 +65357,15 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !GRDRHIC
 !GRD-042008
 +ei
+
+      write(93,*) 'SIXTRACR CRCHECK reading fort.95 Record 4 DUMP'
+      endfile 93
+      backspace 93
+      read(95,err=100,end=100)
+     &     (dumpfilepos_cr(j),j=0,nele)
+
       if (ldynk) then
-         write(93,*) 'SIXTRACR CRCHECK reading fort.95 Record 4 DYNK'
+         write(93,*) 'SIXTRACR CRCHECK reading fort.95 Record 5 DYNK'
          endfile 93
          backspace 93
          read(95,err=100,end=100)
@@ -65263,7 +65386,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 ! and make sure we can read the extended vars before leaving fort.95
 ! We will re-read them in crstart to be sure they are restored correctly
           write(93,*)                                                   &
-     &'SIXTRACR CRCHECK verifying Record 5 extended vars fort.95',      &
+     &'SIXTRACR CRCHECK verifying Record 6 extended vars fort.95',      &
      &' crnapxo=',crnapxo
           endfile 93
           backspace 93
@@ -65391,8 +65514,14 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !GRD-042008
 +ei
 
+      write(93,*) 'SIXTRACR CRCHECK reading fort.96 Record 4 DUMP'
+      endfile 93
+      backspace 93
+      read(96,err=100,end=100)
+     &     (dumpfilepos_cr(j),j=0,nele)
+
       if (ldynk) then
-         write(93,*) 'SIXTRACR CRCHECK reading fort.96 Record 4 DYNK'
+         write(93,*) 'SIXTRACR CRCHECK reading fort.96 Record 5 DYNK'
          endfile 93
          backspace 93
          read(96,err=101,end=101)
@@ -65414,7 +65543,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 ! and make sure we can read the extended vars before leaving fort.96
 ! We will re-read them in crstart to be sure they are correct
           write(93,*)                                                   &
-     &'SIXTRACR CRCHECK verifying Record 5 extended vars fort.96,',     &
+     &'SIXTRACR CRCHECK verifying Record 6 extended vars fort.96,',     &
      &' crnapxo=',crnapxo
           endfile 93
           backspace 93
@@ -65713,8 +65842,42 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
      &'dynkfilepos=',dynkfilepos
         endfile 93
         backspace 93
-
       endif
+      
+      !Reposition files for DUMP
+      write(93,*) "SIXTRACR CRCHECK REPOSITIONING DUMP files"
+      endfile 93
+      backspace 93
+      do i=0, il
+         if (ldump(i)) then
+            write(93,*) "SIXTRACR CRCHECK REPOSITIONING DUMP file"
+            if (i .ne. 0) then
+               write(93,*) "element=",bez(i), "unit=",dumpunit(i)
+            else
+               write(93,*) "element=","ALL" , "unit=",dumpunit(i)
+            endif
+            endfile 93
+            backspace 93
+            
+            inquire( unit=dumpunit(i), opened=lopen )
+            if ( .not. lopen )
+     &           open(dumpunit(i),form='formatted',action='readwrite')
+
+            dumpfilepos(i) = 0
+ 702        read(dumpunit(i),'(a255)',end=111,err=111,iostat=istat)
+     &           arecord
+            dumpfilepos(i) = dumpfilepos(i) + 1
+            if (dumpfilepos(i).lt.dumpfilepos_cr(i)) goto 702
+         endif
+      end do
+      !Crop DUMP files (if used by multiple DUMPs,
+      ! the actual position is the sum of the dumpfileposes
+      do i=0, il
+         if (ldump(i)) then
+            endfile dumpunit(i)
+            backspace dumpunit(i)
+         endif
+      end do
       
 !--     Set up flag for tracking routines to call CRSTART
         restart=.true.
@@ -65838,6 +66001,16 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       backspace 93
       call abend('SIXTRACR CRCHECK failure positioning dynksets.dat ')
 
+ 111  write(93,*)                                                       &
+     &'SIXTRACR CRCHECK *** ERROR ***'//
+     &' reading DUMP file#', dumpunit(i),' iostat=',istat
+      write(93,*)                                                       &
+     &'dumpfilepos=',dumpfilepos(i),' dumpfilepos_cr=',dumpfilepos_cr(i)
+      endfile 93
+      backspace 93
+      call abend('SIXTRACR CRCHECK failure positioning DUMP file    ')
+
+
       end
 
       subroutine crpoint
@@ -65860,6 +66033,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 +ca comdynk
 +ca comdynkcr
       double precision dynk_getvalue
++ca dbdumpcr
 +if collimat
 +ca collpara
 +ca dbmaincr
@@ -66044,6 +66218,18 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !GRDRHIC
 !GRD-042008
 +ei
+
++if .not.debug
+      if (ncalls.le.20.or.numx.ge.numl-20) then
++ei
+         write(93,*) 'SIXTRACR CRPOINT writing DUMP vars fort.95'
+         endfile 93
+         backspace 93
++if .not.debug
+      endif
++ei
+      write(95,err=100,iostat=istat)                                    &
+     &     (dumpfilepos(j),j=0,nele)
       
       if (ldynk) then
 +if .not.debug
@@ -66221,6 +66407,18 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 !GRDRHIC
 !GRD-042008
 +ei
+
++if .not.debug
+      if (ncalls.le.20.or.numx.ge.numl-20) then
++ei
+         write(93,*) 'SIXTRACR CRPOINT writing DUMP vars fort.96'
+         endfile 93
+         backspace 93
++if .not.debug
+      endif
++ei
+      write(96,err=100,iostat=istat)                                    &
+     &     (dumpfilepos(j),j=0,nele)
 
       if (ldynk) then
 +if .not.debug
@@ -66463,7 +66661,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 +ei
 +ei
 !ERIC new extended checkpoint for synuthck
-
+      
       if (ldynk) then
          !LOAD DYNK DATA from temp arrays (loaded from file in crcheck)
          niexpr_dynk = niexpr_dynk_cr
