@@ -26103,7 +26103,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
              lopen = .false.
              do j=0,i-1
                 if (dumpunit(j).eq.dumpunit(i)) then
-                   if (dumpfmt(i).ne.dumpfmt(i)) then
+                   if (dumpfmt(j).ne.dumpfmt(i)) then
 +if cr
                       write(lout,*)
 +ei
@@ -26124,12 +26124,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      & " one of which is ALL"
                       call prror(-1)
                    else
-                      write(dumpunit(i),*)
+                      ! Everything is fine
+                      lopen = .true.
++if cr
+                      dumpfilepos(i) = 0
++ei
+                      if (dumpfmt(i).eq.2) then !More header
+                         write(dumpunit(i),*)
      &  '# DUMP format #2, bez=', bez(i), ', dump period=', ndumpt(i)
 +if cr
-                      dumpfilepos(i) = dumpfilepos(i) + 1
+                         dumpfilepos(i) = dumpfilepos(i) + 1
 +ei
-                      lopen = .true.
+                      endif
                    endif
                 endif
              end do
@@ -26143,8 +26149,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
      & "ERROR in DUMP: unit", dumpunit(i), " is already open, ",
      & " but not by DUMP. Please pick another unit! ",
-     & " Note: This test is not watertight (other part of",
-     & " the program may later open the same file/unit)"
+     & " Note: This test is not watertight, as other parts of",
+     & " the program may later open the same file/unit."
                 call prror(-1)
              endif
           endif
@@ -45540,17 +45546,29 @@ c$$$               endif
 +ca parnum
 +ca common
 +ca dbdcum
++if cr
++ca crcoall
++ei
 +ca save
 
 !     temporary variables
       double precision tmpdcum, ds
       integer ientry, jentry, kentry, ix
 
-      write(*,*)''
++if cr
+      write(lout,*)''
+      write(lout,10010)
+      write(lout,*)''
+      write(lout,*)' CALL TO CADCUM'
+      write(lout,*)''
++ei
++if .not.cr
+      write(*,*)   ''
       write(*,10010)
-      write(*,*)''
-      write(*,*)' CALL TO CADCUM'
-      write(*,*)''
+      write(*,*)   ''
+      write(*,*)   ' CALL TO CADCUM'
+      write(*,*)   ''
++ei
 
 !     initialise cumulative length
       tmpdcum=zero
@@ -45579,25 +45597,48 @@ c$$$               endif
 
       if ( print_dcum ) then
 !       a useful printout
-        write(*,10030)'ientry','ix','name            ','dcum [m]'
-        write(*,10020) 0,-1,'START           ',dcum(0)
++if cr
+        write(lout,10030)'ientry','ix','name            ','dcum [m]'
+        write(lout,10020) 0,-1,'START           ',dcum(0)
++ei
++if .not.cr
+        write(*,10030)   'ientry','ix','name            ','dcum [m]'
+        write(*,10020)    0,-1,'START           ',dcum(0)
++ei
         do ientry=1,iu
           ix=ic(ientry)
           if(ix.gt.nblo) then
 !            SINGLE ELEMENT
              ix=ix-nblo
-             write(*,10020) ientry,ix,bez(ix),dcum(ientry)
++if cr
+             write(lout,10020) ientry,ix,bez(ix),dcum(ientry)
++ei
++if .not.cr
+             write(*,10020)    ientry,ix,bez(ix),dcum(ientry)
++ei
           else
 !            BLOC
-             write(*,10020) ientry,ix,bezb(ix),dcum(ientry)
++if cr
+             write(*,10020)    ientry,ix,bezb(ix),dcum(ientry)
++ei
++if .not.cr
+             write(*,10020)    ientry,ix,bezb(ix),dcum(ientry)
++ei
           endif
         enddo
-        write(*,10020) iu+1,-1,'END            ',dcum(iu+1)
-        write(*,*) ''
++if cr
+        write(lout,10020) iu+1,-1,'END            ',dcum(iu+1)
+        write(lout,*)     ''
++ei
++if .not.cr
+        write(*,10020)    iu+1,-1,'END            ',dcum(iu+1)
+        write(*,*)        ''
++ei
       endif
 
 !     au revoir:
       return
+
 10010 format(132('-'))
 10020 format(2(1x,i6),1x,a16,1x,f12.5)
 10030 format(2(1x,a6),1x,a16,1x,a12)
