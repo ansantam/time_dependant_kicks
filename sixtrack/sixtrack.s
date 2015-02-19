@@ -44760,8 +44760,22 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       endif
       
       if (.not. ldynkfileopen) then
+         !Temp reuse of ldynkfileopen for sanity check
+         inquire( unit=665, opened=ldynkfileopen )
+         if (ldynkfileopen) then
++if cr
+           write(lout,*) "DYNK> **** ERROR in dynk_apply() ****"
+           write(lout,*) "DYNK> unit 665 for dynksets.dat already taken"
++ei
++if .not.cr
+           write(*,*)    "DYNK> **** ERROR in dynk_apply() ****"
+           write(*,*)    "DYNK> unit 665 for dynksets.dat already taken"
++ei
+            call prror(-1)
+         end if
          open(unit=665, file="dynksets.dat",
      &        status="replace",action="write") 
+         ldynkfileopen = .true.
          if (ldynkfiledisable) then
             write (665,*) "### DYNK file output was disabled ",
      &                    "with flag NOFILE in fort.3 ###"
@@ -44778,7 +44792,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             dynkfilepos = 1
 +ei
          endif
-         ldynkfileopen = .true.
+         
+         ! Flush the unit
+         endfile 665
+         backspace 665
+
       endif
       
       !Apply the sets
@@ -44864,13 +44882,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &           getvaldata
          enddo
          
-         !Flush the unit
-         endfile 665
-         backspace 665
 +if cr
          !Note: To be able to reposition, each line should be shorter than 255 chars
          dynkfilepos = dynkfilepos+nsets_unique_dynk
 +ei
+         !Flush the unit
+         endfile 665
+         backspace 665
+
       endif
 
       end subroutine
@@ -65940,6 +65959,19 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
          endfile 93
          backspace 93
          
+         inquire( unit=665, opened=lopen )
+         if (lopen) then
+            write(93,*)
+     &"SIXTRACR CRCHECK FAILED while repositioning dynksets.dat"
+            write(93,*)
+     &"Unit 665 already in use!"
+            endfile 93
+            backspace 93
+
+            call abend
+     &('SIXTRACR CRCHECK failure positioning dynksets.dat ')
+         end if
+
          open(unit=665,file='dynksets.dat',status="old",
      &        action="readwrite", err=110)
          ldynkfileopen = .true.
@@ -65949,6 +65981,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
          if (dynkfilepos.lt.dynkfilepos_cr) goto 701
          endfile 665
          backspace 665
+         
          write(93,*)                                                     &
      &'SIXTRACR CRCHECK sucessfully repositioned dynksets.dat, '//
      &'dynkfilepos=',dynkfilepos
