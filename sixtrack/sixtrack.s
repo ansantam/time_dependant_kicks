@@ -1479,7 +1479,7 @@ C     Block with data/fields needed for checkpoint/restart of DYNK
 +cd multini
 !-- Initialize multipoles, combining settings from fort.2 with
 !-- coefficients from MULT and random values from FLUC.
-!-- Used in program maincr and from initialize_elements.
+!-- Used in program maincr and from initialize_element.
       r0=ek(ix)
       if(abs(r0).le.pieni) goto 150 ! label 150 - just after this code
       nmz=nmu(ix)
@@ -13577,7 +13577,8 @@ cc2008
           itionc(i)=kz(i)/abs(kz(i))
           kp(i)=6
         endif
-        ! More in initialize_element()
+        phasc(i)=el(i)
+        el(i)=zero
       endif
 !--WIRE
       if(abs(kz(i)).eq.15) then
@@ -13599,10 +13600,10 @@ cc2008
 !----------------------------------------
 ! Handled by initialize_element subroutine:
 !-----------------------------------------
-!--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
-!--THIN LENS
-!--CAVITIES (12/-12) (set phasc)
-!--CRABCAVITY (23/-23) / CC multipoles order 2/3/4 (+/- 23/26/27/28)
+!-- CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
+!-- THIN LENS
+!-- MULTIPOLES (11)
+!-- CRABCAVITY (23/-23) / CC multipoles order 2/3/4 (+/- 23/26/27/28)
       call initialize_element(i,.true.)
 
 !--ACDIPOLE
@@ -13626,6 +13627,7 @@ cc2008
         ptnfac(i)=el(i)
         el(i)=zero
       endif
+!--General
       if(abs(el(i)).gt.pieni.and.kz(i).ne.0) ithick=1
       if(i.gt.nele-1) call prror(16)
       if(abs(kz(i)).ne.12) kp(i)=0
@@ -19180,12 +19182,7 @@ C                           ktrack(i)=40
                endif
             enddo
          endif
-!--Cavities (INCOMPLETE)
-      elseif(abs(kz(ix)).eq.12) then
-         ! Some 1st time initialization still in daten()
-         ! Moved from daten:
-         phasc(ix)=el(ix)
-         el(ix)=zero
+
 !--Crab Cavities
 !   Note: If setting something else than el(),
 !   DON'T call initialize_element on a crab, it will reset the phase to 0.
@@ -26837,7 +26834,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca solenoid
         ktrack(i)=56
         goto 290
-!--Multipole block (also in initialize_elements)
+!--Multipole block (also in initialize_element)
   150   r0=ek(ix)
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
@@ -27007,9 +27004,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if (ldynk) call dynk_pretrack
 
       if(idp.eq.0.or.ition.eq.0) then
-        write(*,*) ''
-        write(*,*) 'Calling thin4d subroutine'
-        write(*,*) ''
++if cr
+        write(lout,*) ''
+        write(lout,*) 'Calling thin4d subroutine'
+        write(lout,*) ''
++ei
++if .not.cr
+        write(*,*)    ''
+        write(*,*)    'Calling thin4d subroutine'
+        write(*,*)    ''
++ei
         call thin4d(nthinerr)
       else
 !hr01   hsy(3)=c1m3*hsy(3)*ition
@@ -27019,9 +27023,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(kz(jj).eq.12) hsyc(jj)=(c1m3*hsyc(jj))*dble(itionc(jj))     !hr01
   310   continue
         if(abs(phas).ge.pieni) then
-          write(*,*) ''
-          write(*,*) 'Calling thin6dua subroutine'
-          write(*,*) ''
++if cr
+          write(lout,*) ''
+          write(lout,*) 'Calling thin6dua subroutine'
+          write(lout,*) ''
++ei
++if .not.cr
+          write(*,*)    ''
+          write(*,*)    'Calling thin6dua subroutine'
+          write(*,*)    ''
++ei
           call thin6dua(nthinerr)
         else
 +if collimat
@@ -27918,9 +27929,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !FOR FAST TRACKING CHECKS
 !       open(unit=999,file='checkturns.dat')
 !
++if cr
+          write(lout,*) ''
+          write(lout,*) 'Calling thin6d subroutine'
+          write(lout,*) ''
+
++ei
++if .not.cr
           write(*,*) ''
           write(*,*) 'Calling thin6d subroutine'
           write(*,*) ''
++ei
           call thin6d(nthinerr)
 !
 !++  Save particle offsets to a file
@@ -28290,9 +28309,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
 +ei ! endif collimat
 +if .not.collimat
-          write(*,*) ''
-          write(*,*) 'Calling thin6d subroutine'
-          write(*,*) ''
++if cr
+          write(lout,*) ''
+          write(lout,*) 'Calling thin6d subroutine'
+          write(lout,*) ''
++ei
++if .not. cr
+          write(*,*)    ''
+          write(*,*)    'Calling thin6d subroutine'
+          write(*,*)    ''
++ei
           call thin6d(nthinerr)
         endif
       endif
@@ -34444,7 +34470,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca solenoid
         ktrack(i)=56
         goto 290
-!--Multipole block (also in initialize_elements)
+!--Multipole block (also in initialize_element)
   150   r0=ek(ix)
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
@@ -34613,9 +34639,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if (ldynk) call dynk_pretrack
 
       if(idp.eq.0.or.ition.eq.0) then
-        write(*,*) ''
-        write(*,*) 'Calling thck4d subroutine'
-        write(*,*) ''
++if cr
+        write(lout,*) ''
+        write(lout,*) 'Calling thck4d subroutine'
+        write(lout,*) ''
++ei
++if .not.cr
+        write(*,*)    ''
+        write(*,*)    'Calling thck4d subroutine'
+        write(*,*)    ''
++ei
         call thck4d(nthinerr)
       else
 !hr01   hsy(3)=c1m3*hsy(3)*ition
@@ -34625,14 +34658,28 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           if(kz(jj).eq.12) hsyc(jj)=(c1m3*hsyc(jj))*dble(itionc(jj))     !hr01
   310   continue
         if(abs(phas).ge.pieni) then
-          write(*,*) ''
-          write(*,*) 'Calling thck6dua subroutine'
-          write(*,*) ''
++if cr
+          write(lout,*) ''
+          write(lout,*) 'Calling thck6dua subroutine'
+          write(lout,*) ''
++ei
++if .not.cr
+          write(*,*)    ''
+          write(*,*)    'Calling thck6dua subroutine'
+          write(*,*)    ''
++ei
           call thck6dua(nthinerr)
         else
-          write(*,*) ''
-          write(*,*) 'Calling thck6d subroutine'
-          write(*,*) ''
++if cr
+          write(lout,*) ''
+          write(lout,*) 'Calling thck6d subroutine'
+          write(lout,*) ''
++ei
++if .not.cr
+          write(*,*)    ''
+          write(*,*)    'Calling thck6d subroutine'
+          write(*,*)    ''
++ei
           call thck6d(nthinerr)
         endif
       endif
@@ -45207,9 +45254,9 @@ c$$$            endif
                elseif (att_name_stripped.eq."frequency") then ![MHz]
                   ek(ii) = newValue
                elseif (att_name_stripped.eq."phase") then ![rad]
-                  el = newValue ! Note: el is set to 0 in initialize_element and in daten.
-                                ! Calling initialize element on a crab without setting el
-                                ! will set crabph = 0!
+                  el(ii) = newValue ! Note: el is set to 0 in initialize_element and in daten.
+                                    ! Calling initialize element on a crab without setting el
+                                    ! will set crabph = 0!
                   call initialize_element(ii, .false.)
                else
                   goto 100 !ERROR
