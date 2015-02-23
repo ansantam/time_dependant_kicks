@@ -1259,14 +1259,19 @@ if test "$api" != ""
 then
   if test -s "$ename"
   then
-      echo -e "\e[92mIt appears to have completed successfully.\e[39m"
-      # and a link for Frank
-      cd ..
+    echo -e "\e[92mIt appears to have completed successfully.\e[39m"
+    # and a link for Frank
+    cd ..
+    if test "$da" != ""
+    then
       ln -sf $ename/$ename SixTrack
-      cd $ename
+    else
+      ln -sf $ename/$ename SixTrack_da
+    fi
+    cd $ename
   else
-      echo -e "\e[91mIt appears to have failed!!!\e[39m"
-      exit 2
+    echo -e "\e[91mIt appears to have failed!!!\e[39m"
+    exit 2
   fi
 fi
 # Note that selecting boinc has forced cpss
