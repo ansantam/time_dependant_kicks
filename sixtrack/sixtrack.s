@@ -8312,23 +8312,22 @@ cc2008
 +cd trom06
             phi(l)=phi(l)+dphi/pie
           enddo
+
+!         A.Mereghetti, for the FLUKA Team
+!         last modified: 17-07-2013
+!         update nr
+          nr=nr+1
+
 +if .not.collimat.and..not.bnlelens
           call writelin(nr,bez(ix),etl,phi,t,ix)
 +ei
 +if collimat.or.bnlelens
           call writelin(nr,bez(ix),etl,phi,t,ix,k)
 +ei
-+if .not.collimat.and.bnlelens
-!GRDRHIC
-          call writelin(nr,bez(ix),etl,phi,t,ix,k)
-+ei
-+if collimat.and.bnlelens
-          call writelin(nr,bez(ix),etl,phi,t,ix,k)
-!GRDRHIC
-+ei
           if(ntco.ne.0) then
             if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
           endif
+          goto 500
         endif
 +cd trom10
         if(kzz.eq.22) then
@@ -18628,7 +18627,7 @@ cc2008
      &x,'      SKEW '// t10,'      MEAN            RMS-VALUE     ',     &
      &'       MEAN            RMS-VALUE'/)
 10240 format(t10,a16,3(2x,d16.10),2x,i10)
-10260 format(t4,i3,1x,a16,1x,i2,1x,6(1x,a16))
+10260 format(t4,i4,1x,a16,1x,i2,1x,6(1x,a16))
 10270 format(t28,6(1x,a16))
 10280 format(t3,i6,1x,5(a16,1x))
 10310 format(t10,a16,10x,a16,6x,f20.15)
@@ -18842,7 +18841,8 @@ cc2008
 !
 !-----------------------------------------------------------------------
 !     A.Mereghetti, for the FLUKA Team
-!     last modified: 27-08-2014
+!     K.Sjobak and A.Santamaria, BE-ABP-HSS
+!     last modified: 24-02-2015
 !     parse a line and split it into its fields
 !       fields are returned as 0-terminated and padded string
 !     always in main code
@@ -25998,7 +25998,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       else
         call prror(79)
       endif
-      if(ithick.eq.1) call envarsv(dpsv,oidpsv,rvv,ekv)
+
+      if(ithick.eq.1) then
+!------ Compute matrices for linear tracking
+        call envarsv(dpsv,oidpsv,rvv,ekv)
+        if (idp.eq.0 .or. ition.eq.0) then
+! ------- Only in case of thck4d
+          call blocksv
+        endif
+      endif
+
 !-------------------------------------  START OF 'BLOCK'
       do 440 k=1,mblo
         jm=mel(k)
@@ -27012,7 +27021,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if(nwri.eq.0) nwri=(numl+numlr)+1                                  !hr01
 
 !     A.Mereghetti, for the FLUKA Team
-!     last modified: 17-07-2013
+!     K.Sjobak, BE-ABP-HSS
+!     last modified: 24-02-2015
 !     save original kicks
 !     always in main code
       if (ldynk) call dynk_pretrack
@@ -28457,6 +28467,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca bnltwiss
 +ei
+!! WRITE COMMENT HERE
           ix=ic(i)-nblo
 +if bpm
 +ca bpmdata
@@ -29572,6 +29583,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca bnltwiss
 +ei
+!!! WRITE COMMENT HERE
           ix=ic(i)-nblo
 +if beamgas
 !YIL Call beamGas subroutine whenever a pressure-element is found
@@ -32308,6 +32320,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRD END OF UPGRADE
 !GRD
 
++if collimat
+	!Delete this: always end up at 650 anyway, lose DUMPLINES
+          kpz=abs(kp(ix))
+          if(kpz.eq.0) goto 650
+          if(kpz.eq.1) goto 650
++ei
+
 +if .not.collimat
 +ca lostpart
 +ei
@@ -33014,6 +33033,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca bnltwiss
 +ei
+!!! COMMENT THIS
           ix=ic(i)-nblo
 +if bpm
 +ca bpmdata
@@ -33068,7 +33088,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
             endif
 !hr01       ejfv(j)=sqrt(ejv(j)*ejv(j)-pma*pma)
-            ejfv(j)=sqrt(ejv(j)**2-pma**2)                               !hr01
+!           ejfv(j)=sqrt(ejv(j)**2-pma**2)                               !hr01
+            ejfv(j)=sqrt((ejv(j)-pma)*(ejv(j)+pma))
             rvv(j)=(ejv(j)*e0f)/(e0*ejfv(j))
             dpsv(j)=(ejfv(j)-e0f)/e0f
             oidpsv(j)=one/(one+dpsv(j))
@@ -34108,7 +34129,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !
 !-----------------------------------------------------------------------
 !     by A.Mereghetti, D.Sinuela-Pastor & P.Garcia Ortega, for the FLUKA Team
-!     last modified: 13-06-2014
+!     K.Sjobak and A.Santamaria, BE-ABP-HSS
+!     last modified: 24-02-2015
 !     dump beam particles
 !     always in main code
 !
@@ -34164,18 +34186,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          if ( lhighprec ) then
             do j=1,napx
                write(unit,1981) nturn, i, ix, bez(ix), dcum(i),         &
-+if fluka
-     &fluka_uid(j), fluka_gen(j), fluka_weight(j),                      &
-+ei
      &xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3, yv(2,j)*1d-3,           &
      &ejfv(j)*1d-3, (ejv(j)-e0)*1d6, -1.0d-03*(sigmv(j)/clight)*(e0/e0f)
             enddo
          else
             do j=1,napx
                write(unit,1982) nturn, i, ix, bez(ix), dcum(i),         &
-+if fluka
-     &fluka_uid(j), fluka_gen(j), fluka_weight(j),                      &
-+ei
      &xv(1,j)*1d-3, yv(1,j)*1d-3, xv(2,j)*1d-3, yv(2,j)*1d-3,           &
      &ejfv(j)*1d-3, (ejv(j)-e0)*1d6, -1.0d-03*(sigmv(j)/clight)*(e0/e0f)
             enddo
@@ -34194,22 +34210,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       else if (fmt .eq. 1) then
         if ( lhighprec ) then
             do j=1,napx
-+if .not.fluka
                write(unit,1983) nlostp(j), nturn, dcum(i), xv(1,j),     &
-+ei
-+if fluka
-               write(unit,1983) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
-+ei
      &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
             enddo
          else
             do j=1,napx
-+if .not.fluka
                write(unit,1984) nlostp(j), nturn, dcum(i), xv(1,j),     &
-+ei
-+if fluka
-               write(unit,1984) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
-+ei
      &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
             enddo
          endif
@@ -34225,23 +34231,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       else if (fmt .eq. 2) then
          if ( lhighprec ) then
             do j=1,napx
-+if .not.fluka
                write(unit,1985) nlostp(j), nturn, dcum(i), xv(1,j),     &
-+ei
-+if fluka
-               write(unit,1985) fluka_uid(j), nturn, dcum(i), xv(1,j),  &
-+ei
      &              yv(1,j), xv(2,j), yv(2,j), sigmv(j),
      &              (ejv(j)-e0)/e0, ktrack(i)
             enddo
          else
             do j=1,napx
-+if .not.fluka
                write(unit,1986) nlostp(j), nturn, dcum(i), xv(1,j),
-+ei
-+if fluka
-               write(unit,1986) fluka_uid(j), nturn, dcum(i), xv(1,j),
-+ei
      &              yv(1,j), xv(2,j), yv(2,j), sigmv(j),
      &              (ejv(j)-e0)/e0, ktrack(i)
             enddo
@@ -34267,19 +34263,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       endif
       return
 
-+if fluka
- 1981 format (3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE25.18)) !fmt 0 / hiprec
- 1982 format (3(1X,I8),1X,A16,1X,F12.5,2(1X,I8),8(1X,1PE16.9))  !fmt 0 / not hiprec
-+ei
-+if .not.fluka
  1981 format (3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE25.18)) !fmt 0 / hiprec
  1982 format (3(1X,I8),1X,A16,1X,F12.5,7(1X,1PE16.9))  !fmt 0 / not hiprec
-+ei
+
  1983 format (2(1x,I8),1X,F12.5,5(1X,1PE25.18),1X,I8)  !fmt 1 / hiprec
  1984 format (2(1x,I8),1X,F12.5,5(1X,1PE16.9),1X,I8)   !fmt 1 / not hiprec
 
  1985 format (2(1x,I8),1X,F12.5,6(1X,1PE25.18),1X,I8)  !fmt 2 / hiprec
- 1986 format (2(1x,I8),1X,F12.5,6(1X,1PE16.9),1X,I8) !fmt 2 / not hiprec
+ 1986 format (2(1x,I8),1X,F12.5,6(1X,1PE16.9),1X,I8)   !fmt 2 / not hiprec
       end subroutine
 
 +dk tra_thck
@@ -34822,15 +34813,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               ix=ic(i)
             else
               ix=ic(i)-nblo
+            endif
 +if bpm
 +ca bpmdata
 +ei bpm
 +if time
 +ca timefct
 +ei
-            endif
-          if(i.eq.1103) then
-          endif
+
 !----------count=43
             goto(20,480,740,480,480,480,480,480,480,480,40,60,80,100,   &
      &120,140,160,180,200,220,270,290,310,330,350,370,390,410,          &
@@ -35373,13 +35363,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               ix=ic(i)
             else
               ix=ic(i)-nblo
+            endif
 +if bpm
 +ca bpmdata
 +ei bpm
 +if time
 +ca timefct
 +ei
-            endif
+
 +if debug
 !     if (i.ge.673) then
 !     call warr('xv12,i,ktrack ',xv(1,2),i,ktrack(i),0,0)
@@ -36031,13 +36022,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               ix=ic(i)
             else
               ix=ic(i)-nblo
+            endif
 +if bpm
 +ca bpmdata
 +ei bpm
 +if time
 +ca timefct
 +ei
-            endif
 
 !----------count 56
             goto(20,40,740,500,500,500,500,500,500,500,60,80,100,120,   &
@@ -45959,18 +45950,9 @@ c$$$               endif
 +if .not.collimat.and..not.bnlelens
       call writelin(nr,idum,etl,phi,t,1)
 +ei
-+if collimat.and..not.bnlelens
-      call writelin(nr,idum,etl,phi,t,1,k)
-+ei
-+if .not.collimat.and.bnlelens
++if collimat.or.bnlelens
 !GRDRHIC
-!Eric
-      k=0
-      call writelin(nr,idum,etl,phi,t,1,k)
-!GRDRHIC
-+ei
-+if collimat.and.bnlelens
-!GRDRHIC
+      k=0 !ALWAYS initialize k
       call writelin(nr,idum,etl,phi,t,1,k)
 !GRDRHIC
 +ei
@@ -46008,26 +45990,28 @@ c$$$               endif
 !GRDRHIC
 +ei
 +if .not.collimat.and..not.bnlelens
-          if(ithick.eq.0.and.kz(jk).ne.0) goto 500
-+ei
-+if collimat.and..not.bnlelens
           if(ithick.eq.0.and.kz(jk).ne.0) then
-             call writelin(nr,bez(ix),etl,phi,t,ix,k)
-             goto 500
+
+!           A.Mereghetti, for the FLUKA Team
+!           last modified: 17-07-2013
+!           this is somehow an un-desired situation (thin lens tracking, 
+!             with a non-drift element in a BLOC), but let's dump
+!             the available information (as done in the collimation version)
+            nr=nr+1
+            etl=etl+el(jk)
+            call writelin(nr,bez(jk),etl,phi,t,ix)
+            if(ntco.ne.0) then
+              if(mod(nr,ntco).eq.0) call cpltwis(bez(jk),t,etl,phi)
+            endif
+
+            goto 500
           endif
 +ei
-+if .not.collimat.and.bnlelens
++if collimat.or.bnlelens
           if(ithick.eq.0.and.kz(jk).ne.0) then
-             call writelin(nr,bez(ix),etl,phi,t,ix,k)
+             call writelin(nr,bez(jk),etl,phi,t,ix,k)
              goto 500
           endif
-+ei
-+if collimat.and.bnlelens
-          if(ithick.eq.0.and.kz(jk).ne.0) then
-             call writelin(nr,bez(ix),etl,phi,t,ix,k)
-             goto 500
-          endif
-!GRDRHIC
 +ei
 !--PURE DRIFTLENGTH
           etl=etl+el(jk)
@@ -46064,16 +46048,8 @@ c$$$               endif
 +if .not.collimat.and..not.bnlelens
           call writelin(nr,bez(jk),etl,phi,t,ix)
 +ei
-+if collimat.and..not.bnlelens
++if collimat.or.bnlelens
           call writelin(nr,bez(jk),etl,phi,t,ix,k)
-+ei
-+if .not.collimat.and.bnlelens
-!GRDRHIC
-          call writelin(nr,bez(jk),etl,phi,t,ix,k)
-+ei
-+if collimat.and.bnlelens
-          call writelin(nr,bez(jk),etl,phi,t,ix,k)
-!GRDRHIC
 +ei
           if(ntco.ne.0) then
             if(mod(nr,ntco).eq.0) call cpltwis(bez(jk),t,etl, phi)
@@ -46136,31 +46112,18 @@ c$$$               endif
 +if .not.collimat.and..not.bnlelens
           call writelin(nr,bez(jk),etl,phi,t,ix)
 +ei
-+if collimat.and..not.bnlelens
++if collimat.or.bnlelens
           call writelin(nr,bez(jk),etl,phi,t,ix,k)
-+ei
-+if .not.collimat.and.bnlelens
-!GRDRHIC
-          call writelin(nr,bez(jk),etl,phi,t,ix,k)
-+ei
-+if collimat.and.bnlelens
-          call writelin(nr,bez(jk),etl,phi,t,ix,k)
-!GRDRHIC
 +ei
           if(ntco.ne.0) then
             if(mod(nr,ntco).eq.0) call cpltwis(bez(jk),t,etl, phi)
           endif
-  150   continue
-+if collimat.and..not.bnlelens
-        call writelin(nr,bez(jk),etl,phi,t,ix,k)
+  150   continue !End of loop over elements inside block
++if .not.collimat.and..not.bnlelens
+        call writelin(nr,bez(ix),etl,phi,t,ix)
 +ei
-+if collimat.and.bnlelens
-!GRDRHIC
-        call writelin(nr,bez(jk),etl,phi,t,ix,k)
-+ei
-+if .not.collimat.and.bnlelens
-        call writelin(nr,bez(jk),etl,phi,t,ix,k)
-!GRDRHIC
++if collimat.or.bnlelens
+        call writelin(nr,bez(ix),etl,phi,t,ix,k)
 +ei
         goto 500
 !--BETACALCULATION FOR SERIES OF BLOCKS
