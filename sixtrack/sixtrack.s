@@ -28467,7 +28467,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca bnltwiss
 +ei
-!! WRITE COMMENT HERE
+          ! No if(ktrack(i).eq.1) - a BLOC - is needed in thin tracking,
+          ! as no dependency on ix in this case.
           ix=ic(i)-nblo
 +if bpm
 +ca bpmdata
@@ -29583,7 +29584,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca bnltwiss
 +ei
-!!! WRITE COMMENT HERE
+          ! No if(ktrack(i).eq.1) - a BLOC - is needed in thin tracking,
+          ! as no dependency on ix in this case.
           ix=ic(i)-nblo
 +if beamgas
 !YIL Call beamGas subroutine whenever a pressure-element is found
@@ -33033,7 +33035,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if bnlelens
 +ca bnltwiss
 +ei
-!!! COMMENT THIS
+          ! No if(ktrack(i).eq.1) - a BLOC - is needed in thin tracking,
+          ! as no dependency on ix in this case.
           ix=ic(i)-nblo
 +if bpm
 +ca bpmdata
