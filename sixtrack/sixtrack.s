@@ -26004,10 +26004,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         call envarsv(dpsv,oidpsv,rvv,ekv)
         if (idp.eq.0 .or. ition.eq.0) then
 ! ------- Only in case of thck4d
-          call blocksv
+          call blocksv !!!CAUSES NO LINK CONDITION!!!
         endif
       endif
 
+!!! DELETE THIS (BLOCK) -- already in BLOCKSV? !!!
 !-------------------------------------  START OF 'BLOCK'
       do 440 k=1,mblo
         jm=mel(k)
@@ -34130,11 +34131,11 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &' MOMENTUM DEVIATION ',g12.5 /5x,'REVOLUTION ',i8/)
 10010 format(10x,f47.33)
       end
+
       subroutine dump_beam_population( nturn, i, ix, unit, fmt,         &
      &  lhighprec )
-!
 !-----------------------------------------------------------------------
-!     by A.Mereghetti, D.Sinuela-Pastor & P.Garcia Ortega, for the FLUKA Team
+!     By A.Mereghetti, D.Sinuela-Pastor & P.Garcia Ortega, for the FLUKA Team
 !     K.Sjobak and A.Santamaria, BE-ABP-HSS
 !     last modified: 24-02-2015
 !     dump beam particles
@@ -34147,10 +34148,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     fmt       : Dump output format (0/1/2)
 !     lhighprec : High precission output y/n
 !-----------------------------------------------------------------------
-!
-+if fluka
-      use mod_fluka
-+ei
 
       implicit none
 
