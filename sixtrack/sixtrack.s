@@ -26665,6 +26665,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ei
 +ca comdynk
+      logical dynk_isused
 +ca save
 !-----------------------------------------------------------------------
       do 5 i=1,npart
@@ -26681,6 +26682,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         if(mout2.eq.1.and.i.eq.1) call write4
         ix=ic(i)
         if(ix.gt.nblo) goto 30
+        !BLOC
         ktrack(i)=1
         do 20 jb=1,mel(ix)
           jx=mtyp(ix,jb)
@@ -26688,6 +26690,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
    20   continue
         if(abs(strack(i)).le.pieni) ktrack(i)=31
         goto 290
+        !Non-linear/NOT BLOC
    30   ix=ix-nblo
         kpz=abs(kp(ix))
         if(kpz.eq.6) then
@@ -26754,70 +26757,70 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &       290,290,290,290,290,290,290,290,290,145,146),kzz
         ktrack(i)=31
         goto 290
-   50   if(abs(smiv(1,i)).le.pieni) then
+   50   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=11
 +ca stra01
         goto 290
-   60   if(abs(smiv(1,i)).le.pieni) then
+   60   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=12
 +ca stra02
         goto 290
-   70   if(abs(smiv(1,i)).le.pieni) then
+   70   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=13
 +ca stra03
         goto 290
-   80   if(abs(smiv(1,i)).le.pieni) then
+   80   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=14
 +ca stra04
         goto 290
-   90   if(abs(smiv(1,i)).le.pieni) then
+   90   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=15
 +ca stra05
         goto 290
-  100   if(abs(smiv(1,i)).le.pieni) then
+  100   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=16
 +ca stra06
         goto 290
-  110   if(abs(smiv(1,i)).le.pieni) then
+  110   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=17
 +ca stra07
         goto 290
-  120   if(abs(smiv(1,i)).le.pieni) then
+  120   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=18
 +ca stra08
         goto 290
-  130   if(abs(smiv(1,i)).le.pieni) then
+  130   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=19
 +ca stra09
         goto 290
-  140   if(abs(smiv(1,i)).le.pieni) then
+  140   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
@@ -26839,6 +26842,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
           if(abs(dki(ix,1)).le.pieni.and.abs(dki(ix,2)).le.pieni) then
+            if ( dynk_isused(i) ) then
++if cr
+              write(lout,*)
++ei
++if .not.cr
+              write(*,*)
++ei
+     &        "ERROR: Element of type 11 (bez=",bez(ix),
+     &        ") is off in fort.2, but on in DYNK. Not implemented."
+              call prror(-1)
+            endif
             ktrack(i)=31
           else if(abs(dki(ix,1)).gt.pieni.and.abs(dki(ix,2)).le.pieni)  &
      &then
@@ -26919,70 +26933,70 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         goto(190,200,210,220,230,240,250,260,270,280),kzz
         ktrack(i)=31
         goto 290
-  190   if(abs(smiv(1,i)).le.pieni) then
+  190   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=21
 +ca stra01
         goto 290
-  200   if(abs(smiv(1,i)).le.pieni) then
+  200   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=22
 +ca stra02
         goto 290
-  210   if(abs(smiv(1,i)).le.pieni) then
+  210   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=23
 +ca stra03
         goto 290
-  220   if(abs(smiv(1,i)).le.pieni) then
+  220   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=24
 +ca stra04
         goto 290
-  230   if(abs(smiv(1,i)).le.pieni) then
+  230   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=25
 +ca stra05
         goto 290
-  240   if(abs(smiv(1,i)).le.pieni) then
+  240   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=26
 +ca stra06
         goto 290
-  250   if(abs(smiv(1,i)).le.pieni) then
+  250   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=27
 +ca stra07
         goto 290
-  260   if(abs(smiv(1,i)).le.pieni) then
+  260   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=28
 +ca stra08
         goto 290
-  270   if(abs(smiv(1,i)).le.pieni) then
+  270   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=29
 +ca stra09
         goto 290
-  280   if(abs(smiv(1,i)).le.pieni) then
+  280   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
@@ -34301,6 +34315,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca beamdim
       dimension nbeaux(nbb)
 +ca comdynk
+      logical dynk_isused
 +ca save
 !-----------------------------------------------------------------------
       do 5 i=1,npart
@@ -34317,12 +34332,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         if(mout2.eq.1.and.i.eq.1) call write4
         ix=ic(i)
         if(ix.gt.nblo) goto 30
+        !BLOC
         ktrack(i)=1
         do 20 jb=1,mel(ix)
           jx=mtyp(ix,jb)
           strack(i)=strack(i)+el(jx)
    20   continue
         if(abs(strack(i)).le.pieni) ktrack(i)=31
+        !Non-linear/NOT BLOC
         goto 290
    30   ix=ix-nblo
         kpz=abs(kp(ix))
@@ -34390,70 +34407,70 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &       290,290,290,290,290,290,290,290,290,145,146),kzz
         ktrack(i)=31
         goto 290
-   50   if(abs(smiv(1,i)).le.pieni) then
+   50   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=11
 +ca stra01
         goto 290
-   60   if(abs(smiv(1,i)).le.pieni) then
+   60   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=12
 +ca stra02
         goto 290
-   70   if(abs(smiv(1,i)).le.pieni) then
+   70   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=13
 +ca stra03
         goto 290
-   80   if(abs(smiv(1,i)).le.pieni) then
+   80   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=14
 +ca stra04
         goto 290
-   90   if(abs(smiv(1,i)).le.pieni) then
+   90   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=15
 +ca stra05
         goto 290
-  100   if(abs(smiv(1,i)).le.pieni) then
+  100   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=16
 +ca stra06
         goto 290
-  110   if(abs(smiv(1,i)).le.pieni) then
+  110   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=17
 +ca stra07
         goto 290
-  120   if(abs(smiv(1,i)).le.pieni) then
+  120   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=18
 +ca stra08
         goto 290
-  130   if(abs(smiv(1,i)).le.pieni) then
+  130   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
         ktrack(i)=19
 +ca stra09
         goto 290
-  140   if(abs(smiv(1,i)).le.pieni) then
+  140   if(abs(smiv(1,i)).le.pieni .and. .not.dynk_isused(i)) then
           ktrack(i)=31
           goto 290
         endif
@@ -37993,6 +38010,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &zfz(izu-2),zfz(izu-1),zfz(izu),extalign(i,3)
         endif
         if(kzz.eq.11) then
+          !Very similar to block "multini"
           r0=ek(ix)
           if(abs(r0).le.pieni) goto 60
           nmz=nmu(ix)
@@ -45589,6 +45607,65 @@ c$$$               endif
 +ei
       call prror(-1)
 
+      end function
+
+      logical function dynk_isused(i)
+!
+!-----------------------------------------------------------------------
+!     K. Sjobak, ABP-HSS, 23-01-2015
+!     Indicates whether a structure element is in use by DYNK
+!-----------------------------------------------------------------------
+      
+      implicit none
+
++ca parpro
++ca common
++ca comdynk
++if cr
++ca crcoall
++ei
+
+      integer, intent(in) :: i
+      integer ix,k
+      character(maxstrlen_dynk) element_name_stripped
+
+      character(maxstrlen_dynk) dynk_stringzerotrim
+
+      !Sanity check
+      if (i .gt. iu .or. i .le. 0) then
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &        "Error in dynk_isused(): i=",i,"out of range"
+         call prror(-1)
+      endif
+      ix = ic(i)-nblo
+      if (i .le. 0) then
++if cr
+         write (lout,*)
++ei
++if .not.cr
+         write (*,*)
++ei
+     &        "Error in dynk_isused(): ix-nblo=",ix,"is a block?"
+         call prror(-1)
+      endif
+      
+      do k=1,nsets_unique_dynk
+         element_name_stripped =
+     &        trim(dynk_stringzerotrim(csets_unique_dynk(k,1)))
+         if (bez(ix) .eq. element_name_stripped) then
+            dynk_isused = .true.
+            return
+         endif
+      end do
+      
+      dynk_isused = .false.
+      return
+      
       end function
 
 +dk cadcum
