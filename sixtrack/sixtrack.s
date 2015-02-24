@@ -32322,12 +32322,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRD END OF UPGRADE
 !GRD
 
-+if collimat
-	!Delete this: always end up at 650 anyway, lose DUMPLINES
-          kpz=abs(kp(ix))
-          if(kpz.eq.0) goto 650
-          if(kpz.eq.1) goto 650
-+ei
+!A.Megreghetti & K.Sjobak:
+!This code is pointless: If collimat is true,
+! then the only effect is to skip dumplines, which is new.
+! Thus before the addition of dumplines, it was basically a NOP.
+!+if collimat
+!          kpz=abs(kp(ix))
+!          if(kpz.eq.0) goto 650
+!          if(kpz.eq.1) goto 650
+!+ei
 
 +if .not.collimat
 +ca lostpart
