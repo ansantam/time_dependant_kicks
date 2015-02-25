@@ -1101,9 +1101,11 @@
       integer dumpunit                       ! fortran unit for dump at a
                                              !   flagged SINGLE ELEMENT
       integer dumpfmt                        ! flag the format of the dump
+
+      character dump_fname (0:nele)*(getfields_l_max_string)
       
       common /dumpdb/ ldump(0:nele), ndumpt(0:nele), dumpunit(0:nele),
-     &                dumpfmt(0:nele), ldumphighprec
+     &                dumpfmt(0:nele), ldumphighprec, dump_fname
 +cd dbdumpcr
       !For resetting file positions
       integer dumpfilepos, dumpfilepos_cr
@@ -9927,6 +9929,7 @@ cc2008
       implicit none
 +ca parpro
 +ca common
++ca comgetfields
 +ca dbdump
 +ca comdynk
       integer i
@@ -13169,6 +13172,7 @@ cc2008
 +if bnlelens
 +ca rhicelens
 +ei
++ca comgetfields
 +ca dbdump
 +ca comdynk
 
@@ -13192,8 +13196,6 @@ cc2008
 !     - dynamic kicks
       character*16 dynk
       data dynk /'DYNK'/
-
-+ca   comgetfields
 
 +ca save
 !-----------------------------------------------------------------------
@@ -17854,10 +17856,12 @@ cc2008
 !-----------------------------------------------------------------------
  2000 read(3,10020,end=1530,iostat=ierro) ch
       if(ierro.gt.0) call prror(58)
+      lineno3=lineno3+1 ! Line number used for some crash output
 
-      if(ch(1:1).eq.'/') goto 2000
+      if(ch(1:1).eq.'/') goto 2000 !Skip comment line
+
+      !Done with DUMP, write out!
       if(ch(:4).eq.next) then
-
         ! HEADER
 +if cr
         write(lout,10460) dump
@@ -17886,7 +17890,7 @@ cc2008
 !           write(lout,'(t10,a50)')
 !     &          ' required dump at ALL SINGLE ELEMENTs'
            write(lout,10470) 'ALL SING. ELEMS.', ndumpt(0),
-     &          dumpunit(0), dumpfmt(0)
+     &          dumpunit(0), dump_fname(0), dumpfmt(0)
         endif
 +ei
 +if .not.cr
@@ -17894,7 +17898,7 @@ cc2008
 !           write(*,'(t10,a50)')
 !     &          ' required dump at ALL SINGLE ELEMENTs'
            write(*,10470) 'ALL SING. ELEMS.', ndumpt(0),
-     &          dumpunit(0), dumpfmt(0)
+     &          dumpunit(0), dump_fname(0), dumpfmt(0)
         endif
 +ei
         do ii=1,il
@@ -17905,7 +17909,7 @@ cc2008
 +if .not.cr
             write(*,10470)
 +ei
-     &            bez(ii), ndumpt(ii), dumpunit(ii),dumpfmt(ii)
+     &     bez(ii), ndumpt(ii), dumpunit(ii),dump_fname(ii), dumpfmt(ii)
       
 !           At which structure indices is this single element found? (Sanity check)
             kk = 0
@@ -17966,16 +17970,58 @@ cc2008
       i2 = 0
       i3 = 0
 
-      lineno3=lineno3+1
-      ch1(:83)=ch(:80)//' / '
-
       if(ch1(:4).eq.'HIGH') then
         ldumphighprec = .true.
         goto 2000
       endif
 
 !     requested element
-      read(ch1,*) idat, i1, i2, i3
+      call getfields_split( ch, getfields_fields, getfields_lfields,
+     &        getfields_nfields, getfields_lerr )
+      if ( getfields_lerr ) call prror(51)
+      
+      if (.not. ((getfields_nfields .eq. 4) .or. 
+     &           (getfields_nfields .eq. 5))    ) then
++if cr
+         write(lout,*) "ERROR in DUMP:"
+         write(lout,*) "Expected 4 or 5 arguments, got",
+     &        getfields_nfields
++ei
++if .not.cr
+         write(*,*)    "ERROR in DUMP:"
+         write(*,*)    "Expected 4 or 5 arguments, got",
+     &        getfields_nfields
++ei
+         call prror(-1)
+      endif
+      if (getfields_lfields(1) > 16) then
++if cr
+         write(lout,*) "ERROR in DUMP:"
+         write(lout,*) "element names are max. 16 characters"
++ei
++if .not.cr
+         write(*,*)    "ERROR in DUMP:"
+         write(*,*) "element names are max. 16 characters"
++ei
+         call prror(-1)
+
+      endif
+      idat = getfields_fields(1)(1:getfields_lfields(1))
+      read(getfields_fields(2)(1:getfields_lfields(2)),*) i1
+      read(getfields_fields(3)(1:getfields_lfields(3)),*) i2
+      read(getfields_fields(4)(1:getfields_lfields(4)),*) i3
+      if (getfields_nfields .eq. 4) then
+         !Automatic fname
+         write(ch1,"(a5,I0)") "fort.", i2
+      else if (getfields_nfields .eq. 5) then
+         !Given fname
+         ch1(1:getfields_lfields(5)) = 
+     &        getfields_fields(5)(1:getfields_lfields(5))
+      else
+         !ERROR
+         call prror(-1)
+      endif
+      
 !     find it in the list of SINGLE ELEMENTs:
       do j=1,il
          if(bez(j).eq.idat) goto 2001
@@ -18009,6 +18055,7 @@ cc2008
       if (ndumpt(j).le.0) ndumpt(j)=1
       dumpunit(j) = i2
       dumpfmt(j)  = i3
+      dump_fname(j) = ch1
 !     go to next line
       goto 2000
 
@@ -18021,6 +18068,7 @@ cc2008
 !-----------------------------------------------------------------------
  2200 read(3,10020,end=1530,iostat=ierro) ch
       if(ierro.gt.0) call prror(51)
+      lineno3 = lineno3+1 ! Line number used for some crash output
 
       if(ch(1:1).eq.'/') goto 2200 ! skip comment line
 
@@ -18618,7 +18666,8 @@ cc2008
 10430 format(/5x,'No cut on random distribution'//)
 10440 format(/5x,'Random distribution has been cut to: ',i4,' sigma.'//)
 10460 format(//131('-')//t10,'DATA BLOCK ',a4,' INFOs'/ /t10,           &
-     &'NAME',16x,'EVERY # TURNs',2x,'LOGICAL UNIT') !DUMP/STAT/BMAT
+     &'ELEMENT NAME',8x,'EVERY # TURNs',2x,
+     &'LOGICAL UNIT',2x,'FILENAME',24x,'FORMAT') !DUMP/STAT/BMAT
 10070 format(1x,i3,1x,a16,1x,i3,1x,d16.10,1x,d16.10,1x,d16.10,1x,d13.7, &
      &1x,d12.6,1x,d13.7,1x,d12.6)
 10210 format(t10,'DATA BLOCK MULTIPOLE COEFFICIENTS'/ t10,              &
@@ -18638,8 +18687,8 @@ cc2008
      &'   |    ',a16,'   |               |               |')
 10400 format(5x,'| ELEMENTS |                              |          ' &
      &,'     |               |    ',a16,'   |    ',a16,'   |')
-10470 format(t10,a16,4x,i13,2x,i12,2x,i12) !BMAT/STAT/DUMP
-10472 format(t10,a)                        !BMAT/STAT/DUMP
+10470 format(t10,a16,4x,i13,2x,i12,2x,a32,i6) !BMAT/STAT/DUMP
+10472 format(t10,a)                           !BMAT/STAT/DUMP
 10700 format(t10,'DATA BLOCK TROMBONE ELEMENT'/                         &
      &t10,'TROMBONE #      NAME'/)
 10710 format(t22,i4,5x,a16)
@@ -24451,6 +24500,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if cr
 +ca crco
 +ei
++ca comgetfields
 +ca dbdump
 +if cr
 +ca dbdumpcr
@@ -26070,7 +26120,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !         the same file could be used by more than one SINGLE ELEMENT
           inquire( unit=dumpunit(i), opened=lopen )
           if ( .not.lopen ) then
-             open(dumpunit(i),form='formatted')
+             open(dumpunit(i),file=dump_fname(i),form='formatted')
 +if cr
              dumpfilepos(i) = 0
 +ei
@@ -26123,6 +26173,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
      & "ERROR in DUMP: ouput unit",dumpunit(i), " used by two DUMPS,",
      & " one of which is ALL"
+                      call prror(-1)
+                   else if (dump_fname(j).ne.dump_fname(i)) then
++if cr
+                      write(lout,*)
++ei
++if .not.cr
+                      write(*,*)
++ei
+     & "ERROR in DUMP: Output unit",dumpunit(i),"is used by to DUMPS,"//
+     & " but filenames differ:", dump_fname(i), " vs ", dump_fname(j)
                       call prror(-1)
                    else
                       ! Everything is fine
@@ -28395,6 +28455,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
++ca comgetfields
 +ca dbdump
 +ca comdynk
 +ca dbdcum
@@ -28931,6 +28992,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
++ca comgetfields
 +ca dbdump
 +ca comdynk
 +ca dbdcum
@@ -32960,6 +33022,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
++ca comgetfields
 +ca dbdump
 +ca comdynk
 +ca dbdcum
@@ -34160,6 +34223,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca commontr
 +ca dbdcum
 +if cr
++ca comgetfields
 +ca dbdump
 +ca dbdumpcr
 +ei
@@ -34750,6 +34814,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
++ca comgetfields
 +ca dbdump
 +ca comdynk
 +ca save
@@ -35279,6 +35344,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !GRDRHIC
 !GRD-042008
 +ei
++ca comgetfields
 +ca dbdump
 +ca comdynk
 +ca save
@@ -35955,6 +36021,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ca bnlio
 +ei
++ca comgetfields
 +ca dbdump
 +ca comdynk
 +ca save
@@ -38495,6 +38562,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca rhicelens
 +ei
 +ca dbdcum
++ca comgetfields
 +ca dbdump
 +ca comdynk
 +ca save
@@ -39017,6 +39085,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         ndumpt(i)   = 0
         dumpunit(i) = 0
 	dumpfmt(i)  = 0
+        do j=1,getfields_l_max_string
+           dump_fname(i)(j:j) = char(0)
+        enddo
       enddo
 !--DYNAMIC KICKS--------------------------------------------------------
 !     A.Mereghetti, for the FLUKA Team
@@ -65414,6 +65485,7 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 +ca crco
 +ca comdynk
 +ca comdynkcr
++ca comgetfields
 +ca dbdump
 +ca dbdumpcr
       integer i,j,k,l,m,ia
@@ -66038,7 +66110,8 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
             
             inquire( unit=dumpunit(i), opened=lopen )
             if ( .not. lopen )
-     &           open(dumpunit(i),form='formatted',action='readwrite')
+     &           open(dumpunit(i),file=dump_fname(i),
+     &                form='formatted',action='readwrite')
 
             dumpfilepos(i) = 0
  702        read(dumpunit(i),'(a255)',end=111,err=111,iostat=istat)
