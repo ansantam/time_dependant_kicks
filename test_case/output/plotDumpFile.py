@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-import os
+import os,sys
 
 # fileDType = np.dtype([('ID', np.int), ('turn', np.int),
 #                       ('s', np.float),('x', np.float),('xp', np.float),('z', np.float),
@@ -78,8 +78,11 @@ def get_turndata(fdata, turn):
             rdata.append(fdata[j])
     return rdata
     
-(fdata,turnIdxs) = readdumpfile("../fort.660") #IP1
+#(fdata,turnIdxs) = readdumpfile("../fort.660") #IP1
+#(fdata,turnIdxs) = readdumpfile("../IP1_DUMP.dat") #IP1
 #(fdata,turnIdxs) = readdumpfile("../fort.661") #CRAB5
+
+(fdata,turnIdxs) = readdumpfile(sys.argv[1])
 
 plot_particleNum(fdata,turnIdxs)
 
@@ -116,8 +119,8 @@ for t in xrange(1,10000000):
     plt.scatter(tdata['z'], tdata['x'], c=tdata['ID'],cmap='rainbow',s=20)
     plt.xlabel("z [mm]")
     plt.ylabel("x [mm]")
-    plt.xlim(-200,200)
-    plt.ylim(-0.05,0.05)
+    plt.xlim(min(fdata[:]['z']),max(fdata[:]['z']))
+    plt.ylim(min(fdata[:]['x']),max(fdata[:]['x']))
 
     plt.savefig("pngs/zx_%05i.png" % (t))
 
@@ -128,8 +131,8 @@ for t in xrange(1,10000000):
     plt.scatter(tdata['x'], tdata['y'], c=tdata['ID'],cmap='rainbow',s=20)
     plt.xlabel("x [mm]")
     plt.ylabel("y [mm]")
-    plt.xlim(-0.05,0.05)
-    plt.ylim(-0.25,0.25)
+    plt.xlim(min(fdata[:]['x']),max(fdata[:]['x']))
+    plt.ylim(min(fdata[:]['y']),max(fdata[:]['y']))
     
     plt.savefig("pngs/xy_%05i.png" % (t))
 
@@ -139,10 +142,22 @@ for t in xrange(1,10000000):
     plt.scatter(tdata['x'], tdata['xp'], c=tdata['ID'],cmap='rainbow',s=20)
     plt.xlabel("x [mm]")
     plt.ylabel("xp [mrad]")
-    plt.xlim(-0.05,0.05)
-    plt.ylim(-0.25,0.25)
+    plt.xlim(min(fdata[:]['x']),max(fdata[:]['x']))
+    plt.ylim(min(fdata[:]['xp']),max(fdata[:]['xp']))
     
     plt.savefig("pngs/xxp_%05i.png" % (t))
+
+    plt.clf()
+    plt.title("TURN =" + str(t))
+    #plt.plot(tdata['x'], tdata['xp'],'+')
+    plt.scatter(tdata['y'], tdata['yp'], c=tdata['ID'],cmap='rainbow',s=20)
+    plt.xlabel("y [mm]")
+    plt.ylabel("yp [mrad]")
+    plt.xlim(min(fdata[:]['y']),max(fdata[:]['y']))
+    plt.ylim(min(fdata[:]['yp']),max(fdata[:]['yp']))
+    
+    plt.savefig("pngs/yyp_%05i.png" % (t))
+
 
     continue
 
