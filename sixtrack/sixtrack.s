@@ -25999,16 +25999,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         call prror(79)
       endif
 
-      if(ithick.eq.1) then
-!------ Compute matrices for linear tracking
-        call envarsv(dpsv,oidpsv,rvv,ekv)
-        if (idp.eq.0 .or. ition.eq.0) then
-! ------- Only in case of thck4d
-          call blocksv !!!CAUSES NO LINK CONDITION - subroutine not present?!!!
-        endif
-      endif
+      if(ithick.eq.1) call envarsv(dpsv,oidpsv,rvv,ekv)
 
-!!! DELETE THIS (BLOCK) -- already in BLOCKSV? !!!
+!!! Really only neccessary for thick 4d tracking !!!
+!!! In FLUKA version, moved to new subroutine "blocksv"
 !-------------------------------------  START OF 'BLOCK'
       do 440 k=1,mblo
         jm=mel(k)
