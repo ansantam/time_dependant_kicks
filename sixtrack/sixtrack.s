@@ -26004,7 +26004,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         call envarsv(dpsv,oidpsv,rvv,ekv)
         if (idp.eq.0 .or. ition.eq.0) then
 ! ------- Only in case of thck4d
-          call blocksv !!!CAUSES NO LINK CONDITION!!!
+          call blocksv !!!CAUSES NO LINK CONDITION - subroutine not present?!!!
         endif
       endif
 
@@ -34486,6 +34486,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         nmz=nmu(ix)
         if(abs(r0).le.pieni.or.nmz.eq.0) then
           if(abs(dki(ix,1)).le.pieni.and.abs(dki(ix,2)).le.pieni) then
+            if ( dynk_isused(i) ) then
++if cr
+              write(lout,*)
++ei
++if .not.cr
+              write(*,*)
++ei
+     &        "ERROR: Element of type 11 (bez=",bez(ix),
+     &        ") is off in fort.2, but on in DYNK. Not implemented."
+              call prror(-1)
+            endif
             ktrack(i)=31
           else if(abs(dki(ix,1)).gt.pieni.and.abs(dki(ix,2)).le.pieni)  &
      &then
