@@ -34821,13 +34821,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               ix=ic(i)
             else
               ix=ic(i)-nblo
-            endif
 +if bpm
 +ca bpmdata
 +ei bpm
 +if time
 +ca timefct
 +ei
+	    endif
 
 !----------count=43
             goto(20,480,740,480,480,480,480,480,480,480,40,60,80,100,   &
@@ -35371,13 +35371,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               ix=ic(i)
             else
               ix=ic(i)-nblo
-            endif
 +if bpm
 +ca bpmdata
 +ei bpm
 +if time
 +ca timefct
 +ei
+            endif
 
 +if debug
 !     if (i.ge.673) then
@@ -36030,13 +36030,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               ix=ic(i)
             else
               ix=ic(i)-nblo
-            endif
 +if bpm
 +ca bpmdata
 +ei bpm
 +if time
 +ca timefct
 +ei
+            endif
 
 !----------count 56
             goto(20,40,740,500,500,500,500,500,500,500,60,80,100,120,   &
