@@ -46190,18 +46190,10 @@ c$$$               endif
   180   phi(l)=phi(l)+dphi/pie
         nr=nr+1
 +if .not.collimat.and..not.bnlelens
-          call writelin(nr,bezb(ix),etl,phi,t,ix)
+        call writelin(nr,bezb(ix),etl,phi,t,ix)
 +ei
-+if collimat.and..not.bnlelens
-          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
-+ei
-+if .not.collimat.and.bnlelens
-!GRDRHIC
-          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
-+ei
-+if collimat.and.bnlelens
-          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
-!GRDRHIC
++if collimat.or.bnlelens
+        call writelin(nr,bezb(ix),etl,phi,t,ix,k)
 +ei
         if(ntco.ne.0) then
           if(mod(nr,ntco).eq.0) call cpltwis(bezb(ix),t,etl,phi)
@@ -46260,18 +46252,10 @@ c$$$               endif
   210   phi(l)=phi(l)+dphi/pie
         nr=nr+1
 +if .not.collimat.and..not.bnlelens
-          call writelin(nr,bezb(ix),etl,phi,t,ix)
+        call writelin(nr,bezb(ix),etl,phi,t,ix)
 +ei
-+if collimat.and..not.bnlelens
-          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
-+ei
-+if .not.collimat.and.bnlelens
-!GRDRHIC
-          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
-+ei
-+if collimat.and.bnlelens
-          call writelin(nr,bezb(ix),etl,phi,t,ix,k)
-!GRDRHIC
++if collimat.or.bnlelens
+        call writelin(nr,bezb(ix),etl,phi,t,ix,k)
 +ei
         if(ntco.ne.0) then
           if(mod(nr,ntco).eq.0) call cpltwis(bezb(ix),t,etl,phi)
@@ -46285,27 +46269,26 @@ c$$$               endif
         dyy2=zero
         kpz=kp(ix)
 +if .not.collimat.and..not.bnlelens
-        if(kpz.eq.6) goto 500
-+ei
-+if collimat.and..not.bnlelens
         if(kpz.eq.6) then
-           call writelin(nr,bez(jk),etl,phi,t,ix,k)
-           goto 500
+
+!         A.Mereghetti, for the FLUKA Team
+!         last modified: 17-07-2013
+!         let's dump the available information (as done in the collimation
+!           version)
+          nr=nr+1
+          call writelin(nr,bez(ix),etl,phi,t,ix)
+          if(ntco.ne.0) then
+            if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
+          endif
+
+          goto 500
         endif
 +ei
-+if collimat.and.bnlelens
-!GRDRHIC
++if collimat.or.bnlelens
         if(kpz.eq.6) then
-           call writelin(nr,bez(jk),etl,phi,t,ix,k)
+           call writelin(nr,bez(ix),etl,phi,t,ix,k)
            goto 500
         endif
-+ei
-+if .not.collimat.and.bnlelens
-        if(kpz.eq.6) then
-           call writelin(nr,bez(jk),etl,phi,t,ix,k)
-           goto 500
-        endif
-!GRDRHIC
 +ei
         kzz=kz(ix)
         if(kzz.eq.20.and.nbeam.ge.1) then
@@ -46314,40 +46297,30 @@ c$$$               endif
 +if .not.collimat.and..not.bnlelens
           call writelin(nr,bez(ix),etl,phi,t,ix)
 +ei
-+if collimat.and..not.bnlelens
++if collimat.or.bnlelens
           call writelin(nr,bez(ix),etl,phi,t,ix,k)
 +ei
-+if .not.collimat.and.bnlelens
-!GRDRHIC
-          call writelin(nr,bez(ix),etl,phi,t,ix,k)
-+ei
-+if collimat.and.bnlelens
-          call writelin(nr,bez(ix),etl,phi,t,ix,k)
-!GRDRHIC
-+ei
+!         A.Mereghetti, for the FLUKA Team
+!         last modified: 17-07-2013
+!         let's add coupling calculation
+          if(ntco.ne.0) then
+            if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
+          endif
+          goto 500
+
         endif
 +ca trom01
 +ca trom03
 +ca trom06
-+if collimat.and..not.bnlelens
-        if(kzz.eq.0.or.kzz.eq.20.or.kzz.eq.22) then
-          call writelin(nr,bez(ix),etl,phi,t,ix,k)
-          goto 500
-        endif
-+ei
-+if collimat.and.bnlelens
++if collimat.or.bnlelens
 !GRDRHIC
         if(kzz.eq.0.or.kzz.eq.20.or.kzz.eq.22) then
           call writelin(nr,bez(ix),etl,phi,t,ix,k)
           goto 500
         endif
-+ei
-+if .not.collimat.and.bnlelens
-        if(kzz.eq.0.or.kzz.eq.20.or.kzz.eq.22) then
-          call writelin(nr,bez(ix),etl,phi,t,ix,k)
-          goto 500
-        endif
-!GRDRHIC
+! JBG RF CC Multipoles to 500
+        if(kzz.eq.26.or.kzz.eq.27.or.kzz.eq.28) goto 500
+        if(kzz.eq.-26.or.kzz.eq.-27.or.kzz.eq.-28) goto 500
 +ei
 +if .not.collimat.and..not.bnlelens
         if(kzz.eq.0.or.kzz.eq.20.or.kzz.eq.22) goto 500
@@ -46365,19 +46338,20 @@ c$$$               endif
         zs=zpl(ix)+zfz(izu)*zrms(ix)
 +ca alignl
         if(kzz.lt.0) goto 370
-        goto(230,240,250,260,270,280,290,300,310,320,330,500,500,500,   &
-     &      500,500,500,500,500,500,500,500,500,325,326,500,500,500),kzz
-+if collimat.and..not.bnlelens
+        goto(230, 240, 250, 260, 270, 280, 290, 300, 310, 320, !10
+     &       330, 500, 500, 500, 500, 500, 500, 500, 500, 500, !20
+     &       500, 500, 500, 325, 326, 500, 500, 500),kzz       !28
+
++if .not.collimat.and..not.bnlelens
+        call writelin(nr,bez(ix),etl,phi,t,ix)
++ei
++if collimat.or.bnlelens
         call writelin(nr,bez(ix),etl,phi,t,ix,k)
 +ei
-+if collimat.and.bnlelens
-!GRDRHIC
-        call writelin(nr,bez(ix),etl,phi,t,ix,k)
-+ei
-+if .not.collimat.and.bnlelens
-        call writelin(nr,bez(ix),etl,phi,t,ix,k)
-!GRDRHIC
-+ei
+! Not sure whether to add this
+!        if(ntco.ne.0) then
+!          if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
+!        endif
         goto 500
 !--HORIZONTAL DIPOLE
   230   ekk=ekk*c1e3
@@ -46504,21 +46478,25 @@ c$$$               endif
         nmz=nmu(ix)
         if(nmz.eq.0) then
           izu=izu+2*mmul
-+if collimat.and..not.bnlelens
+          nr=nr+1
++if collimat.or.bnlelens
 ! --> THAT'S THE IMPORTANT ONE !!!!
-         call writelin(nr,bez(jk),etl,phi,t,ix,k)
+          call writelin(nr,bez(ix),etl,phi,t,ix,k)
 +ei
-+if collimat.and.bnlelens
-!GRDRHIC
-! --> THAT'S THE IMPORTANT ONE !!!!
-         call writelin(nr,bez(jk),etl,phi,t,ix,k)
+
++if .not.collimat.and..not.bnlelens
+!         A.Mereghetti, for the FLUKA Team
+!         last modified: 17-07-2013
+!         let's dump the available information (as done in the collimation
+!           version)
+          call writelin(nr,bez(ix),etl,phi,t,ix)
 +ei
-+if .not.collimat.and.bnlelens
-! --> THAT'S THE IMPORTANT ONE !!!!
-         call writelin(nr,bez(jk),etl,phi,t,ix,k)
-!GRDRHIC
-+ei
-         goto 500
+! Not sure??
+!          if(ntco.ne.0) then
+!            if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
+!          endif
+
+          goto 500
         endif
         im=irm(ix)
         r0a=one
@@ -46539,9 +46517,21 @@ c$$$               endif
 +ei
         izu=izu+2*mmul-2*nmz
         goto 480
+
+
 !--SKEW ELEMENTS
   370   kzz=-kzz
         goto(380,390,400,410,420,430,440,450,460,470),kzz
++if .not.collimat.and..not.bnlelens
+        call writelin(nr,bez(ix),etl,phi,t,ix)
++ei
++if collimat.or.bnlelens
+        call writelin(nr,bez(ix),etl,phi,t,ix,k)
++ei
+!Unsure???
+!        if(ntco.ne.0) then
+!          if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
+!        endif
         goto 500
 !--VERTICAL DIPOLE
   380   ekk=ekk*c1e3
@@ -46628,6 +46618,8 @@ c$$$               endif
 +ca kickq10v
 +ca kicksho
 +ca kicklxxv
+
+!After processing an element: go here!
   480   continue
         t(6,2)=t(6,2)-dyy1/(one+dpp)
         t(6,4)=t(6,4)-dyy2/(one+dpp)
@@ -46649,7 +46641,6 @@ c$$$               endif
             t(i,4)=(t(i,4)-t(i,3)*qu)-qv*t(i,1)                          !hr06
           endif
   490   continue
-        nr=nr+1
 !hr06   bexi=t(2,1)*t(2,1)+t(3,1)*t(3,1)
         bexi=t(2,1)**2+t(3,1)**2                                         !hr06
 !hr06   bezii=t(4,3)*t(4,3)+t(5,3)*t(5,3)
@@ -46670,19 +46661,12 @@ c$$$               endif
             write(34,10070) etl,bez(ix),kz(ix),ekk,bexi,bezii,phi
           endif
         endif
+        nr=nr+1
 +if .not.collimat.and..not.bnlelens
-          call writelin(nr,bez(ix),etl,phi,t,ix)
+        call writelin(nr,bez(ix),etl,phi,t,ix)
 +ei
-+if collimat.and..not.bnlelens
-          call writelin(nr,bez(ix),etl,phi,t,ix,k)
-+ei
-+if .not.collimat.and.bnlelens
-!GRDRHIC
-          call writelin(nr,bez(ix),etl,phi,t,ix,k)
-+ei
-+if collimat.and.bnlelens
-          call writelin(nr,bez(ix),etl,phi,t,ix,k)
-!GRDRHIC
++if collimat.or.bnlelens
+        call writelin(nr,bez(ix),etl,phi,t,ix,k)
 +ei
         if(ntco.ne.0) then
           if(mod(nr,ntco).eq.0) call cpltwis(bez(ix),t,etl,phi)
