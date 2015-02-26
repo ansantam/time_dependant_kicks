@@ -17986,12 +17986,16 @@ cc2008
          write(lout,*) "ERROR in DUMP:"
          write(lout,*) "Expected 4 or 5 arguments, got",
      &        getfields_nfields
+         write(lout,*)
 +ei
 +if .not.cr
          write(*,*)    "ERROR in DUMP:"
          write(*,*)    "Expected 4 or 5 arguments, got",
      &        getfields_nfields
+         write(*,*)
 +ei
+     &        ("'"//getfields_fields(kk)(1:getfields_lfields(kk))//"' ",
+     &        kk=1,getfields_nfields)
          call prror(-1)
       endif
       if (getfields_lfields(1) > 16) then
@@ -26052,7 +26056,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       if(ithick.eq.1) call envarsv(dpsv,oidpsv,rvv,ekv)
 
 !!! Really only neccessary for thick 4d tracking !!!
-!!! In FLUKA version, moved to new subroutine "blocksv"
+!!! In FLUKA version, this is moved to new subroutine "blocksv" (in a new deck)
 !-------------------------------------  START OF 'BLOCK'
       do 440 k=1,mblo
         jm=mel(k)
@@ -28393,7 +28397,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           write(lout,*) 'Calling thin6d subroutine'
           write(lout,*) ''
 +ei
-+if .not. cr
++if .not.cr
           write(*,*)    ''
           write(*,*)    'Calling thin6d subroutine'
           write(*,*)    ''
@@ -28526,6 +28530,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           ! No if(ktrack(i).eq.1) - a BLOC - is needed in thin tracking,
           ! as no dependency on ix in this case.
           ix=ic(i)-nblo
+!Should this be inside "if ktrack .ne. 1"? (time/bpm)
 +if bpm
 +ca bpmdata
 +ei bpm
@@ -29654,6 +29659,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          endif
       endif
 +ei beamgas
+!Should this be inside "if ktrack .ne. 1"? (time/bpm)
 +if bpm
 +ca bpmdata
 +ei bpm
@@ -32395,7 +32401,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
 +ca dumplines
 
-  650   continue
+ 650  continue !END loop over structure elements
+
 !GRD
 !UPGRADE JANUARY 2005
 !GRD
@@ -32696,6 +32703,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
               ipart(imov) = ipart(j)
 !MAY2005
               flukaname(imov) = flukaname(j)
+!KNS: Also compact nlostp (used for standard LOST calculations + output)
+              nlostp(imov) = nlostp(j)
 !MAY2005
 !GRD
               do ieff = 1, numeff
@@ -33099,6 +33108,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
           ! No if(ktrack(i).eq.1) - a BLOC - is needed in thin tracking,
           ! as no dependency on ix in this case.
           ix=ic(i)-nblo
+!Should this be inside "if ktrack .ne. 1"? (time/bpm)
 +if bpm
 +ca bpmdata
 +ei bpm
@@ -34222,11 +34232,21 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca commonm1
 +ca commontr
 +ca dbdcum
+
 +if cr
 +ca comgetfields
 +ca dbdump
 +ca dbdumpcr
 +ei
+
++if collimat
++ca collpara
++ca dbcommon
++ei
++if .not.collimat
+      integer, parameter :: samplenumber = 1
++ei
+
 
 !     temporary variables
       integer j
@@ -34271,13 +34291,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       else if (fmt .eq. 1) then
         if ( lhighprec ) then
             do j=1,napx
-               write(unit,1983) nlostp(j), nturn, dcum(i), xv(1,j),     &
-     &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
+               write(unit,1983) nlostp(j)+(samplenumber-1)*npart,
+     &              nturn, dcum(i), xv(1,j),
+     &              yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
             enddo
          else
             do j=1,napx
-               write(unit,1984) nlostp(j), nturn, dcum(i), xv(1,j),     &
-     &yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
+               write(unit,1984) nlostp(j)+(samplenumber-1)*npart,
+     &              nturn, dcum(i), xv(1,j),
+     &              yv(1,j), xv(2,j), yv(2,j), (ejv(j)-e0)/e0, ktrack(i)
             enddo
          endif
          
@@ -34292,13 +34314,15 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       else if (fmt .eq. 2) then
          if ( lhighprec ) then
             do j=1,napx
-               write(unit,1985) nlostp(j), nturn, dcum(i), xv(1,j),     &
+               write(unit,1985) nlostp(j)+(samplenumber-1)*npart,
+     &              nturn, dcum(i), xv(1,j),
      &              yv(1,j), xv(2,j), yv(2,j), sigmv(j),
      &              (ejv(j)-e0)/e0, ktrack(i)
             enddo
          else
             do j=1,napx
-               write(unit,1986) nlostp(j), nturn, dcum(i), xv(1,j),
+               write(unit,1986) nlostp(j)+(samplenumber-1)*npart,
+     &              nturn, dcum(i), xv(1,j),
      &              yv(1,j), xv(2,j), yv(2,j), sigmv(j),
      &              (ejv(j)-e0)/e0, ktrack(i)
             enddo
@@ -45021,7 +45045,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          write(lout,*) "DYNK> funNum =", funNum
          write(lout,*) "DYNK> Invalid funNum, nfuncs_dynk=", nfuncs_dynk
 +ei
-+if .not. cr
++if .not.cr
          write(*,*)    "DYNK> **** ERROR in dynk_computeFUN() ****"
          write(*,*)    "DYNK> funNum =", funNum
          write(*,*)    "DYNK> Invalid funNum, nfuncs_dynk=", nfuncs_dynk
@@ -45127,7 +45151,7 @@ C+ei
 +if crlibm
          retval = log10_rn(dynk_computeFUN(funcs_dynk(funNum,3),turn))
 +ei
-+if .not. crlibm
++if .not.crlibm
          retval = log10(dynk_computeFUN(funcs_dynk(funNum,3),turn))
 +ei
       case (36)                                                         ! EXP
