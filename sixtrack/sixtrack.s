@@ -44469,6 +44469,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             endif
          enddo
       enddo
+
       if (.not. sane) then
 +if cr
          write (lout,*) "****************************************"
@@ -44687,6 +44688,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !-----------------------------------------------------------------------
       implicit none
 +ca parpro
++ca common
 +ca comdynk
 +if cr
 +ca crcoall
@@ -44694,9 +44696,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       !Functions
       double precision dynk_getvalue
       integer dynk_findSETindex
-      !Temp variables
-      integer ii
+      character(maxstrlen_dynk) dynk_stringzerotrim
 
+      !Temp variables
+      integer ii,jj
+      character(maxstrlen_dynk) element_name_s, att_name_s
+      logical found
+      integer ix
       if (ldynkdebug) then
 +if cr
          write(lout,*)
@@ -44717,6 +44723,34 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 
             csets_unique_dynk(nsets_unique_dynk,1) = csets_dynk(ii,1)
             csets_unique_dynk(nsets_unique_dynk,2) = csets_dynk(ii,2)
+            
+            ! Sanity check: Does the element actually exist?
+            element_name_s =
+     &           trim(dynk_stringzerotrim(
+     &           csets_unique_dynk(nsets_unique_dynk,1) ))
+            att_name_s     =
+     &           trim(dynk_stringzerotrim(
+     &           csets_unique_dynk(nsets_unique_dynk,2) ))
+            found = .false.
+
+            do jj=1,il
+               if ( bez(jj).eq. element_name_s) then
+                  found = .true.
+               endif
+            enddo
+            if (.not. found) then
++if cr
+               write (lout,*) "DYNK> Insane: Element '", element_name_s,
+     &                        "' was not found"
++ei
++if .not.cr
+               write (*,*)    "DYNK> Insane: Element '", element_name_s,
+     &                        "' was not found"
++ei
+!TODO: Check that the requested attribute actually exist for the given element type
+!TODO: Check that the requested element type is supported
+               call prror(-1)
+            endif
 
             ! Store original value of data point
             fsets_origvalue_dynk(nsets_unique_dynk) =  
@@ -45409,6 +45443,11 @@ c$$$            endif
             endif
          endif
       enddo
+      
+      !Sanity check
+      if (.not.ldoubleElement) then
+         goto 101
+      endif
 
       return
       
@@ -45423,6 +45462,19 @@ c$$$            endif
       WRITE (*,*)   "DYNK> *** ERROR in dynk_setvalue() ***"
       WRITE (*,*)   "DYNK> Attribute '", att_name_stripped,
      &     "' does not exist for type =", el_type
++ei
+      call prror(-1)
+
+ 101  continue
++if cr
+      WRITE (lout,*)"DYNK> *** ERROR in dynk_setvalue() ***"
+      WRITE (lout,*)"DYNK> The element named '",element_name_stripped,
+     &     "' was not found."
++ei
++if .not.cr
+      WRITE (*,*)   "DYNK> *** ERROR in dynk_setvalue() ***"
+      WRITE (*,*)   "DYNK> The element named '",element_name_stripped,
+     &     "' was not found."
 +ei
       call prror(-1)
       
