@@ -43748,7 +43748,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
          nfexpr_dynk = nfexpr_dynk + 3
          
-         if (fexpr_dynk(nfexpr_dynk) .eq. fexpr_dynk(nfexpr_dynk+1))then
+         if (fexpr_dynk(nfexpr_dynk-3).eq.fexpr_dynk(nfexpr_dynk-2))then
 +if cr
             write (lout,*) "ERROR in DYNK block parsing (fort.3)"
             write (lout,*) "LINSEG: x1 and x2 must be different."
