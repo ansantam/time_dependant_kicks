@@ -43891,11 +43891,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          nfexpr_dynk = nfexpr_dynk + 7
          
       !!! Trancedental functions: #60-79 !!!
-      case ("SINF")
-         ! SINF: Sin functions y = A*sin(omega*T+phi)
+      case ("SINF","COSF","COSF_RIPP")
+         ! SINF     : Sin functions y = A*sin(omega*T+phi)
+         ! COSF     : Cos functions y = A*cos(omega*T+phi)
+         ! COSF_RIPP: Cos functions y = A*cos(2*pi*(T-1)/period+phi)
          
          call dynk_checkargs(getfields_nfields,6,
-     &        "FUN funname SINF amplitude omega phase" )
+     &        "FUN funname {SINF|COSF|COSF_RIPP} "//
+     &        "amplitude {omega|period} phase" )
          call dynk_checkspace(0,3,1)
 
          ! Set pointers to start of funs data blocks
@@ -43904,7 +43907,24 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          ncexpr_dynk = ncexpr_dynk+1
          ! Store pointers
          funcs_dynk(nfuncs_dynk,1) = ncexpr_dynk !NAME (in cexpr_dynk)
-         funcs_dynk(nfuncs_dynk,2) = 60          !TYPE (SINF)
+         select case (getfields_fields(3)(1:getfields_lfields(3)))
+         case("SINF")
+            funcs_dynk(nfuncs_dynk,2) = 60       !TYPE (SINF)
+         case("COSF")
+            funcs_dynk(nfuncs_dynk,2) = 61       !TYPE (COSF)
+         case ("COSF_RIPP")
+            funcs_dynk(nfuncs_dynk,2) = 62       !TYPE (COSF_RIPP)
+         case default
++if cr
+            write (lout,*) "DYNK> dynk_parseFUN() : SINF/COSF"
+            write (lout,*) "DYNK> non-recognized type in inner switch"
++ei
++if .not.cr
+            write (*,*)    "DYNK> dynk_parseFUN() : SINF/COSF"
+            write (*,*)    "DYNK> non-recognized type in inner switch"
++ei
+            call prror(51)
+         end select
          funcs_dynk(nfuncs_dynk,3) = nfexpr_dynk !ARG1
          funcs_dynk(nfuncs_dynk,4) = -1          !ARG2
          funcs_dynk(nfuncs_dynk,5) = -1          !ARG3
@@ -45072,7 +45092,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
       ! General temporaries
       integer foff !base offset into fexpr array
-            
+      
+      ! Other stuff
++ca parnum
+      double precision pi
+      !This is how it is done in the rest of the code...
++if crlibm
+      pi = 4d0*atan_rn(1d0)
++ei
++if .not. crlibm
+      pi = 4d0*atan(1d0)
++ei
+      
       if (funNum .lt. 1 .or. funNum .gt. nfuncs_dynk) then
 +if cr
          write(lout,*) "DYNK> **** ERROR in dynk_computeFUN() ****"
@@ -45216,7 +45247,7 @@ C+ei
      &                 turn*fexpr_dynk(funcs_dynk(funNum,3)+1) +
      &                      fexpr_dynk(funcs_dynk(funNum,3)+2) )
 
-      case (60)                                                         ! SIN
+      case (60)                                                         ! SINF
 +if crlibm
       retval = fexpr_dynk(funcs_dynk(funNum,3))
      &     * SIN_RN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
@@ -45227,6 +45258,30 @@ C+ei
       retval = fexpr_dynk(funcs_dynk(funNum,3))
      &     * SIN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
      &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
++ei
+      case (61)                                                         ! COSF
++if crlibm
+      retval = fexpr_dynk(funcs_dynk(funNum,3))
+     &     * COS_RN( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
+     &             + fexpr_dynk(funcs_dynk(funNum,3)+2) )
+
++ei
++if .not.crlibm
+      retval = fexpr_dynk(funcs_dynk(funNum,3))
+     &     * COS( fexpr_dynk(funcs_dynk(funNum,3)+1) * turn 
+     &          + fexpr_dynk(funcs_dynk(funNum,3)+2) )
++ei
+      case (62)                                                         ! COSF_RIPP
++if crlibm
+      retval = fexpr_dynk(funcs_dynk(funNum,3))
+     & *COS_RN( (two*pi)*dble(turn-1)/fexpr_dynk(funcs_dynk(funNum,3)+1)
+     &             + fexpr_dynk(funcs_dynk(funNum,3)+2) )
+
++ei
++if .not.crlibm
+      retval = fexpr_dynk(funcs_dynk(funNum,3))
+     & *COS   ( (two*pi)*dble(turn-1)/fexpr_dynk(funcs_dynk(funNum,3)+1)
+     &             + fexpr_dynk(funcs_dynk(funNum,3)+2) )
 +ei
       
       case (80)                                                         ! PELP
