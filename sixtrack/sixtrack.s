@@ -26122,7 +26122,17 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     always in main code
       do i=0,il
 +if cr
-        dumpfilepos(i) = -1
+        if (dumpfilepos(i).ge.0) then
+           ! Expect the file to be opened already, in crcheck
+           inquire( unit=dumpunit(i), opened=lopen )
+           if ( .not.lopen ) then
+              write(lout,*) "ERROR in DUMP: The unit",dumpunit,
+     &             "has dumpfilepos=", dumpfilepos(i), ".ge.0, ",
+     &             "but the file is NOT open. This is probably a bug."
+              call prror(-1)
+           endif
+           cycle !Everything OK, don't try to open the files again.
+        endif 
 +ei
         if (ldump(i)) then
 !         the same file could be used by more than one SINGLE ELEMENT
@@ -38592,6 +38602,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca dbdcum
 +ca comgetfields
 +ca dbdump
++if cr
++ca dbdumpcr
++ei
 +ca comdynk
 +ca save
 !-----------------------------------------------------------------------
@@ -39116,6 +39129,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
         do j=1,getfields_l_max_string
            dump_fname(i)(j:j) = char(0)
         enddo
++if cr
+        dumpfilepos(i) = -1
++ei
       enddo
 !--DYNAMIC KICKS--------------------------------------------------------
 !     A.Mereghetti, for the FLUKA Team
