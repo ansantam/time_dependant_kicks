@@ -19262,19 +19262,6 @@ c$$$         endif
          !Moved from daten()
          crabph4(ix)=el(ix)
          el(ix)=0d0
-      else
-!-- Non-recognized element type
-+if cr
-         write (lout,*) "ERROR in initialize_element,"
-         write (lout,*) "un-recognized element type kz = ", kz
-         write (lout,*) "bez = ", bez(ix)
-+ei
-+if .not.cr
-         write (*,*)    "ERROR in initialize_element,"
-         write (*,*)    "un-recognized element type kz = ", kz
-         write (*,*)    "bez = ", bez(ix)
-+ei
-         call prror(-1)
       endif
       
       return
