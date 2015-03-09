@@ -19143,14 +19143,16 @@ cc2008
 !--Multipoles
       elseif(kz(ix).eq.11) then
          
-         if (lfirst) then
-            dynk_elemdata(ix,1) = el(ix) !Flag for type
-            dynk_elemdata(ix,2) = ed(ix) !Bending strenght
-            dynk_elemdata(ix,3) = ek(ix) !Radius
-         else
-            el(ix) = dynk_elemdata(ix,1)
-            !The others are set correctly in setvalue
-         end if
+         !MULT support removed untill we have a proper use case.
+c$$$         if (lfirst) then
+c$$$            dynk_elemdata(ix,1) = el(ix) !Flag for type
+c$$$            dynk_elemdata(ix,2) = ed(ix) !Bending strenght
+c$$$            dynk_elemdata(ix,3) = ek(ix) !Radius
+c$$$         else
+c$$$            el(ix) = dynk_elemdata(ix,1)
+c$$$            dynk_elemdata(ii,2) = ed(ii) !Updated in dynk_setvalue
+c$$$            ek(ii) = dynk_elemdata(ix,3)
+c$$$         end if
          
          ! Moved from daten():
          if (abs(el(ix)+one).le.pieni) then
@@ -19166,75 +19168,77 @@ cc2008
             ek(ix) = one
             el(ix) = zero
          endif
-         
-         !All multipoles:
-         if(.not.lfirst) then
-            do i=1,iu
-               if ( ic(i)-nblo.eq.ix ) then
-                  if(ktrack(i).eq.31) goto 100 !ERROR
-                  !--Initialize smiv as usual
-                  sm(ix)=ed(ix)
-                  smiv(m,i)=sm(ix)+smizf(i)
-                  smi(i)=smiv(m,i)
+         !Otherwise, i.e. when el=0, dki(:,1) = dki(:,2) = dki(:,3) = 0.0
 
-                  !--Using the right izu & setting aaiv, bbiv (see multini)
-                  izu = dynk_izuIndex(ix)
-+ca multini !Also in program maincr()
- 150              continue ! needs to be after a multini block
-
-                  ! From trauthin()&trauthck() (they are identical)
-                  r0=ek(ix)
-                  nmz=nmu(ix)
-                  if(abs(r0).le.pieni.or.nmz.eq.0) then
-                     if(abs(dki(ix,1)).le.pieni .and.
-     &                    abs(dki(ix,2)).le.pieni) then
-C                       ktrack(i)=31
-                     else if(abs(dki(ix,1)).gt.pieni .and.
-     &                       abs(dki(ix,2)).le.pieni) then
-                        if(abs(dki(ix,3)).gt.pieni) then
-C                          ktrack(i)=33
-+ca stra11
-                        else
-C                          ktrack(i)=35
-+ca stra12
-                        endif
-                     else if(abs(dki(ix,1)).le.pieni .and.
-     &                       abs(dki(ix,2)).gt.pieni) then
-                        if(abs(dki(ix,3)).gt.pieni) then
-C                           ktrack(i)=37
-+ca stra13
-                        else
-C                            ktrack(i)=39
-+ca stra14
-                        endif
-                     endif
-                  else
-                     if(abs(dki(ix,1)).le.pieni .and.
-     &                    abs(dki(ix,2)).le.pieni) then
-C                        ktrack(i)=32
-                     else if(abs(dki(ix,1)).gt.pieni .and.
-     &                       abs(dki(ix,2)).le.pieni) then
-                        if(abs(dki(ix,3)).gt.pieni) then
-C                           ktrack(i)=34
-+ca stra11
-                        else
-C                           ktrack(i)=36
-+ca stra12
-                        endif
-                     else if(abs(dki(ix,1)).le.pieni .and.
-     &                       abs(dki(ix,2)).gt.pieni) then
-                        if(abs(dki(ix,3)).gt.pieni) then
-C                           ktrack(i)=38
-+ca stra13
-                        else
-C                           ktrack(i)=40
-+ca stra14
-                        endif
-                     endif
-                  endif
-               endif
-            enddo
-         endif
+         !MULT support removed untill we have a proper use case.
+c$$$         !All multipoles:
+c$$$         if(.not.lfirst) then
+c$$$            do i=1,iu
+c$$$               if ( ic(i)-nblo.eq.ix ) then
+c$$$                  if(ktrack(i).eq.31) goto 100 !ERROR
+c$$$                  !--Initialize smiv as usual
+c$$$                  sm(ix)=ed(ix)
+c$$$                  smiv(m,i)=sm(ix)+smizf(i)
+c$$$                  smi(i)=smiv(m,i)
+c$$$
+c$$$                  !--Using the right izu & setting aaiv, bbiv (see multini)
+c$$$                  izu = dynk_izuIndex(ix)
+c$$$+ca multini !Also in program maincr()
+c$$$ 150              continue ! needs to be after a multini block
+c$$$
+c$$$                  ! From trauthin()&trauthck() (they are identical)
+c$$$                  r0=ek(ix)
+c$$$                  nmz=nmu(ix)
+c$$$                  if(abs(r0).le.pieni.or.nmz.eq.0) then
+c$$$                     if(abs(dki(ix,1)).le.pieni .and.
+c$$$     &                    abs(dki(ix,2)).le.pieni) then
+c$$$C                       ktrack(i)=31
+c$$$                     else if(abs(dki(ix,1)).gt.pieni .and.
+c$$$     &                       abs(dki(ix,2)).le.pieni) then
+c$$$                        if(abs(dki(ix,3)).gt.pieni) then
+c$$$C                          ktrack(i)=33
+c$$$+ca stra11
+c$$$                        else
+c$$$C                          ktrack(i)=35
+c$$$+ca stra12
+c$$$                        endif
+c$$$                     else if(abs(dki(ix,1)).le.pieni .and.
+c$$$     &                       abs(dki(ix,2)).gt.pieni) then
+c$$$                        if(abs(dki(ix,3)).gt.pieni) then
+c$$$C                           ktrack(i)=37
+c$$$+ca stra13
+c$$$                        else
+c$$$C                            ktrack(i)=39
+c$$$+ca stra14
+c$$$                        endif
+c$$$                     endif
+c$$$                  else
+c$$$                     if(abs(dki(ix,1)).le.pieni .and.
+c$$$     &                    abs(dki(ix,2)).le.pieni) then
+c$$$C                        ktrack(i)=32
+c$$$                     else if(abs(dki(ix,1)).gt.pieni .and.
+c$$$     &                       abs(dki(ix,2)).le.pieni) then
+c$$$                        if(abs(dki(ix,3)).gt.pieni) then
+c$$$C                           ktrack(i)=34
+c$$$+ca stra11
+c$$$                        else
+c$$$C                           ktrack(i)=36
+c$$$+ca stra12
+c$$$                        endif
+c$$$                     else if(abs(dki(ix,1)).le.pieni .and.
+c$$$     &                       abs(dki(ix,2)).gt.pieni) then
+c$$$                        if(abs(dki(ix,3)).gt.pieni) then
+c$$$C                           ktrack(i)=38
+c$$$+ca stra13
+c$$$                        else
+c$$$C                           ktrack(i)=40
+c$$$+ca stra14
+c$$$                        endif
+c$$$                     endif
+c$$$                  endif
+c$$$               endif
+c$$$            enddo
+c$$$         endif
 
 !--Crab Cavities
 !   Note: If setting something else than el(),
@@ -19258,6 +19262,19 @@ C                           ktrack(i)=40
          !Moved from daten()
          crabph4(ix)=el(ix)
          el(ix)=0d0
+      else
+!-- Non-recognized element type
++if cr
+         write (lout,*) "ERROR in initialize_element,"
+         write (lout,*) "un-recognized element type kz = ", kz
+         write (lout,*) "bez = ", bez(ix)
++ei
++if .not.cr
+         write (*,*)    "ERROR in initialize_element,"
+         write (*,*)    "un-recognized element type kz = ", kz
+         write (*,*)    "bez = ", bez(ix)
++ei
+         call prror(-1)
       endif
       
       return
@@ -31817,9 +31834,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca kickvxxh
   120     continue
           goto 640
+! JBG RF CC Multipoles
   757     continue
           xory=1
-! JBG RF CC Multipoles
 +ca ccmul4
           goto 640
   760     continue
@@ -45414,19 +45431,14 @@ C     Here comes the logic for setting the value of the attribute for all instan
                endif
                call initialize_element(ii, .false.)
                
-            elseif (abs(el_type).eq.11) then !MULTIPOLES
-               if (att_name_stripped.eq."bending_str") then 
-                  ed(ii) = newValue
-                  dynk_elemdata(ii,2) = newValue
-                  ek(ii) = dynk_elemdata(ii,3)
-               elseif (att_name_stripped.eq."radius") then
-                  ed(ii) = dynk_elemdata(ii,1)
-                  ek(ii) = newValue
-                  dynk_elemdata(ii,3) = newValue
-               else
-                  goto 100 !ERROR
-               endif
-               call initialize_element(ii, .false.)
+          !Not yet supported
+c$$$            elseif (abs(el_type).eq.11) then !MULTIPOLES
+c$$$               if (att_name_stripped.eq."bending_str") then
+c$$$                  ed(ii) = newValue
+c$$$               else
+c$$$                  goto 100 !ERROR
+c$$$               endif
+c$$$               call initialize_element(ii, .false.)
 
           !Not yet supported
 c$$$          elseif (abs(el_type).eq.12) then ! cavities 
