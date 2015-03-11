@@ -7776,16 +7776,16 @@ cc2008
    30 continue
       if(lnapx.eq.0) then
 +if cr
-        write(lout,*)
+        write(lout,*) ''
 +ei
 +if .not.cr
-        write(*,*)
+        write(*,*) ''
 +ei
 +if cr
-        write(lout,*)
+        write(lout,*) ''
 +ei
 +if .not.cr
-        write(*,*)
+        write(*,*) ''
 +ei
 +if cr
         write(lout,*) '***********************'
@@ -7812,16 +7812,16 @@ cc2008
         write(*,*) '***********************'
 +ei
 +if cr
-        write(lout,*)
+        write(lout,*) ''
 +ei
 +if .not.cr
-        write(*,*)
+        write(*,*) ''
 +ei
 +if cr
-        write(lout,*)
+        write(lout,*) ''
 +ei
 +if .not.cr
-        write(*,*)
+        write(*,*) ''
 +ei
         nthinerr=3001
         nnuml=numl
@@ -17859,7 +17859,7 @@ cc2008
         ! HEADER
 +if cr
         write(lout,10460) dump
-        write(lout,*)
+        write(lout,*) ''
         write(lout,*) '       The last column states the format'
         write(lout,*) '            of the output file (see Twiki page):'
         write(lout,*) '       ==0 -> regular output (default)'
@@ -17869,7 +17869,7 @@ cc2008
 +ei
 +if .not.cr
         write(*,10460) dump
-        write(*,*)
+        write(*,*)    ''
         write(*,*)    '       The last column states the format'
         write(*,*)    '            of the output file (see Twiki page):'
         write(*,*)    '       ==0 -> regular output (default)'
@@ -18100,13 +18100,13 @@ cc2008
          if ( getfields_lerr ) call prror(51)
          if (ldynkdebug) then
 +if cr
-            write (lout,*)
+            write (lout,'(A,I4,A)')
 +ei
 +if .not.cr
-            write (*,*)
+            write    (*,'(1x,A,I4,A)')
 +ei
      &           "DYNKDEBUG> Got a FUN block, len=",
-     &           len(ch), ": '", ch, "'"
+     &           len(ch), ": '"// trim(ch)// "'"
             do ii=1,getfields_nfields
 +if cr
                write (lout,*)
@@ -18128,13 +18128,13 @@ cc2008
          if ( getfields_lerr ) call prror(51)
          if (ldynkdebug) then
 +if cr
-            write (lout,*)
+            write (lout,'(A,I4,A)')
 +ei
 +if .not.cr
-            write (*,*)
+            write    (*,'(1x,A,I4,A)')
 +ei
      &           "DYNKDEBUG> Got a SET block, len=",
-     &           len(ch), ": '", ch, "'"
+     &           len(ch), ": '"//trim(ch)//"'"
             do ii=1,getfields_nfields
 +if cr
                write (lout,*)
@@ -44605,10 +44605,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
       do ii=1,nfexpr_dynk
 +if cr
-         write (lout,*)
+         write (lout, '(1x,I8,1x,A,1x,E16.9)')
 +ei
 +if .not.cr
-         write (*,*)
+         write (*,    '(1x,I8,1x,A,1x,E16.9)')
 +ei
      &   ii, ":", fexpr_dynk(ii)
       end do
@@ -44658,12 +44658,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ei
       do ii=1,nsets_unique_dynk
 +if cr
-         write(lout,*)
+         write(lout, '(1x,I8,1x,A,1x,E16.9)')
 +ei
 +if .not.cr
-         write (*,*) 
+         write (*,   '(1x,I8,1x,A,1x,E16.9)')
 +ei
-     &       ii, ":", "'"//
+     &       ii, ": '"//
      &       trim(dynk_stringzerotrim(csets_unique_dynk(ii,1)))//"' '"//
      &       trim(dynk_stringzerotrim(csets_unique_dynk(ii,2)))//"' = ",
      &        fsets_origvalue_dynk(ii)
@@ -44914,12 +44914,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             if (lopen) then
 +if cr
                write(lout,*) "DYNK> **** ERROR in dynk_apply() ****"
-               write(lout,*) "DYNK> unit 665 for dynksets.dat",
+               write(lout,*) "DYNK> unit 665 for dynksets.dat"//
      &                       " was already taken"
 +ei
 +if .not.cr
               write(*,*)    "DYNK> **** ERROR in dynk_apply() ****"
-              write(*,*)    "DYNK> unit 665 for dynksets.dat",
+              write(*,*)    "DYNK> unit 665 for dynksets.dat"//
      &                      " was already taken"
 +ei
               call prror(-1)
@@ -44987,14 +44987,14 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             newValue = dynk_computeFUN(sets_dynk(ii,1),shiftedTurn)
             if (ldynkdebug) then
 +if cr
-               write(lout,*)
+               write (lout, '(1x,A,I5,A,I8,A,E16.9)')
 +ei
 +if .not.cr
-               write(*,*)
+               write     (*,'(1x,A,I5,A,I8,A,E16.9)')
 +ei
-     &              "DYNKDEBUG> Applying set #", ii, "on '",
-     &           trim(dynk_stringzerotrim(csets_dynk(ii,1))),
-     &           "':'", trim(dynk_stringzerotrim(csets_dynk(ii,2))),
+     &              "DYNKDEBUG> Applying set #", ii, " on '"//
+     &           trim(dynk_stringzerotrim(csets_dynk(ii,1)))//
+     &           "':'"// trim(dynk_stringzerotrim(csets_dynk(ii,2)))//
      &           "', shiftedTurn=",shiftedTurn,", value=",newValue
             endif
             call dynk_setvalue(csets_dynk(ii,1),
@@ -45006,10 +45006,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                getvaldata = dynk_getvalue( csets_dynk(ii,1), 
      &                                     csets_dynk(ii,2) )
 +if cr
-               write (lout,*)
+               write (lout, '(1x,A,E16.9)')
 +ei
 +if .not.cr
-               write (*,*)
+               write (*,    '(1x,A,E16.9)')
 +ei
      &              "DYNKDEBUG> Read back value = ", getvaldata
 
@@ -45050,7 +45050,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
                whichFUN(jj) = "N/A"
             endif
             
-            write(665,*)
+            write(665,'(I12,1x,A,1x,A,1x,I4,1x,A,E16.9)')
      &           turn, 
      &           dynk_stringzerotrim(csets_unique_dynk(jj,1)),
      &           dynk_stringzerotrim(csets_unique_dynk(jj,2)),
@@ -45379,14 +45379,14 @@ C+ei
 
       if ( ldynkdebug ) then
 +if cr
-         write (lout,*)
+         write (lout, '(1x,A,E16.9)')
 +ei
 +if .not.cr
-         write (*,*)
+         write (*,    '(1x,A,E16.9)')
 +ei
-     &        "DYNKDEBUG> In dynk_setvalue(), element_name = '",
-     &        element_name_stripped, "', att_name = '",
-     &        att_name_stripped, "', newValue =", newValue
+     &        "DYNKDEBUG> In dynk_setvalue(), element_name = '"//
+     &        trim(element_name_stripped)//"', att_name = '"//
+     &        trim(att_name_stripped)//"', newValue =", newValue
       endif
       
 C     Here comes the logic for setting the value of the attribute for all instances of the element...
@@ -45580,8 +45580,8 @@ c$$$            endif
 +if .not.cr
          write(*,*)
 +ei
-     &   "DYNKDEBUG> In dynk_getvalue(), element_name = '",
-     &        element_name_s, "', att_name = '", att_name_s, "'"
+     &   "DYNKDEBUG> In dynk_getvalue(), element_name = '"//
+     &    trim(element_name_s)//"', att_name = '"//trim(att_name_s)//"'"
       end if
 
       do ii=1,il
