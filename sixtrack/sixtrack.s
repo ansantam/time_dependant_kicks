@@ -26132,7 +26132,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !         the same file could be used by more than one SINGLE ELEMENT
           inquire( unit=dumpunit(i), opened=lopen )
           if ( .not.lopen ) then
-             open(dumpunit(i),file=dump_fname(i),form='formatted')
+             open(dumpunit(i),file=dump_fname(i),
+     &            status='replace',form='formatted')
 +if cr
              dumpfilepos(i) = 0
 +ei
@@ -66216,8 +66217,12 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
  701     read(665,'(a255)',end=110,err=110,iostat=istat) arecord
          dynkfilepos=dynkfilepos+1
          if (dynkfilepos.lt.dynkfilepos_cr) goto 701
+
          endfile 665
-         backspace 665
+!         backspace 665
+         close(665)
+         open(unit=665, file="dynksets.dat", status="old",
+     &        position='append', action="write")
          
          write(93,*)                                                     &
      &'SIXTRACR CRCHECK sucessfully repositioned dynksets.dat, '//
@@ -66234,18 +66239,20 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
          if (ldump(i)) then
             write(93,*) "SIXTRACR CRCHECK REPOSITIONING DUMP file"
             if (i .ne. 0) then
-               write(93,*) "element=",bez(i), "unit=",dumpunit(i)
+               write(93,*) "element=",bez(i), "unit=",dumpunit(i),
+     &              " filename=",dump_fname(i)
             else
-               write(93,*) "element=","ALL" , "unit=",dumpunit(i)
+               write(93,*) "element=","ALL" , "unit=",dumpunit(i),
+     &              " filename=",dump_fname(i)
             endif
             endfile 93
             backspace 93
             
             inquire( unit=dumpunit(i), opened=lopen )
             if ( .not. lopen )
-     &           open(dumpunit(i),file=dump_fname(i),
+     &           open(dumpunit(i),file=dump_fname(i), status='old',
      &                form='formatted',action='readwrite')
-
+            
             dumpfilepos(i) = 0
  702        read(dumpunit(i),'(a255)',end=111,err=111,iostat=istat)
      &           arecord
@@ -66258,7 +66265,11 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
       do i=0, il
          if (ldump(i)) then
             endfile dumpunit(i)
-            backspace dumpunit(i)
+C            backspace dumpunit(i)
+            ! Change from 'readwrite' to 'write'
+            close(dumpunit(i))
+            open(dumpunit(i),file=dump_fname(i), status='old',
+     &           position='append', form='formatted',action='write')
          endif
       end do
       
