@@ -1155,10 +1155,7 @@
 *     general-purpose variables
       logical ldynk            ! dynamic kick requested, i.e. DYNK input bloc issued in the fort.3 file
       logical ldynkdebug       ! print debug messages in main output
-      logical ldynkfileopen    ! Is dynksets.dat already open?
       logical ldynkfiledisable ! Disable writing dynksets.dat?
-      logical ldynksetsEnable  ! Used in apply_dynk, true if .not.ldynkfiledisable
-                               !  and in first turn loop. Must be saved for CR
 
 C     Store the FUN statements
       integer maxfuncs_dynk, maxdata_dynk, maxstrlen_dynk
@@ -1201,8 +1198,7 @@ C     Store the SET statements
       double precision dynk_elemdata(nele,3)
       
 !     fortran COMMON declaration follows padding requirements
-      common /dynkComGen/ ldynk, ldynkdebug,
-     &     ldynkfileopen, ldynkfiledisable, ldynksetsEnable
+      common /dynkComGen/ ldynk, ldynkdebug, ldynkfiledisable
 
       common /dynkComExpr/ funcs_dynk,
      &     iexpr_dynk, fexpr_dynk, cexpr_dynk,
@@ -10040,9 +10036,7 @@ cc2008
 !     last modified: 02-09-2014
 !     close units for logging dynks
 !     always in main code
-      if (ldynkfileopen) then
-         close(665)
-      endif
+      if (ldynk) close(665)
 
       return
       end subroutine
@@ -39141,14 +39135,13 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 !     - general-purpose variables
       ldynk = .false.
       ldynkdebug = .false.
-      ldynkfileopen = .false.
       ldynkfiledisable = .false.
       
       nfuncs_dynk = 0
       niexpr_dynk = 0
       nfexpr_dynk = 0
       ncexpr_dynk = 0
-
+      
       do i=1,maxdata_dynk
          do j=1,maxstrlen_dynk
             cexpr_dynk(i)(j:j) = char(0)
@@ -44562,16 +44555,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       write (lout,*) " ldynk            =", ldynk
       write (lout,*) " ldynkdebug       =", ldynkdebug
       write (lout,*) " ldynkfiledisable =", ldynkfiledisable
-      write (lout,*) " ldynkfileopen    =", ldynkfileopen
-      write (lout,*) " ldynksetsEnable  =", ldynksetsEnable
 +ei
 +if .not.cr
       write (*,*)    "OPTIONS:"
       write (*,*)    " ldynk            =", ldynk
       write (*,*)    " ldynkdebug       =", ldynkdebug
       write (*,*)    " ldynkfiledisable =", ldynkfiledisable
-      write (*,*)    " ldynkfileopen    =", ldynkfileopen
-      write (*,*)    " ldynksetsEnable  =", ldynksetsEnable
 +ei
 
 +if cr
@@ -44846,13 +44835,18 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca comdynkcr
 +ei
 
++if collimat
++ca collpara
++ca dbcommon
++ei
+
 !     interface variables
       integer turn  ! current turn number
       intent(in) turn
 
 !     temporary variables
       integer ii, jj, shiftedTurn
-!!      logical ldynksetsEnable
+      logical lopen
 !     functions
       double precision dynk_computeFUN
       character(maxstrlen_dynk) dynk_stringzerotrim
@@ -44862,8 +44856,6 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       
       character(maxstrlen_dynk) whichFUN(maxsets_dynk) !Which function was used to set a given elem/attr?
       integer whichSET(maxsets_dynk) !Which SET was used for a given elem/attr?
-      
-!      save ldynksetsEnable
 
       if ( ldynkdebug ) then
 +if cr
@@ -44872,10 +44864,16 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if .not.cr
          write (*,*)
 +ei
-     &   'DYNKDEBUG> In dynk_apply(), turn = ', turn
+     &   'DYNKDEBUG> In dynk_apply(), turn = ',
++if collimat
+     & turn, "samplenumber =", samplenumber
++ei
++if .not.collimat
+     & turn
++ei
       end if
       
-      !Initialize variables
+      !Initialize variables (every call)
       do jj=1, nsets_unique_dynk
          whichSET(jj) = -1
          do ii=1,maxstrlen_dynk
@@ -44883,6 +44881,8 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          enddo
       enddo
 
+      !First-turn initialization, some parts which are specific for collimat.
+      ! (move to pretrack?)
       if (turn .eq. 1) then
          ! Reset RNGs
          do ii=1, nfuncs_dynk
@@ -44904,85 +44904,70 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
      &         iexpr_dynk(funcs_dynk(ii,3)+1)
             endif
          enddo
-      endif
 
-      if (ldynkfileopen .and. turn .eq. 1) then
-         ! We're in the 2nd pass of the turn loop
-         
-         if (ldynkdebug) then
+         !Open dynksets.dat
++if collimat
+         if (samplenumber.eq.1) then
++ei
+            inquire( unit=665, opened=lopen )
+            if (lopen) then
 +if cr
-               write (lout,*)
+               write(lout,*) "DYNK> **** ERROR in dynk_apply() ****"
+               write(lout,*) "DYNK> unit 665 for dynksets.dat",
+     &                       " was already taken"
 +ei
 +if .not.cr
-               write (*,*)
+              write(*,*)    "DYNK> **** ERROR in dynk_apply() ****"
+              write(*,*)    "DYNK> unit 665 for dynksets.dat",
+     &                      " was already taken"
 +ei
-     & "DYNKDEBUG> 2nd pass of turn loop, ",
-     & "setting ldynksetsenable=FALSE'"
+              call prror(-1)
+            end if
+            open(unit=665, file="dynksets.dat",
+     &           status="replace",action="write") 
+
+            if (ldynkfiledisable) then
+               write (665,*) "### DYNK file output was disabled ",
+     &                       "with flag NOFILE in fort.3 ###"
+            else 
+               write(665,*)
+     &              "# turn element attribute SETidx funname value"
+            endif
++if cr
+            !Note: To be able to reposition, each line should be shorter than 255 chars
+            dynkfilepos = 1
+            
+            ! Flush the unit
+            endfile 665
+            backspace 665
++ei
++if collimat
          endif
-         ! Only write to output file in first "pass"
-         ldynksetsEnable = .false. ! (comment out for debugging)
-         
-         ! Reset values
-         do ii=1, nsets_unique_dynk
-            newValue = fsets_origvalue_dynk(ii)
++ei
+ 
++if collimat
+         ! Reset values to original settings in turn 1 
+         if (samplenumber.gt.1) then
             if (ldynkdebug) then
-+if cr
-               write (lout,*)
-+ei
-+if .not.cr
-               write (*,*)
-+ei
-     &              "DYNKDEBUG> Resetting: '",
-     &               trim(dynk_stringzerotrim(csets_unique_dynk(ii,1))),
+               write (*,*) "DYNKDEBUG> New collimat sample, ",
+     &            "samplenumber = ", samplenumber,
+     &                     "resetting the SET'ed values."
+            endif
+            do ii=1, nsets_unique_dynk
+               newValue = fsets_origvalue_dynk(ii)
+               if (ldynkdebug) then
+                  write (*,*) "DYNKDEBUG> Resetting: '",
+     &         trim(dynk_stringzerotrim(csets_unique_dynk(ii,1))),
      &         "':'",trim(dynk_stringzerotrim(csets_unique_dynk(ii,2))),
      &         "', newValue=", newValue
-            endif
+               endif
 
-            call dynk_setvalue(csets_unique_dynk(ii,1),
-     &                         csets_unique_dynk(ii,2),
-     &                         newValue )
-         enddo
-         
-      endif
-      
-      if (.not. ldynkfileopen) then
-         !Temp reuse of ldynkfileopen for sanity check
-         inquire( unit=665, opened=ldynkfileopen )
-         if (ldynkfileopen) then
-+if cr
-           write(lout,*) "DYNK> **** ERROR in dynk_apply() ****"
-           write(lout,*) "DYNK> unit 665 for dynksets.dat already taken"
-+ei
-+if .not.cr
-           write(*,*)    "DYNK> **** ERROR in dynk_apply() ****"
-           write(*,*)    "DYNK> unit 665 for dynksets.dat already taken"
-+ei
-            call prror(-1)
-         end if
-         open(unit=665, file="dynksets.dat",
-     &        status="replace",action="write") 
-         ldynkfileopen = .true.
-         if (ldynkfiledisable) then
-            write (665,*) "### DYNK file output was disabled ",
-     &                    "with flag NOFILE in fort.3 ###"
-            ldynksetsEnable = .false.
-+if cr
-            !Note: To be able to reposition, each line should be shorter than 255 chars
-            dynkfilepos = 1
-+ei
-         else
-            write(665,*) "# turn element attribute SETidx funname value"
-            ldynksetsEnable = .true.
-+if cr
-            !Note: To be able to reposition, each line should be shorter than 255 chars
-            dynkfilepos = 1
-+ei
+               call dynk_setvalue(csets_unique_dynk(ii,1),
+     &                            csets_unique_dynk(ii,2),
+     &                            newValue )
+            enddo
          endif
-         
-         ! Flush the unit
-         endfile 665
-         backspace 665
-
++ei
       endif
       
       !Apply the sets
@@ -45050,7 +45035,12 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
       end do
       
       !Write output file
-      if (ldynksetsEnable) then
++if collimat
+      if (samplenumber.eq.1 .and..not.ldynkfiledisable) then
++ei
++if .not.collimat
+      if (.not.ldynkfiledisable) then
++ei
          do jj=1,nsets_unique_dynk
             getvaldata =  dynk_getvalue( csets_unique_dynk(jj,1),
      &                                   csets_unique_dynk(jj,2) )
@@ -65751,7 +65741,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
          backspace 93
          read(95,err=100,end=100)
      &        dynkfilepos_cr,
-     &        ldynksetsEnable,
      &        niexpr_dynk_cr,
      &        nfexpr_dynk_cr,
      &        ncexpr_dynk_cr,
@@ -65907,7 +65896,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
          backspace 93
          read(96,err=101,end=101)
      &        dynkfilepos_cr,
-     &        ldynksetsEnable,
      &        niexpr_dynk_cr,
      &        nfexpr_dynk_cr,
      &        ncexpr_dynk_cr,
@@ -66224,7 +66212,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
 
          open(unit=665,file='dynksets.dat',status="old",
      &        action="readwrite", err=110)
-         ldynkfileopen = .true.
          
  701     read(665,'(a255)',end=110,err=110,iostat=istat) arecord
          dynkfilepos=dynkfilepos+1
@@ -66640,7 +66627,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
         !TODO: One could probably be more efficient when saving
         write(95,err=100,iostat=istat)                                  &
      &dynkfilepos,
-     &ldynksetsEnable,
      &niexpr_dynk,
      &nfexpr_dynk,
      &ncexpr_dynk,
@@ -66829,7 +66815,6 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
         !TODO: One could probably be more efficient when saving
         write(96,err=100,iostat=istat)                                  &
      &dynkfilepos,
-     &ldynksetsEnable,
      &niexpr_dynk,
      &nfexpr_dynk,
      &ncexpr_dynk,
