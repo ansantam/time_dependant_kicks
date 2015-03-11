@@ -65749,6 +65749,16 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
      &        (fexpr_dynk_cr(j),j=1,maxdata_dynk),
      &        (cexpr_dynk_cr(j),j=1,maxdata_dynk),
      &        (fsets_dynk_cr(j),j=1,maxsets_dynk)
+
+c$$$         write (93,*) "Contents: (nsets_unique_dynk=",
+c$$$     &        nsets_unique_dynk,")"
+c$$$         do j=1,nsets_unique_dynk
+c$$$            write(93,*) csets_unique_dynk(j,1),csets_unique_dynk(j,2),
+c$$$     &                  fsets_dynk_cr(j)
+c$$$         enddo
+c$$$         write(93,*) "DONE"
+c$$$         endfile 93
+c$$$         backspace 93
       endif
 
 !ERIC new extended checkpoint for synuthck
@@ -65904,6 +65914,16 @@ c      write(*,*)cs_tail,prob_tail,ranc,EnLo*DZ
      &        (fexpr_dynk_cr(j),j=1,maxdata_dynk),
      &        (cexpr_dynk_cr(j),j=1,maxdata_dynk),
      &        (fsets_dynk_cr(j),j=1,maxsets_dynk)
+
+c$$$         write (93,*) "Contents: (nsets_unique_dynk=",
+c$$$     &        nsets_unique_dynk,")"
+c$$$         do j=1,nsets_unique_dynk
+c$$$            write(93,*) csets_unique_dynk(j,1),csets_unique_dynk(j,2),
+c$$$     &                  fsets_dynk_cr(j)
+c$$$         enddo
+c$$$         write(93,*) "DONE"
+c$$$         endfile 93
+c$$$         backspace 93
       endif
 
 
@@ -66530,8 +66550,19 @@ C            backspace dumpunit(i)
 +ei
          do j=1,nsets_unique_dynk
             fsets_dynk_cr(j) =
-     &           dynk_getvalue(csets_dynk(j,1),csets_dynk(j,2))
+     &           dynk_getvalue(csets_unique_dynk(j,1),
+     &                         csets_unique_dynk(j,2))
          end do
+
+c$$$         write (93,*) "Contents: (nsets_unique_dynk=",
+c$$$     &        nsets_unique_dynk,")"
+c$$$         do j=1,nsets_unique_dynk
+c$$$            write(93,*) csets_unique_dynk(j,1),csets_unique_dynk(j,2),
+c$$$     &                  fsets_dynk_cr(j)
+c$$$         enddo
+c$$$         write(93,*) "DONE"
+c$$$         endfile 93
+c$$$         backspace 93
       end if
 
 +if .not.debug
@@ -67064,6 +67095,17 @@ C            backspace dumpunit(i)
             fexpr_dynk(j) = fexpr_dynk_cr(j)
             cexpr_dynk(j) = cexpr_dynk_cr(j)
          enddo
+
+c$$$         write (93,*) "Contents: (nsets_unique_dynk=",
+c$$$     &        nsets_unique_dynk,")"
+c$$$         do j=1,nsets_unique_dynk
+c$$$            write(93,*) csets_unique_dynk(j,1),csets_unique_dynk(j,2),
+c$$$     &                  fsets_dynk_cr(j)
+c$$$         enddo
+c$$$         write(93,*) "DONE"
+c$$$         endfile 93
+c$$$         backspace 93
+         
          ! Load current settings from fsets_dynk_cr into the elements affected by DYNK.
          do j=1,nsets_unique_dynk
             !It is OK to write to lout from here
