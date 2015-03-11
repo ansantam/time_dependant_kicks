@@ -17947,11 +17947,11 @@ cc2008
         enddo
         if ( ldumphighprec ) then
 +if cr
-          write(lout,*)
+          write(lout,*) ''
           write(lout,*) '        --> requested high precision dumping!'
 +ei
 +if .not.cr
-          write(*,*)
+          write(*,*) ''
           write(*,*) '        --> requested high precision dumping!'
 +ei
         endif
@@ -17999,7 +17999,7 @@ cc2008
 +ei
 +if .not.cr
          write(*,*)    "ERROR in DUMP:"
-         write(*,*) "element names are max. 16 characters"
+         write(*,*)    "element names are max. 16 characters"
 +ei
          call prror(-1)
 
@@ -18030,20 +18030,20 @@ cc2008
       endif
 !     search failed:
 +if cr
-      write(lout,*)
+      write(lout,*) ''
       write(lout,*) " Un-identified SINGLE ELEMENT '", idat, "'"
       write(lout,*) '   in block ',dump, '(fort.3)'
       write(lout,*) '   parsed line:'
       write(lout,*) ch(:80)
-      write(lout,*)
+      write(lout,*) ''
 +ei
 +if .not.cr
-      write(*,*)
+      write(*,*)    ''
       write(*,*)    " Un-identified SINGLE ELEMENT '", idat, "'"
       write(*,*)    '   in block ',dump, '(fort.3)'
       write(*,*)    '   parsed line:'
       write(*,*)    ch(:80)
-      write(*,*)
+      write(*,*)    ''
 +ei
       call prror(-1)
 
@@ -18100,7 +18100,7 @@ cc2008
          if ( getfields_lerr ) call prror(51)
          if (ldynkdebug) then
 +if cr
-            write (lout,'(A,I4,A)')
+            write (lout,'(1x,A,I4,A)')
 +ei
 +if .not.cr
             write    (*,'(1x,A,I4,A)')
@@ -18128,7 +18128,7 @@ cc2008
          if ( getfields_lerr ) call prror(51)
          if (ldynkdebug) then
 +if cr
-            write (lout,'(A,I4,A)')
+            write (lout,'(1x,A,I4,A)')
 +ei
 +if .not.cr
             write    (*,'(1x,A,I4,A)')
@@ -38601,6 +38601,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +ca dbdumpcr
 +ei
 +ca comdynk
++if cr
++ca comdynkcr
++ei
 +ca save
 !-----------------------------------------------------------------------
 !
@@ -39164,6 +39167,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
          dynk_elemdata(i,2) = 0
          dynk_elemdata(i,3) = 0
       end do
++if cr
+      dynkfilepos = -1
++ei
 !
 !-----------------------------------------------------------------------
       return
@@ -44910,6 +44916,10 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
 +if collimat
          if (samplenumber.eq.1) then
 +ei
++if cr
+         ! Could be a CR just before tracking starts 
+         if (dynkfilepos .eq.-1) then
++ei
             inquire( unit=665, opened=lopen )
             if (lopen) then
 +if cr
@@ -44943,6 +44953,9 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
             backspace 665
 +ei
 +if collimat
+         endif
++ei
++if cr
          endif
 +ei
  
