@@ -2,8 +2,8 @@
       character*8 version
       character*10 moddate
       integer itot,ttot
-      data version /'4.5.19'/
-      data moddate /'14.02.2015'/
+      data version /'4.5.20'/
+      data moddate /'12.03.2015'/
 +cd license
 !!SixTrack
 !!
@@ -14,7 +14,8 @@
 !!R. Assman, C. Bracco, R. Bruce, D. Mirarchi, V. Previtali,
 !!S. Redaelli, G. Robert-Demolaize,
 !!A. Rossi, C. Tambasco, T. Weiler,
-!!J. Barranco, Y. Sun, Y. Levinsen, M. Fjellstrom,  CERN
+!!J. Barranco, Y. Sun, Y. Levinsen, M. Fjellstrom,
+!!A. Santamaria, R. Kwee-Hinzmann, A. Mereghetti, K. Sjobak,  CERN
 !!G. Robert-Demolaize, BNL
 !!
 !!Copyright 2014 CERN. This software is distributed under the terms of the GNU
