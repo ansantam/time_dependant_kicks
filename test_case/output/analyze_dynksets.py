@@ -89,8 +89,8 @@ for (k,i) in zip(dynkData,xrange(len(dynkData))):
     plt.xlabel("Turn")
     plt.ylabel("Setting")
     plt.title("%s:%s" %(k[0],k[1]))
-    plt.grid(True)
-    plt.xticks(np.arange(dynkData[k].turn[0], dynkData[k].turn[-1], 1.0))
+#    plt.grid(True)
+#    plt.xticks(np.arange(dynkData[k].turn[0], dynkData[k].turn[-1], 1.0))
 
     #Combined figure
     plt.figure(1)
@@ -102,7 +102,7 @@ for (k,i) in zip(dynkData,xrange(len(dynkData))):
 
 #Final touches
 plt.figure(1)
-plt.legend(loc=0)
+plt.legend(loc=0,frameon=False,ncol=2)
 plt.grid(True)
 
 plt.show()

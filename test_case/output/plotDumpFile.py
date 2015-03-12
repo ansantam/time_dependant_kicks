@@ -89,7 +89,11 @@ plot_particleNum(fdata,turnIdxs)
 corr = []
 X = []
 XP = []
-XT = []
+Y = []
+YP = []
+Z = []
+DEE = []
+T = []
 
 print
 for t in xrange(1,10000000):
@@ -101,12 +105,31 @@ for t in xrange(1,10000000):
         break
     
     corr.append(np.corrcoef(tdata['z'], tdata['x'])[0,1])    
+    
     for p in tdata:
         if p['ID'] == 1:
             X.append(  p['x']  )
             XP.append( p['xp'] )
-            XT.append( t )
+            Y.append(  p['y']  )
+            YP.append( p['yp'] )
+            Z.append( p['z'] )
+            DEE.append( p['dEE'] )
+            T.append( t )
             break
+    
+    #Check if ID is "unbroken" or not
+    if len(tdata) != 64:
+        pid = tdata[0]['ID']
+        s0 = tdata[0]['s']
+        for p in tdata:
+            if p['s'] != s0:
+                break
+            if p['ID'] < pid:
+                pid = p['ID']
+            if p['ID'] != pid:
+                print pid, tdata['ID']
+                break
+            pid = pid+1
             
     #continue
     plt.figure(5)
@@ -204,21 +227,33 @@ print "Converting to .gif:"
 movieFileName = "pngs/zx.gif"
 command = "convert " + "pngs/zx_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
 print "Command = '" + command + "'"
-#os.system(command)
+os.system(command)
 print "Done."
 
 
-plt.figure(5) # To close the remains of xy/xz plots
+plt.figure(5) # To close the remains of per-timestep plots, reuse same plot #
 plt.clf()
 plt.plot(corr)
 plt.xlabel("Turn")
 plt.ylabel("Corr")
 
-plt.figure(6)
-plt.clf()
-plt.scatter(X,XP, c=XT,cmap='rainbow',s=20)
-plt.colorbar()
-plt.xlabel("X [mm]")
-plt.ylabel("XP [mrad]")
+(f,ax) = plt.subplots(2,2)
+
+ax[0][0].scatter(X,XP,  c=T,cmap='rainbow',s=20)
+ax[0][0].set_xlabel("X [mm]")
+ax[0][0].set_ylabel("XP [mrad]")
+
+ax[0][1].scatter(Y,YP,  c=T,cmap='rainbow',s=20)
+ax[0][1].set_xlabel("Y [mm]")
+ax[0][1].set_ylabel("YP [mrad]")
+
+ax[1][0].scatter(Z,DEE, c=T,cmap='rainbow',s=20)
+ax[1][0].set_xlabel("Z [mm]")
+ax[1][0].set_ylabel("dE/E")
+
+
+ax[1][1].scatter(X,Y,   c=T,cmap='rainbow',s=20)
+ax[1][1].set_xlabel("X [mm]")
+ax[1][1].set_ylabel("Y [mm]")
 
 plt.show()
