@@ -21,6 +21,9 @@
 *.a
 *.lib
 
+!sixtrack_SVN/SixTrack/lib32
+!sixtrack_SVN/SixTrack/lib32/*
+
 # Executables
 *.exe
 *.out
