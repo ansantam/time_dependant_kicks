@@ -31165,7 +31165,7 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
        CALL APPENDREADING(hdfpid,hdfturn,hdfs,hdfx,hdfxp,hdfy,hdfyp,    &
      &                    hdfdee,hdftyp)
 +ei
-+if .not.hdf5   
++if .not.hdf5
 !          write(38,'(1x,i8,1x,i4,1x,f8.2,5(1x,e11.3),1x,i4)')           &
 !         write(38,'(1x,i8,1x,i4,1x,f8.2,4(1x,e11.5),1x,e11.3,1x,i4)')   &
          write(38,'(1x,i8,1x,i4,1x,f8.2,4(1x,e11.5),1x,e11.3,1x,i4)')   &
@@ -31264,17 +31264,23 @@ C     Convert r(1), r(2) from U(0,1) -> rvec0 as Gaussian with cutoff mcut (#sig
        hdfpid=ipart(j)+100*samplenumber
        hdfturn=iturn
        hdfs=sampl(ie)-0.5*c_length
-       hdfx=xv(1,j)-0.5*c_length*yv(1,j)
-       hdfxp=yv(1,j)
-       hdfy=xv(2,j)-0.5*c_length*yv(2,j)
-       hdfyp=yv(2,j)
+       hdfx=  ! xv(1,j)-0.5*c_length*yv(1,j)
+     &    (rcx0(j)*1d3+torbx(ie))-0.5*c_length*(rcxp0(j)*1d3+torbxp(ie))
+       hdfxp= ! yv(1,j)
+     &    rcxp0(j)*1d3+torbxp(ie)
+       hdfy=  ! xv(2,j)-0.5*c_length*yv(2,j)
+     &    (rcy0(j)*1d3+torby(ie))-0.5*c_length*(rcyp0(j)*1d3+torbyp(ie))
+       hdfyp= ! yv(2,j)
+     &    rcyp0(j)*1d3+torbyp(ie)
        hdfdee=(ejv(j)-myenom)/myenom
        hdftyp=secondary(j)+tertiary(j)+other(j)
        call APPENDREADING(hdfpid,hdfturn,hdfs,hdfx,hdfxp,hdfy,hdfyp,    &
      &                    hdfdee,hdftyp)
        hdfs=sampl(ie)+0.5*c_length
        hdfx=xv(1,j)+0.5*c_length*yv(1,j)
+       hdfxp=yv(1,j)
        hdfy=xv(2,j)+0.5*c_length*yv(2,j)
+       hdfyp=yv(2,j)
        call APPENDREADING(hdfpid,hdfturn,hdfs,hdfx,hdfxp,hdfy,hdfyp,    &
      &                    hdfdee,hdftyp)
      
