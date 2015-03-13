@@ -13566,6 +13566,10 @@ cc2008
         ed(i)=ed(i)/two
         ek(i)=ek(i)/two
       endif
+!--CHANGING SIGN OF CURVATURE OF VERTICAL THICK DIPOLE
+      if((kz(i).eq.4.or.kz(i).eq.5).and.abs(el(i)).gt.pieni)            &
+     &ed(i)=-1d0*ed(i)                                                   !hr05
+!hr05&ed(i)=-ed(i)
 !--CAVITIES
       if(abs(kz(i)).eq.12) then
         if(abs(ed(i)).gt.pieni.and.abs(ek(i)).gt.pieni) then
@@ -19040,9 +19044,7 @@ cc2008
             enddo
          endif
 
-      elseif((kz(ix).eq.4).and.
-     &   abs(el(ix)).gt.pieni) then
-         ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
+      elseif(kz(ix).eq.4) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
@@ -19055,9 +19057,7 @@ cc2008
             enddo
          endif
 
-      elseif((kz(ix).eq.5).and.
-     &   abs(el(ix)).gt.pieni) then
-         ed(ix)=-1d0*ed(ix)  !--CHANGING SIGN OF CURVATURE OF THICK DIPOLE
+      elseif(kz(ix).eq.5) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
