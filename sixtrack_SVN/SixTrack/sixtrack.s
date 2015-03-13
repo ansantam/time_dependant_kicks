@@ -19006,7 +19006,8 @@ cc2008
       integer i
 
 !--Nonlinear Elements
-      if(kz(ix).eq.1) then
+! TODO: Merge these cases into 1 + subcases?
+      if(abs(kz(ix)).eq.1) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
@@ -19019,7 +19020,7 @@ cc2008
             enddo
          endif
 
-      elseif(kz(ix).eq.2) then
+      elseif(abs(kz(ix)).eq.2) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
@@ -19031,7 +19032,7 @@ cc2008
                endif
             enddo
          endif
-      elseif(kz(ix).eq.3) then
+      elseif(abs(kz(ix)).eq.3) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
@@ -19044,7 +19045,7 @@ cc2008
             enddo
          endif
 
-      elseif(kz(ix).eq.4) then
+      elseif(abs(kz(ix)).eq.4) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
@@ -19057,7 +19058,7 @@ cc2008
             enddo
          endif
 
-      elseif(kz(ix).eq.5) then
+      elseif(abs(kz(ix)).eq.5) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
@@ -19070,7 +19071,7 @@ cc2008
             enddo
          endif
 
-      elseif(kz(ix).eq.6) then
+      elseif(abs(kz(ix)).eq.6) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
@@ -19083,7 +19084,7 @@ cc2008
             enddo
          endif
 
-      elseif(kz(ix).eq.7) then
+      elseif(abs(kz(ix)).eq.7) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
@@ -19096,7 +19097,7 @@ cc2008
             enddo
          endif
 
-      elseif(kz(ix).eq.8) then
+      elseif(abs(kz(ix)).eq.8) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
@@ -19109,7 +19110,7 @@ cc2008
             enddo
          endif
 
-      elseif(kz(ix).eq.9) then
+      elseif(abs(kz(ix)).eq.9) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
@@ -19122,7 +19123,7 @@ cc2008
             enddo
          endif
 
-      elseif(kz(ix).eq.10) then
+      elseif(abs(kz(ix)).eq.10) then
          if(.not.lfirst) then
             do i=1,iu
                if ( ic(i)-nblo.eq.ix ) then
@@ -45881,15 +45882,30 @@ c$$$               endif
          call prror(-1)
       endif
       
-      do k=1,nsets_unique_dynk
+      do k=1,nsets_dynk
          element_name_stripped =
-     &        trim(dynk_stringzerotrim(csets_unique_dynk(k,1)))
+     &        trim(dynk_stringzerotrim(csets_dynk(k,1)))
          if (bez(ix) .eq. element_name_stripped) then
             dynk_isused = .true.
+            if (ldynkdebug)
++if cr
+     &         write(lout,*)
++ei
++if .not.cr
+     &         write(*,*)
++ei
+     &         "DYNKDEBUG> dynk_isused = TRUE, bez='"//bez(ix)//
+     &         "', element_name_stripped='"//element_name_stripped//"'"
             return
          endif
       end do
       
++if cr
+      write(lout,*)"DYNKDEBUG> dynk_isused = FALSE, bez='"//bez(ix)//"'"
++ei
++if .not.cr
+      write(*,*)   "DYNKDEBUG> dynk_isused = FALSE, bez='"//bez(ix)//"'"
++ei
       dynk_isused = .false.
       return
       
