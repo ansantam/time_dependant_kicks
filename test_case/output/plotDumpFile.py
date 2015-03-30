@@ -127,7 +127,7 @@ for t in xrange(1,10000000):
             if p['ID'] < pid:
                 pid = p['ID']
             if p['ID'] != pid:
-                print pid, tdata['ID']
+#                print pid, tdata['ID']
                 break
             pid = pid+1
             
@@ -136,9 +136,9 @@ for t in xrange(1,10000000):
     
     #zx
     #plt.figure()
+
     plt.clf()
     plt.title("TURN =" + str(t))
-    #plt.plot(tdata['z'], tdata['x'],'+')
     plt.scatter(tdata['z'], tdata['x'], c=tdata['ID'],cmap='rainbow',s=20)
     plt.xlabel("z [mm]")
     plt.ylabel("x [mm]")
@@ -147,10 +147,8 @@ for t in xrange(1,10000000):
 
     plt.savefig("pngs/zx_%05i.png" % (t))
 
-    #plt.figure()
     plt.clf()
     plt.title("TURN =" + str(t))
-    #plt.plot(tdata['x'], tdata['y'],'+')
     plt.scatter(tdata['x'], tdata['y'], c=tdata['ID'],cmap='rainbow',s=20)
     plt.xlabel("x [mm]")
     plt.ylabel("y [mm]")
@@ -161,7 +159,6 @@ for t in xrange(1,10000000):
 
     plt.clf()
     plt.title("TURN =" + str(t))
-    #plt.plot(tdata['x'], tdata['xp'],'+')
     plt.scatter(tdata['x'], tdata['xp'], c=tdata['ID'],cmap='rainbow',s=20)
     plt.xlabel("x [mm]")
     plt.ylabel("xp [mrad]")
@@ -172,7 +169,6 @@ for t in xrange(1,10000000):
 
     plt.clf()
     plt.title("TURN =" + str(t))
-    #plt.plot(tdata['x'], tdata['xp'],'+')
     plt.scatter(tdata['y'], tdata['yp'], c=tdata['ID'],cmap='rainbow',s=20)
     plt.xlabel("y [mm]")
     plt.ylabel("yp [mrad]")
@@ -181,6 +177,15 @@ for t in xrange(1,10000000):
     
     plt.savefig("pngs/yyp_%05i.png" % (t))
 
+    plt.clf()
+    plt.title("TURN =" + str(t))
+    plt.scatter(tdata['z'], tdata['dEE'], c=tdata['ID'],cmap='rainbow',s=20)
+    plt.xlabel("z [mm]")
+    plt.ylabel("dE/E")
+    plt.xlim(min(fdata[:]['z']),max(fdata[:]['z']))
+    plt.ylim(min(fdata[:]['dEE']),max(fdata[:]['dEE']))
+    
+    plt.savefig("pngs/zdEE_%05i.png" % (t))
 
     continue
 
@@ -222,7 +227,6 @@ print "Command = '" + command + "'"
 #os.system(command)
 print "Done."
 
-
 print "Converting to .gif:"
 movieFileName = "pngs/zx.gif"
 command = "convert " + "pngs/zx_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
@@ -230,6 +234,12 @@ print "Command = '" + command + "'"
 os.system(command)
 print "Done."
 
+print "Converting to .gif:"
+movieFileName = "pngs/zdEE.gif"
+command = "convert " + "pngs/zdEE_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
+print "Command = '" + command + "'"
+os.system(command)
+print "Done."
 
 plt.figure(5) # To close the remains of per-timestep plots, reuse same plot #
 plt.clf()
